@@ -4,10 +4,11 @@
 1. [Getting Started](#getting-started)
 2. [Basic Usage](#basic-usage)
 3. [Document Ingestion](#document-ingestion)
-4. [Querying the Knowledge Base](#querying-the-knowledge-base)
-5. [Using Open WebUI](#using-open-webui)
-6. [Configuration](#configuration)
-7. [Troubleshooting](#troubleshooting)
+4. [Local Folder Import](#local-folder-import)
+5. [Querying the Knowledge Base](#querying-the-knowledge-base)
+6. [Using Open WebUI](#using-open-webui)
+7. [Configuration](#configuration)
+8. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -93,6 +94,148 @@ Supported formats:
 Set access control during ingestion:
 - `dept`: Department (e.g., "Engineering", "Sales")
 - `level`: Access level (e.g., "Internal", "Confidential")
+
+## Local Folder Import
+
+### Import Using PowerShell Script
+
+The RAG Knowledge Base provides convenient local folder import functionality, allowing you to import entire folders from your computer directly into the knowledge base.
+
+#### Basic Usage
+
+```powershell
+# Import local folder (simple mode)
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Users\YourName\Documents\KB"
+
+# Specify user and knowledge base name
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents\Technical" -UserId "john" -KbName "tech_docs"
+
+# Use simple mode (auto-create user and knowledge base)
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents" -SimpleMode
+```
+
+#### Parameters
+
+- **-FolderPath**: Local folder path to import (required)
+- **-UserId**: User ID (default: "default")
+- **-KbName**: Knowledge base name (default: "default")
+- **-ApiUrl**: API address (default: "http://localhost:8000/api/v1")
+- **-SimpleMode**: Simple mode, auto-create user and knowledge base
+
+#### Import Process
+
+The script will automatically:
+1. Scan all files in the specified folder
+2. Count file numbers and total size
+3. Copy files to the knowledge base's raw directory
+4. Process each document (parse, clean, chunk)
+5. Display import result statistics
+
+#### Import Result Example
+
+```
+=== RAG Knowledge Base Local Folder Import ===
+
+Import Configuration:
+  Folder: C:\Users\YourName\Documents\KB
+  User ID: default
+  Knowledge Base: default
+  API Address: http://localhost:8000/api/v1
+  Simple Mode: False
+
+Folder Information:
+  File Count: 25
+  Total Size: 45.67 MB
+
+Starting import...
+Import completed!
+
+Import Results:
+  Success: True
+  Source Folder: C:\Users\YourName\Documents\KB
+  Total Files Found: 25
+  Files Processed: 23
+  Files Skipped: 2
+  Files Failed: 0
+
+Processed Documents:
+  - document1.pdf
+  - document2.docx
+  - notes.md
+  ...
+
+Import completed! You can now query the knowledge base.
+```
+
+### Import Using API
+
+If you prefer to use the API directly to import folders:
+
+#### Simple Import (Recommended)
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/import-local-folder" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "folder_path": "C:\\Users\\YourName\\Documents\\KB",
+    "user_id": "default",
+    "kb_name": "default",
+    "acl": {
+      "read": ["default"],
+      "write": ["default"]
+    }
+  }'
+```
+
+#### Advanced Import (requires creating user and knowledge base first)
+
+```bash
+# 1. Create user knowledge base
+curl -X POST "http://localhost:8000/api/v1/users/john/kbs" \
+  -d "kb_name=my_documents"
+
+# 2. Import folder
+curl -X POST "http://localhost:8000/api/v1/users/john/kbs/my_documents/import-folder" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "folder_path": "C:\\Documents\\Technical",
+    "acl": {
+      "read": ["john", "team"],
+      "write": ["john"]
+    }
+  }'
+```
+
+### Supported File Formats
+
+Folder import supports the following file formats:
+- PDF (.pdf)
+- Word (.docx)
+- Markdown (.md)
+- Text (.txt)
+- HTML (.html)
+
+### Import Best Practices
+
+1. **Folder Organization**: Group related documents in the same folder
+2. **File Naming**: Use clear file names for easy identification
+3. **File Size**: Individual files should not exceed 100MB
+4. **Batch Import**: For large numbers of files, import in batches
+5. **Permission Settings**: Set ACL permissions as needed
+
+### Troubleshooting
+
+**Common import failure reasons**:
+- Folder path does not exist
+- API service not started
+- File format not supported
+- File corrupted or encrypted
+
+**Solutions**:
+1. Confirm the folder path is correct
+2. Check API service status: `curl http://localhost:8000/health`
+3. Review error messages from the import script
+4. Check if files can be opened normally
 
 ## Querying the Knowledge Base
 

@@ -4,10 +4,11 @@
 1. [快速开始](#快速开始)
 2. [基本使用](#基本使用)
 3. [文档导入](#文档导入)
-4. [查询知识库](#查询知识库)
-5. [使用 Open WebUI](#使用-open-webui)
-6. [配置](#配置)
-7. [故障排除](#故障排除)
+4. [本地文件夹导入](#本地文件夹导入)
+5. [查询知识库](#查询知识库)
+6. [使用 Open WebUI](#使用-open-webui)
+7. [配置](#配置)
+8. [故障排除](#故障排除)
 
 ## 快速开始
 
@@ -93,6 +94,148 @@ curl -X POST "http://localhost:8000/api/v1/ingest" \
 在导入时设置访问控制：
 - `dept`：部门（如"工程部"、"销售部"）
 - `level`：访问级别（如"内部"、"机密"）
+
+## 本地文件夹导入
+
+### 使用PowerShell脚本导入
+
+RAG知识库提供了便捷的本地文件夹导入功能，可以将您电脑上的整个文件夹直接导入到知识库中。
+
+#### 基本用法
+
+```powershell
+# 导入本地文件夹（简单模式）
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Users\YourName\Documents\KB"
+
+# 指定用户和知识库名称
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents\Technical" -UserId "john" -KbName "tech_docs"
+
+# 使用简单模式（自动创建用户和知识库）
+.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents" -SimpleMode
+```
+
+#### 参数说明
+
+- **-FolderPath**: 要导入的本地文件夹路径（必需）
+- **-UserId**: 用户ID（默认: "default"）
+- **-KbName**: 知识库名称（默认: "default"）
+- **-ApiUrl**: API地址（默认: "http://localhost:8000/api/v1"）
+- **-SimpleMode**: 简单模式，自动创建用户和知识库
+
+#### 导入过程
+
+脚本会自动：
+1. 扫描指定文件夹中的所有文件
+2. 统计文件数量和总大小
+3. 将文件复制到知识库的raw目录
+4. 处理每个文档（解析、清洗、切片）
+5. 显示导入结果统计
+
+#### 导入结果示例
+
+```
+=== RAG知识库本地文件夹导入 ===
+
+导入配置:
+  文件夹: C:\Users\YourName\Documents\KB
+  用户ID: default
+  知识库: default
+  API地址: http://localhost:8000/api/v1
+  简单模式: False
+
+文件夹信息:
+  文件数量: 25
+  总大小: 45.67 MB
+
+开始导入...
+导入完成!
+
+导入结果:
+  成功: True
+  源文件夹: C:\Users\YourName\Documents\KB
+  发现文件总数: 25
+  处理文件数: 23
+  跳过文件数: 2
+  失败文件数: 0
+
+处理的文档:
+  - document1.pdf
+  - document2.docx
+  - notes.md
+  ...
+
+导入完成! 您现在可以查询知识库了。
+```
+
+### 使用API导入文件夹
+
+如果您更喜欢使用API直接导入文件夹：
+
+#### 简单导入（推荐）
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/import-local-folder" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "folder_path": "C:\\Users\\YourName\\Documents\\KB",
+    "user_id": "default",
+    "kb_name": "default",
+    "acl": {
+      "read": ["default"],
+      "write": ["default"]
+    }
+  }'
+```
+
+#### 高级导入（需要先创建用户和知识库）
+
+```bash
+# 1. 创建用户知识库
+curl -X POST "http://localhost:8000/api/v1/users/john/kbs" \
+  -d "kb_name=my_documents"
+
+# 2. 导入文件夹
+curl -X POST "http://localhost:8000/api/v1/users/john/kbs/my_documents/import-folder" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "folder_path": "C:\\Documents\\Technical",
+    "acl": {
+      "read": ["john", "team"],
+      "write": ["john"]
+    }
+  }'
+```
+
+### 支持的文件格式
+
+文件夹导入支持以下文件格式：
+- PDF (.pdf)
+- Word (.docx)
+- Markdown (.md)
+- 文本 (.txt)
+- HTML (.html)
+
+### 导入最佳实践
+
+1. **文件夹组织**: 将相关文档放在同一文件夹中
+2. **文件命名**: 使用清晰的文件名便于识别
+3. **文件大小**: 单个文件建议不超过100MB
+4. **批量导入**: 大量文件建议分批导入
+5. **权限设置**: 根据需要设置ACL权限
+
+### 故障排除
+
+**导入失败常见原因**：
+- 文件夹路径不存在
+- API服务未启动
+- 文件格式不支持
+- 文件损坏或加密
+
+**解决方法**：
+1. 确认文件夹路径正确
+2. 检查API服务状态：`curl http://localhost:8000/health`
+3. 查看导入脚本的错误信息
+4. 检查文件是否可以正常打开
 
 ## 查询知识库
 

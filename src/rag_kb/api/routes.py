@@ -184,3 +184,101 @@ async def delete_user_kb(user_id: str, kb_name: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post('/users/{user_id}/kbs/{kb_name}/import-folder')
+async def import_folder(user_id: str, kb_name: str, folder_path: str, acl: dict = None):
+    """Import entire folder to knowledge base.
+    
+    Args:
+        user_id: User identifier
+        kb_name: Knowledge base name
+        folder_path: Path to local folder to import
+        acl: Access control list metadata
+        
+    Returns:
+        Import result with statistics
+    """
+    try:
+        from pathlib import Path
+        import shutil
+        
+        folder = Path(folder_path)
+        if not folder.exists():
+            raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
+        
+        if not folder.is_dir():
+            raise HTTPException(status_code=400, detail=f"Path is not a directory: {folder_path}")
+        
+        # Get user knowledge base folder
+        kb_folder = user_manager.get_user_folder(user_id) / kb_name
+        raw_folder = kb_folder / "raw"
+        raw_folder.mkdir(parents=True, exist_ok=True)
+        
+        # Process files
+        documents = []
+        skipped_files = []
+        failed_files = []
+        
+        for file_path in folder.rglob('*'):
+            if file_path.is_file() and not file_path.name.startswith('.'):
+                try:
+                    # Check if file already exists
+                    target_path = raw_folder / file_path.name
+                    if target_path.exists():
+                        skipped_files.append(file_path.name)
+                        continue
+                    
+                    # Copy file to user knowledge base
+                    shutil.copy2(file_path, target_path)
+                    
+                    # Process document
+                    doc = user_manager.pipeline.run(target_path, acl=acl)
+                    documents.append(doc)
+                    
+                except Exception as e:
+                    failed_files.append({
+                        "file": file_path.name,
+                        "error": str(e)
+                    })
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "kb_name": kb_name,
+            "source_folder": str(folder),
+            "total_files_found": len(list(folder.rglob('*'))),
+            "files_processed": len(documents),
+            "files_skipped": len(skipped_files),
+            "files_failed": len(failed_files),
+            "documents": [doc.metadata for doc in documents],
+            "skipped_files": skipped_files,
+            "failed_files": failed_files
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post('/import-local-folder')
+async def import_local_folder_simple(folder_path: str, user_id: str = "default", kb_name: str = "default", acl: dict = None):
+    """Simple endpoint to import local folder without requiring user/kb creation first.
+    
+    Args:
+        folder_path: Path to local folder to import
+        user_id: User identifier (default: "default")
+        kb_name: Knowledge base name (default: "default")
+        acl: Access control list metadata
+        
+    Returns:
+        Import result
+    """
+    try:
+        # Auto-create user and KB if they don't exist
+        user_manager.create_user_kb(user_id, kb_name)
+        
+        # Import folder
+        return await import_folder(user_id, kb_name, folder_path, acl)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
