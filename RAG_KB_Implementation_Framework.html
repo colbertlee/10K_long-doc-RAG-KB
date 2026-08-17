@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>万级长文档 RAG 知识库实施框架 | RAG KB Implementation Framework</title>
+<style>:root{--primary:#0284c7;--primary-dark:#0369a1;--accent:#0d9488;--bg:#f8fafc;--card:#ffffff;--text:#0f172a;--muted:#475569;--border:#e2e8f0;--code-bg:#1e293b;--code-text:#f8fafc;--accent-bg:#f0f9ff;--warn-bg:#fffbeb;--warn-border:#fde68a;--warn-text:#b45309}*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:24px 16px}.container{max-width:1080px;margin:0 auto}header,.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px 24px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}header h1{font-size:1.85rem;margin-bottom:10px}header p{color:var(--muted);font-size:1.05rem;margin-bottom:16px}.tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.tag{background:var(--accent-bg);color:var(--primary);border:1px solid #bae6fd;padding:4px 12px;border-radius:16px;font-size:.85rem;font-weight:600}nav#toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:24px}nav#toc h2{font-size:1.2rem;margin-bottom:12px;color:var(--primary-dark)}nav#toc ul{list-style:none;padding-left:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}nav#toc li a{color:var(--primary);text-decoration:none;font-size:.95rem}nav#toc li a:hover{text-decoration:underline}section.card h2{font-size:1.35rem;color:var(--text);border-bottom:2px solid var(--border);padding-bottom:12px;margin-bottom:18px;display:flex;align-items:center;gap:8px}section.card h3{font-size:1.1rem;color:var(--primary-dark);margin:20px 0 10px}section.card p,section.card li{color:var(--text);margin-bottom:10px}section.card ul,section.card ol{padding-left:24px;margin-bottom:16px}section.card li{margin-bottom:8px}.pipeline{background:var(--code-bg);color:var(--code-text);padding:20px;border-radius:8px;font-family:'Courier New', monospace;font-size:.9rem;overflow-x:auto;margin:16px 0;white-space:pre}.pipeline .step{margin-bottom:8px}.pipeline .arrow{color:var(--accent);margin:0 8px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:12px}.item{border:1px solid var(--border);border-radius:8px;padding:16px;background:#fafafa}.item h4{color:var(--primary-dark);font-size:1rem;margin-bottom:8px}.warn{background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);padding:16px;border-radius:8px;margin-top:16px}.warn strong{display:block;margin-bottom:6px}table{width:100%;border-collapse:collapse;margin:16px 0;background:var(--card)}th,td{border:1px solid var(--border);padding:10px 12px;text-align:left;font-size:.95rem}th{background:var(--accent-bg);color:var(--primary-dark)}tr:nth-child(even){background:#f8fafc}footer{text-align:center;color:var(--muted);font-size:.85rem;margin-top:32px;padding-bottom:16px}a{color:var(--primary)}code{background:#e2e8f0;padding:2px 6px;border-radius:4px;font-family:'Courier New', monospace}pre.code{background:var(--code-bg);color:var(--code-text);padding:16px;border-radius:8px;overflow-x:auto;font-family:'Courier New', monospace;font-size:.85rem;white-space:pre;margin:16px 0;line-height:1.5}@media print{nav#toc{display:none}}</style>
+</head>
+<body>
+<div class='container'>
+<header>
+<h1>万级长文档 RAG 知识库实施框架</h1>
+<p>从规划到代码的分步施工蓝图 | Step-by-Step Engineering Blueprint for 10K Long-Document RAG KB</p>
+<div class='tags'>
+<span class='tag'>MVP</span>
+<span class='tag'>Python 3.11</span>
+<span class='tag'>pip</span>
+<span class='tag'>NanoVectorDB</span>
+<span class='tag'>Open WebUI</span>
+<span class='tag'>Ollama</span>
+<span class='tag'>FastAPI</span>
+<span class='tag'>Hybrid Search</span>
+<span class='tag'>LightRAG</span>
+<span class='tag'>RBAC / ACL</span>
+</div>
+</header>
+<nav id='toc'>
+<h2>目录 Table of Contents</h2>
+<ul>
+<li><a href='#s1'>s1. 项目目标与使用说明 Objectives &amp; How to Use</a></li>
+<li><a href='#s2'>s2. 实施原则与阶段总览 Implementation Principles &amp; Phase Overview</a></li>
+<li><a href='#s3'>s3. 项目目录与模块总览 Project Structure &amp; Module Overview</a></li>
+<li><a href='#s4'>s4. Phase 0 工程骨架与依赖 Skeleton &amp; Dependencies</a></li>
+<li><a href='#s5'>s5. Phase 1 数据清洗与解析 Ingestion &amp; Parsing</a></li>
+<li><a href='#s6'>s6. Phase 2 结构感知切片 Semantic Chunking</a></li>
+<li><a href='#s7'>s7. Phase 3 Embedding 与索引 Embedding &amp; Indexing</a></li>
+<li><a href='#s8'>s8. Phase 4 检索、重排与生成 Retrieval, Rerank &amp; Generation</a></li>
+<li><a href='#s9'>s9. Phase 5 FastAPI 后端与 Open WebUI 集成 Backend &amp; Frontend Integration</a></li>
+<li><a href='#s10'>s10. Phase 6 测试、评估与脚本 Testing, Evaluation &amp; Scripts</a></li>
+<li><a href='#s11'>s11. Phase 7 运维、增量更新与安全 Operations, Incremental Update &amp; Security</a></li>
+<li><a href='#s12'>s12. Phase 8 后续：LightRAG 图增强检索 LightRAG Extension</a></li>
+<li><a href='#s13'>s13. 风险与常见陷阱 Risks &amp; Pitfalls</a></li>
+<li><a href='#s14'>s14. 附录：文件清单、配置示例与命令速查 Appendix</a></li>
+</ul>
+</nav>
+<main>
+<section class='card' id='s1'>
+<h2>项目目标与使用说明 Objectives &amp; How to Use</h2>
+<p>本文档是 <code>RAG_KB_Plan.html</code> 的配套实施蓝图（Implementation Blueprint），在 <strong>不修改原规划文件</strong> 的前提下，将设计文档中的分层管道、技术选型、模块职责、开发阶段与验证清单转化为可执行的工程路线图。</p>
+<p>本文件假设用户已确认技术栈：MVP 优先、Python 3.11 + pip、<strong>LightRAG</strong> 本地向量+图索引（NetworkX + NanoVectorDB + JSON）、Open WebUI 前端、Ollama 本地模型、原生 Windows；LightRAG 作为主力 RAG 引擎。</p>
+<h3>核心目标 Objectives</h3>
+<ul>
+<li>将总体设计拆分为 8 个可验收的工程阶段（Phase 0–8）。</li>
+<li>提供接近可运行的接口签名、配置示例、目录结构与关键伪代码。</li>
+<li>锁定以 <strong>Python 3.11 + pip</strong>、<strong>LightRAG</strong>、<strong>Open WebUI</strong>、<strong>FastAPI</strong> 为核心的落地栈。</li>
+<li>LightRAG 作为主力 RAG 引擎，同时保留自定义后端的扩展能力（source/category 子库、可选自定义 Embedding/LLM 注入）。</li>
+<li>确保权限（RBAC/ACL）、增量更新、可观测性内建于每个阶段。</li>
+<li>每个版本完成后推送 <strong>GitHub Release</strong>，附带 README、Release Notes 与一键安装说明，提升交付与可复现性。</li>
+</ul>
+<h3>如何使用 How to Use</h3>
+<ol>
+<li>按 Phase 0 → Phase 8 顺序推进，每阶段先跑通接口再填充实现细节。</li>
+<li>代码块为骨架（Skeleton），需补充错误处理、日志、监控与集成测试。</li>
+<li>使用 <code>pytest</code> 对每个阶段做验收，再进入下一阶段。</li>
+<li>批量 10K 文档入库走 <code>/api/v1/ingest</code> 后端；Open WebUI 仅作为聊天前端入口。</li>
+<li>在 <code>configs/config.example.yaml</code> 中切换 Ollama 与 OpenAI-compatible 远程模型。</li>
+<li>每阶段完成后保持 README 与 Release Notes 同步；版本发布前使用 GitHub Release 归档可运行版本。</li>
+</ol>
+<p>注：所有代码仅作为文档内示例，不是可直接上线的完整系统；生产环境需完善安全、并发、容错与审计。为降低用户门槛，建议提供 <code>pip install -e .</code> 或一键安装脚本，并在 README 中给出从安装到运行的完整步骤。</p>
+</section>
+<section class='card' id='s2'>
+<h2>实施原则与阶段总览 Implementation Principles &amp; Phase Overview</h2>
+<p>本章节定义从规划到落地的实施原则，并给出 8 个阶段的执行顺序、关键交付与验收标准。</p>
+<div class='pipeline'>
+<div class='step'>Phase 0 工程骨架与依赖 Skeleton &amp; Dependencies</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 1 数据清洗与解析 Ingestion &amp; Parsing</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 2 结构感知切片 Semantic Chunking</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 3 Embedding 与 LightRAG 索引 Embedding &amp; LightRAG Indexing</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 4 LightRAG 多模式查询与生成 LightRAG Query Modes &amp; Generation</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 5 FastAPI 后端与 Open WebUI 集成 Backend &amp; Frontend</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 6 测试、评估与脚本 Testing, Evaluation &amp; Scripts</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 7 运维、增量更新与安全 Operations, Incremental Update &amp; Security</div>
+<div style='text-align:center;'><span class='arrow'>↓</span></div>
+<div class='step'>Phase 8 后续：LightRAG 图增强检索 LightRAG Extension</div>
+</div>
+<h3>实施原则 Implementation Principles</h3>
+<div class='grid'>
+<div class='item'><h4>MVP 优先 MVP First</h4><p>先跑通端到端再补功能，避免过早优化。</p></div>
+<div class='item'><h4>接口先行 API Before Implementation</h4><p>先定义 BaseParser/Chunker/Retriever 接口，再填具体实现。</p></div>
+<div class='item'><h4>本地优先 Local First</h4><p>原生 Windows + Ollama 本地模型，可离线演示。</p></div>
+<div class='item'><h4>测试驱动 Test-Driven</h4><p>每阶段用 pytest 与 RAGAS 指标验收。</p></div>
+<div class='item'><h4>可观测 Observable</h4><p>结构化日志、Latency、Recall、Faithfulness 全链路监控。</p></div>
+<div class='item'><h4>安全内建 Security by Design</h4><p>从入库开始绑定 ACL，检索阶段强制预过滤。</p></div>
+<div class='item'><h4>版本发布优先 Release-Driven</h4><p>每个可运行版本完成后推送 GitHub Release，附带 Release Notes 与语义化版本。</p></div>
+<div class='item'><h4>极简安装 Easy Installation</h4><p>默认提供 <code>pip install -e .</code>、一键安装脚本与离线安装包，降低用户上手门槛。</p></div>
+<div class='item'><h4>文档同步 Documentation-First</h4><p>每个版本同步更新 README、Release Notes、升级指南与示例，保证用户“开箱即用”。</p></div>
+</div>
+<h3>阶段总览 Phase Overview</h3>
+<table>
+<tr><th>Phase</th><th>目标 Objective</th><th>关键交付 Key Deliverables</th><th>验收标准 Acceptance</th></tr>
+<tr><td>Phase 0</td><td>工程骨架</td><td>pyproject、Pydantic 配置、领域模型、空 pytest 通过</td><td><code>pip install -e .</code> 成功；pytest 通过空测试</td></tr>
+<tr><td>Phase 1</td><td>数据清洗与解析</td><td>BaseParser、PyMuPDF/pdfplumber、去重、PII 占位</td><td>100 页 PDF 解析成功；重复文件被过滤</td></tr>
+<tr><td>Phase 2</td><td>结构切片</td><td>StructuredChunker、ParentChildChunker</td><td>按标题层级切片；父子块关系正确</td></tr>
+<tr><td>Phase 3</td><td>Embedding 与 LightRAG 索引</td><td>Ollama embedding + LightRAG insert</td><td>100 个 chunk 批量 insert 与 hybrid 查询在 2 秒内完成</td></tr>
+<tr><td>Phase 4</td><td>LightRAG 查询与生成</td><td>LightRAG 多模式查询（hybrid/local/global/naive）、LLM 生成</td><td>hybrid 模式命中测试问题；SSE 流式返回</td></tr>
+<tr><td>Phase 5</td><td>FastAPI 后端与 Open WebUI 集成</td><td>FastAPI 端点、LightRAG query、OpenAI-compatible SSE、Open WebUI 配置</td><td>前端可问答；/ingest 可批量入库</td></tr>
+<tr><td>Phase 6</td><td>测试、评估与脚本</td><td>pytest、RAGAS/simple metrics、PowerShell 启动脚本</td><td>测试覆盖率 > 60%；启动脚本一键启动</td></tr>
+<tr><td>Phase 7</td><td>运维与安全</td><td>文件 hash 增量更新、DocID↔ChunkID 映射、RBAC 预过滤</td><td>更新文档后旧 chunk 被清理；越权文档不可见</td></tr>
+<tr><td>Phase 8</td><td>LightRAG 扩展/调优</td><td>LightRAG 子库路由、自定义查询模式、性能调优</td><td>保留扩展点；可演示多模式查询</td></tr>
+</table>
+</section>
+<section class='card' id='s3'>
+<h2>项目目录与模块总览 Project Structure &amp; Module Overview</h2>
+<p>推荐采用 <code>src</code> 布局与 <code>pip install -e .</code> 开发模式。以下为 MVP 阶段建议目录树与模块职责。</p>
+<h3>目录树 Directory Tree</h3>
+<pre class='code'>rag-kb-project/
+├── configs/
+│   └── config.example.yaml
+├── data/
+│   └── samples/
+├── docs/
+├── scripts/
+│   ├── start.ps1
+│   └── ingest_bulk.py
+├── src/
+│   └── rag_kb/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── models.py
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── main.py
+│       │   └── routes.py
+│       ├── chunkers/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── structured.py
+│       │   └── parent_child.py
+│       ├── ingest/
+│       │   ├── __init__.py
+│       │   ├── cleaner.py
+│       │   ├── incremental.py
+│       │   └── pipeline.py
+│       ├── lightrag/
+│       │   ├── __init__.py
+│       │   ├── adapter.py
+│       │   ├── llm_funcs.py
+│       │   └── embedding_funcs.py
+│       ├── parsers/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── pdf_pymupdf.py
+│       │   ├── pdf_pdfplumber.py
+│       │   └── registry.py
+│       ├── security/
+│       │   ├── __init__.py
+│       │   └── acl.py
+│       └── utils/
+│           ├── __init__.py
+│           ├── hashing.py
+│           └── logging.py
+└── tests/
+    ├── __init__.py
+    ├── conftest.py
+    ├── test_chunking.py
+    ├── test_eval.py
+    ├── test_ingest.py
+    └── test_lightrag.py
+</pre>
+<h3>模块职责 Module Responsibilities</h3>
+<table><tr><th>模块 Module</th><th>路径 Path</th><th>职责 Responsibility</th></tr>
+<tr><td>配置与模型</td><td>src/rag_kb/config.py, models.py</td><td>Pydantic Settings 与 Document/Chunk/SearchResult 领域模型</td></tr>
+<tr><td>API 服务</td><td>src/rag_kb/api/</td><td>FastAPI 路由、OpenAI-compatible chat completions、SSE、上传入库</td></tr>
+<tr><td>解析器</td><td>src/rag_kb/parsers/</td><td>PDF/Word/Markdown 解析、元数据绑定、文件 Hash</td></tr>
+<tr><td>清洗与入库</td><td>src/rag_kb/ingest/</td><td>去重、PII 占位、批量写入、增量更新</td></tr>
+<tr><td>切片器</td><td>src/rag_kb/chunkers/</td><td>结构感知切片与 Parent-Child 分块</td></tr>
+<tr><td>LightRAG 适配</td><td>src/rag_kb/lightrag/</td><td>注入 Ollama LLM/Embedding、构建本地图+向量索引、hybrid 查询</td></tr>
+<tr><td>安全</td><td>src/rag_kb/security/</td><td>ACL 转换、RBAC 预过滤</td></tr>
+<tr><td>脚本</td><td>scripts/</td><td>PowerShell 一键启动、批量入库</td></tr>
+<tr><td>测试</td><td>tests/</td><td>pytest 单元/集成测试与 RAGAS 评估</td></tr>
+<tr><td colspan='3' style='color:var(--muted);'>注：原 embeddings/、llms/、stores/、sparse_index/、retrieval/、rerankers/ 等模块若需保留自定义检索方案，可作为 LightRAG 主引擎的备选/对比方案。</td></tr></table>
+</section>
+<section class='card' id='s4'>
+<h2>Phase 0 工程骨架与依赖 Skeleton &amp; Dependencies</h2>
+<p>Phase 0 的目标是让项目能被安装、导入并通过空测试。优先定义配置与领域模型，所有上层模块依赖这些基础抽象。LightRAG 作为主力 RAG 引擎，默认使用本地 NetworkX 图 + NanoVectorDB 向量 + JSON KV，无需 Chroma/Whoosh/图数据库服务。</p>
+<h3>pyproject.toml</h3>
+<pre class='code'>[build-system]
+requires = ["setuptools&gt;=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-kb"
+version = "0.1.0"
+description = "10K long-document RAG knowledge base"
+requires-python = "&gt;=3.11"
+dependencies = [
+    "pydantic&gt;=2.0",
+    "pydantic-settings&gt;=2.0",
+    "fastapi&gt;=0.110",
+    "uvicorn[standard]&gt;=0.27",
+    "python-multipart",
+    "requests",
+    "pyyaml",
+    "pymupdf&gt;=1.23",
+    "pdfplumber&gt;=0.10",
+    "python-docx",
+    "beautifulsoup4",
+    "lightrag-hku",
+    "ollama",
+    "httpx",
+    "sentence-transformers&gt;=2.3",
+    "numpy",
+    "pytest&gt;=8.0",
+    "open-webui",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]</pre>
+<h3>requirements.txt</h3>
+<pre class='code'>pydantic&gt;=2.0
+pydantic-settings&gt;=2.0
+fastapi&gt;=0.110
+uvicorn[standard]&gt;=0.27
+python-multipart
+requests
+pyyaml
+pymupdf&gt;=1.23
+pdfplumber&gt;=0.10
+python-docx
+beautifulsoup4
+lightrag-hku
+ollama
+httpx
+sentence-transformers&gt;=2.3
+numpy
+pytest&gt;=8.0
+open-webui</pre>
+<h3>Pydantic Settings 配置抽象</h3>
+<pre class='code'># src/rag_kb/config.py
+from pathlib import Path
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        extra='ignore',
+        env_prefix='RAGKB_',
+    )
+
+    app_name: str = 'rag-kb'
+    data_dir: Path = Path('./data')
+    lightrag_working_dir: Path = Path('./lightrag_db')
+    log_level: str = 'INFO'
+
+    # Embedding
+    embedding_provider: str = 'ollama'
+    embedding_base_url: str = 'http://localhost:11434'
+    embedding_model: str = 'nomic-embed-text'
+
+    # LLM
+    llm_provider: str = 'ollama'
+    llm_base_url: str = 'http://localhost:11434'
+    llm_model: str = 'qwen2.5'
+    llm_temperature: float = 0.3
+    llm_top_p: float = 0.9
+    llm_max_tokens: int = 2048
+
+    # LightRAG knobs
+    lightrag_chunk_token_size: int = 1200
+    lightrag_max_token: int = 4096
+    lightrag_query_mode: str = 'hybrid'
+    lightrag_enable_llm_cache: bool = True
+
+    # OpenAI-compatible remote LLM (optional)
+    openai_api_key: str | None = Field(default=None)
+    openai_base_url: str | None = Field(default=None)
+
+
+settings = Settings()</pre>
+<h3>领域模型 Document / Chunk / SearchResult</h3>
+<pre class='code'># src/rag_kb/models.py
+from __future__ import annotations
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field
+
+class Document(BaseModel):
+    doc_id: str = Field(..., description='Unique document id, e.g. sha256 of normalized content or file hash')
+    title: str = ''
+    source: str = ''
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    file_hash: str = ''
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    acl: Dict[str, List[str]] = Field(default_factory=dict, description='RBAC/ACL tags, e.g. {"dept": ["Sales"], "level": ["Internal"]}')
+
+class Chunk(BaseModel):
+    chunk_id: str
+    doc_id: str
+    parent_id: Optional[str] = None
+    text: str
+    level: int = 0
+    section_path: List[str] = Field(default_factory=list)
+    token_count: int = 0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    embedding: Optional[List[float]] = None
+
+class SearchResult(BaseModel):
+    chunk_id: str
+    doc_id: str
+    text: str
+    score: float
+    rank: int
+    source: str = ''
+    metadata: Dict[str, Any] = Field(default_factory=dict)</pre>
+<h3>配置示例 config.example.yaml</h3>
+<pre class='code'># config.example.yaml — Ollama / OpenAI-compatible settings for rag-kb
+app:
+  name: rag-kb
+  data_dir: ./data
+  lightrag_working_dir: ./lightrag_db
+  log_level: INFO
+
+embedding:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: nomic-embed-text
+  # Alternative: sentence-transformers (CPU-only, no Ollama needed)
+  # provider: sentence-transformers
+  # model: BAAI/bge-m3
+
+llm:
+  # Mode 1: local Ollama (default for Windows native deployment)
+  provider: ollama
+  base_url: http://localhost:11434
+  model: qwen2.5
+  temperature: 0.3
+  top_p: 0.9
+  max_tokens: 2048
+
+  # Mode 2: OpenAI / OpenAI-compatible / domestic providers
+  # provider: openai
+  # base_url: https://api.openai.com/v1
+  # api_key: ${OPENAI_API_KEY}
+  # model: gpt-4o
+  # temperature: 0.3
+  # top_p: 0.9
+  # max_tokens: 2048
+
+  # Mode 3: domestic OpenAI-compatible endpoint
+  # provider: openai
+  # base_url: https://your-provider.example.com/v1
+  # api_key: ${PROVIDER_API_KEY}
+
+lightrag:
+  working_dir: ./lightrag_db
+  chunk_token_size: 1200
+  max_token: 4096
+  query_mode: hybrid
+  enable_llm_cache: true
+
+security:
+  default_acl:
+    dept: []
+    level: ['Internal']</pre>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li><code>python -m venv .venv &amp; .venv\Scripts\activate</code></li>
+<li><code>pip install -e .</code> 成功安装无报错，且 <code>lightrag-hku</code> 可导入。</li>
+<li><code>pytest</code> 至少通过一个空测试（如 <code>tests/test_dummy.py</code>）。</li>
+<li>读取 <code>config.example.yaml</code> 理解 Ollama、LightRAG 与 OpenAI-compatible 切换方式。</li>
+</ol>
+</section>
+<section class='card' id='s5'>
+<h2>Phase 1 数据清洗与解析 Ingestion &amp; Parsing</h2>
+<p><strong>数据质量（Data Quality）</strong>是 RAG 的第一道防线。本阶段定义通用解析接口，接入 PyMuPDF / pdfplumber，并实现去重与 PII 占位。</p>
+<h3>BaseParser 接口</h3>
+<pre class='code'># src/rag_kb/parsers/base.py
+from abc import ABC, abstractmethod
+from pathlib import Path
+from rag_kb.models import Document
+
+class BaseParser(ABC):
+    supported_ext: tuple[str, ...] = ()
+
+    @abstractmethod
+    def parse(self, path: Path) -&gt; Document:
+        &#x27;&#x27;&#x27;Return a Document with full text and metadata.&#x27;&#x27;&#x27;
+        ...
+
+    def can_parse(self, path: Path) -&gt; bool:
+        return path.suffix.lower() in self.supported_ext</pre>
+<h3>PyMuPDF 解析示例</h3>
+<pre class='code'># src/rag_kb/parsers/pdf_pymupdf.py
+import hashlib
+from pathlib import Path
+import fitz  # PyMuPDF
+from rag_kb.models import Document
+
+class PyMuPDFParser:
+    supported_ext = (&#x27;.pdf&#x27;,)
+
+    def parse(self, path: Path) -&gt; Document:
+        doc = fitz.open(path)
+        parts = []
+        for page in doc:
+            parts.append(page.get_text())
+        content = &#x27;\n\n&#x27;.join(parts)
+        file_hash = hashlib.sha256(content.encode(&#x27;utf-8&#x27;)).hexdigest()
+        return Document(
+            doc_id=file_hash[:16],
+            title=path.stem,
+            source=str(path),
+            content=content,
+            metadata={&#x27;pages&#x27;: len(doc), &#x27;parser&#x27;: &#x27;pymupdf&#x27;},
+            file_hash=file_hash,
+        )</pre>
+<h3>pdfplumber 解析示例（保留表格）</h3>
+<pre class='code'># src/rag_kb/parsers/pdf_pdfplumber.py
+import hashlib
+from pathlib import Path
+import pdfplumber
+from rag_kb.models import Document
+
+class PDFPlumberParser:
+    supported_ext = (&#x27;.pdf&#x27;,)
+
+    def parse(self, path: Path) -&gt; Document:
+        parts = []
+        tables_md = []
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text() or &#x27;&#x27;
+                parts.append(text)
+                for table in (page.extract_tables() or []):
+                    rows = [&#x27;| &#x27; + &#x27; | &#x27;.join(str(c or &#x27;&#x27;) for c in row) + &#x27; |&#x27; for row in table]
+                    tables_md.append(&#x27;\n&#x27;.join(rows))
+        content = &#x27;\n\n&#x27;.join(parts)
+        if tables_md:
+            content += &#x27;\n\n## Tables\n&#x27; + &#x27;\n\n&#x27;.join(tables_md)
+        file_hash = hashlib.sha256(content.encode(&#x27;utf-8&#x27;)).hexdigest()
+        return Document(
+            doc_id=file_hash[:16],
+            title=path.stem,
+            source=str(path),
+            content=content,
+            metadata={&#x27;pages&#x27;: len(pdf.pages), &#x27;parser&#x27;: &#x27;pdfplumber&#x27;, &#x27;tables&#x27;: len(tables_md)},
+            file_hash=file_hash,
+        )</pre>
+<h3>解析器注册表</h3>
+<pre class='code'># src/rag_kb/parsers/registry.py
+from rag_kb.parsers.pdf_pymupdf import PyMuPDFParser
+from rag_kb.parsers.pdf_pdfplumber import PDFPlumberParser
+
+PARSER_REGISTRY = [PyMuPDFParser(), PDFPlumberParser()]</pre>
+<h3>去重与 PII 脱敏占位</h3>
+<pre class='code'># src/rag_kb/ingest/cleaner.py
+import re
+from typing import List
+from rag_kb.models import Document
+
+def dedupe_by_hash(documents: List[Document]) -&gt; List[Document]:
+    seen = set()
+    unique = []
+    for doc in documents:
+        if doc.file_hash in seen:
+            continue
+        seen.add(doc.file_hash)
+        unique.append(doc)
+    return unique
+
+def mask_pii_placeholder(text: str) -&gt; str:
+    &#x27;&#x27;&#x27;Placeholder PII de-identification: use regex for demo only.
+    Replace with a dedicated NER/PII library in production.&#x27;&#x27;&#x27;
+    text = re.sub(r&#x27;\d{18}&#x27;, &#x27;[ID]&#x27;, text)  # Chinese ID
+    text = re.sub(r&#x27;1[3-9]\d{9}&#x27;, &#x27;[MOBILE]&#x27;, text)
+    text = re.sub(r&#x27;\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}&#x27;, &#x27;[CARD]&#x27;, text)
+    return text</pre>
+<h3>元数据绑定 Ingest Pipeline</h3>
+<pre class='code'># src/rag_kb/ingest/pipeline.py
+from pathlib import Path
+from typing import Optional
+from rag_kb.models import Document
+from rag_kb.ingest.cleaner import mask_pii_placeholder
+from rag_kb.parsers.registry import PARSER_REGISTRY
+
+class IngestPipeline:
+    def run(self, file: Path, acl: Optional[dict] = None) -&gt; Document:
+        parser = next((p for p in PARSER_REGISTRY if p.can_parse(file)), None)
+        if parser is None:
+            raise ValueError(f&#x27;No parser registered for {file.suffix}&#x27;)
+        doc = parser.parse(file)
+        if acl:
+            doc.acl = acl
+            for k, v in acl.items():
+                # Keep source/category/ACL metadata scalar for downstream filtering and text header injection
+                doc.metadata[f&#x27;acl_{k}&#x27;] = v[0] if isinstance(v, list) and v else str(v)
+        doc.content = mask_pii_placeholder(doc.content)
+        return doc</pre>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li>100 页 PDF 可在 5 秒内解析为 Document。</li>
+<li>重复文件通过 file_hash 被过滤。</li>
+<li>手机号、身份证、银行卡号被替换为占位符。</li>
+<li>ACL 元数据正确写入 Document 与 Chunk 的 metadata。</li>
+</ol>
+</section>
+<section class='card' id='s6'>
+<h2>Phase 2 结构感知切片 Semantic Chunking</h2>
+<p>摒弃固定长度切片，采用<strong>结构感知切片（Structure-aware Chunking）</strong>与<strong>父子块（Parent-Child Chunking）</strong>，保留标题层级与上下文。</p>
+<h3>BaseChunker 接口</h3>
+<pre class='code'># src/rag_kb/chunkers/base.py
+from abc import ABC, abstractmethod
+from typing import List
+from rag_kb.models import Document, Chunk
+
+class BaseChunker(ABC):
+    @abstractmethod
+    def chunk(self, doc: Document) -&gt; List[Chunk]:
+        &#x27;&#x27;&#x27;Split a Document into semantic Chunks.&#x27;&#x27;&#x27;
+        ...</pre>
+<h3>StructuredChunker：按标题层级切片</h3>
+<pre class='code'># src/rag_kb/chunkers/structured.py
+import re
+import uuid
+from typing import List
+from rag_kb.models import Document, Chunk
+from rag_kb.chunkers.base import BaseChunker
+
+class StructuredChunker(BaseChunker):
+    &#x27;&#x27;&#x27;Structure-aware chunker: split by H1..H6, merge small paragraphs,
+    keep overlapping windows between sections.&#x27;&#x27;&#x27;
+    def __init__(self, target_tokens: int = 400, overlap_chars: int = 60):
+        self.target_tokens = target_tokens
+        self.overlap_chars = overlap_chars
+
+    def _heading_level(self, line: str) -&gt; int:
+        m = re.match(r&#x27;^(#{1,6})\s+&#x27;, line)
+        return len(m.group(1)) if m else 0
+
+    def chunk(self, doc: Document) -&gt; List[Chunk]:
+        chunks: List[Chunk] = []
+        section_path: List[str] = []
+        buffer = &#x27;&#x27;
+        current_title = &#x27;&#x27;
+        current_level = 0
+
+        for line in doc.content.splitlines():
+            level = self._heading_level(line)
+            if level:
+                if buffer.strip():
+                    chunks.append(self._make_chunk(doc, buffer, current_title, section_path, current_level))
+                    buffer = buffer[-self.overlap_chars:] if self.overlap_chars else &#x27;&#x27;
+                current_title = line.strip().lstrip(&#x27;#&#x27;).strip()
+                section_path = section_path[:level - 1] + [current_title]
+                current_level = level
+            else:
+                buffer += line + &#x27;\n&#x27;
+
+        if buffer.strip():
+            chunks.append(self._make_chunk(doc, buffer, current_title, section_path, current_level))
+        return chunks
+
+    def _make_chunk(self, doc, text, title, path, level):
+        return Chunk(
+            chunk_id=str(uuid.uuid4()),
+            doc_id=doc.doc_id,
+            text=text.strip(),
+            level=level,
+            section_path=path,
+            token_count=len(text) // 4,
+            metadata={**doc.metadata, &#x27;title&#x27;: title},
+        )</pre>
+<h3>ParentChildChunker：小 Child 命中、大 Parent 补全上下文</h3>
+<pre class='code'># src/rag_kb/chunkers/parent_child.py
+import uuid
+from typing import List
+from rag_kb.models import Document, Chunk
+from rag_kb.chunkers.structured import StructuredChunker
+
+class ParentChildChunker(StructuredChunker):
+    &#x27;&#x27;&#x27;Small child chunks for high-precision retrieval; parent chunk
+    carries full section context for prompt expansion.&#x27;&#x27;&#x27;
+    def __init__(self, parent_target: int = 1200, child_target: int = 250, overlap_chars: int = 40):
+        super().__init__(target_tokens=child_target, overlap_chars=overlap_chars)
+        self.parent_target = parent_target
+
+    def chunk(self, doc: Document) -&gt; List[Chunk]:
+        sections = super().chunk(doc)
+        children: List[Chunk] = []
+        for parent in sections:
+            parent.chunk_id = str(uuid.uuid4())
+            parent.token_count = len(parent.text) // 4
+            words = parent.text.split()
+            start = 0
+            while start &lt; len(words):
+                end = min(start + self.target_tokens, len(words))
+                child_text = &#x27; &#x27;.join(words[start:end])
+                children.append(Chunk(
+                    chunk_id=str(uuid.uuid4()),
+                    doc_id=doc.doc_id,
+                    parent_id=parent.chunk_id,
+                    text=child_text,
+                    level=parent.level,
+                    section_path=parent.section_path,
+                    token_count=len(child_text) // 4,
+                    metadata={&#x27;parent_text&#x27;: parent.text, **doc.metadata},
+                ))
+                start = end
+        return children</pre>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li># Title / ## Section 等标题被正确识别为 chunk 边界。</li>
+<li>相邻 chunk 保留 40–60 字符重叠，避免句子断裂。</li>
+<li>Child chunk 通过 parent_id 可回溯到 Parent chunk 全文。</li>
+<li>表格内容不会被切成半截行。</li>
+</ol>
+</section>
+<section class='card' id='s7'>
+<h2>Phase 3 Embedding 与 LightRAG 索引 Embedding &amp; LightRAG Indexing</h2>
+<p>本阶段使用 Ollama 生成 Embedding，并通过 LightRAG <code>insert</code> 把清洗后的 chunk（含 source/category/product_id 元数据）写入本地图+向量混合索引。LightRAG 默认使用 NetworkX 图 + NanoVectorDB 向量 + JSON KV，无需 Chroma/Whoosh/图数据库服务。</p>
+<h3>依赖安装</h3>
+<pre class='code'>pip install lightrag-hku ollama sentence-transformers numpy</pre>
+<h3>LightRAG 适配器骨架</h3>
+<pre class='code'># src/rag_kb/lightrag/adapter.py
+import asyncio
+import json
+from pathlib import Path
+from lightrag import LightRAG, QueryParam
+from rag_kb.lightrag.llm_funcs import ollama_llm
+from rag_kb.lightrag.embedding_funcs import ollama_embed
+from rag_kb.config import settings
+
+NL = chr(10)
+
+class LightRAGAdapter:
+    def __init__(self, working_dir=None):
+        self.working_dir = Path(working_dir or settings.lightrag_working_dir)
+        self.working_dir.mkdir(parents=True, exist_ok=True)
+        self.rag = LightRAG(
+            working_dir=str(self.working_dir),
+            llm_model_func=ollama_llm,
+            embedding_func=ollama_embed,
+            chunk_token_size=settings.lightrag_chunk_token_size,
+            max_token=settings.lightrag_max_token,
+        )
+
+    def insert_chunks(self, chunks):
+        parts = []
+        for c in chunks:
+            meta = getattr(c, 'metadata', {}) or {}
+            header = (
+                '[source=' + str(meta.get('source', '')) +
+                ';category=' + str(meta.get('category', '')) +
+                ';product_id=' + str(meta.get('product_id', '')) +
+                ';doc_id=' + str(c.doc_id) + ']'
+            )
+            parts.append(header + NL + c.text)
+        doc_text = (NL + NL).join(parts)
+        self.rag.insert(doc_text)
+
+    def query(self, question, mode=None):
+        mode = mode or settings.lightrag_query_mode
+        return self.rag.query(
+            question,
+            param=QueryParam(mode=mode, only_need_context=False),
+        )
+
+    async def stream_query(self, question, mode=None):
+        loop = asyncio.get_event_loop()
+        mode = mode or settings.lightrag_query_mode
+        answer = await loop.run_in_executor(
+            None,
+            self.rag.query,
+            question,
+            QueryParam(mode=mode, only_need_context=False),
+        )
+        SSE_END = NL * 2
+        buf = ''
+        for ch in answer:
+            buf += ch
+            if ch in ('。', '？', '！', '.', '?', '!', NL):
+                payload = json.dumps({'choices': [{'delta': {'content': buf}}]})
+                yield 'data: ' + payload + SSE_END
+                buf = ''
+        if buf:
+            yield 'data: ' + json.dumps({'choices': [{'delta': {'content': buf}}]}) + SSE_END
+        yield 'data: [DONE]' + SSE_END</pre>
+<h3>Ollama LLM 与 Embedding 注入函数</h3>
+<pre class='code'># src/rag_kb/lightrag/embedding_funcs.py
+import numpy as np
+import ollama
+from rag_kb.config import settings
+
+def ollama_embed(texts: list):
+    client = ollama.Client(host=settings.embedding_base_url)
+    resp = client.embed(model=settings.embedding_model, input=texts)
+    return np.array(resp['embeddings'], dtype=np.float32)
+
+
+# src/rag_kb/lightrag/llm_funcs.py
+import ollama
+from rag_kb.config import settings
+
+def ollama_llm(prompt: str, **kwargs):
+    client = ollama.Client(host=settings.llm_base_url)
+    resp = client.chat(
+        model=settings.llm_model,
+        messages=[{'role': 'user', 'content': prompt}],
+        options={
+            'temperature': settings.llm_temperature,
+            'top_p': settings.llm_top_p,
+            'num_predict': settings.llm_max_tokens,
+        },
+    )
+    return resp['message']['content']</pre>
+<h3>批量入库脚本示例</h3>
+<pre class='code'># scripts/ingest_bulk.py
+from pathlib import Path
+from rag_kb.ingest.pipeline import IngestPipeline
+from rag_kb.lightrag.adapter import LightRAGAdapter
+
+pipeline = IngestPipeline()
+adapter = LightRAGAdapter()
+
+for path in Path('data/raw').glob('*.*'):
+    if path.suffix.lower() in {'.pdf', '.docx', '.md', '.txt'}:
+        doc = pipeline.run(path, acl={'dept': [], 'level': ['Internal']})
+        adapter.insert_chunks(doc.chunks)
+        print(f'Indexed {path}: {len(doc.chunks)} chunks')</pre>
+<h3>LightRAG 索引说明</h3>
+<ul>
+<li><strong>working_dir：</strong>本地目录，保存 <code>kv_store.json</code>、<code>vector_store.json</code>、<code>graph.pkl</code>。</li>
+<li><strong>chunk_token_size：</strong>LightRAG 内部再次切分的大小，默认 1200；与你的结构化 chunk 可以并存。</li>
+<li><strong>metadata 注入：</strong>在 chunk 文本头部加入 <code>[source=...;category=...;product_id=...;doc_id=...]</code>，方便后过滤与引用溯源。</li>
+<li><strong>增量插入：</strong><code>rag.insert(doc_text)</code> 会追加到现有索引；文档更新时建议删除对应子库并重建。</li>
+</ul>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li><code>ollama pull nomic-embed-text qwen2.5</code> 成功。</li>
+<li>100 个 chunk 通过 <code>adapter.insert_chunks</code> 完成 <code>rag.insert</code> 无报错。</li>
+<li>索引目录下出现 <code>kv_store.json</code>、<code>vector_store.json</code>、<code>graph.pkl</code> 等文件。</li>
+</ol>
+</section>
+<section class='card' id='s8'>
+<h2>Phase 4 LightRAG 多模式查询与生成 LightRAG Query Modes &amp; Generation</h2>
+<p>LightRAG 提供 <code>naive</code>、<code>local</code>、<code>global</code>、<code>hybrid</code> 四种查询模式。推荐默认使用 <code>hybrid</code>，既能利用向量相似，也能通过图扩展召回相关上下文。</p>
+<ul>
+<li><strong>naive：</strong>仅向量检索，适合简单事实查询。</li>
+<li><strong>local：</strong>基于局部图子结构与向量，适合需要实体关系的问题。</li>
+<li><strong>global：</strong>基于全局图摘要，适合宏观/聚合问题。</li>
+<li><strong>hybrid：</strong>综合局部与全局，兼顾精度与覆盖，默认。</li>
+</ul>
+<h3>查询模式示例</h3>
+<pre class='code'># src/rag_kb/lightrag/adapter.py (continued)
+
+def ask(rag, question, mode='hybrid'):
+    return rag.query(question, mode=mode)
+
+# 模式切换
+answer = ask(rag, '产品 X 包含哪些配件？', mode='hybrid')
+context = ask(rag, '产品 X 包含哪些配件？', mode='hybrid')
+# 若需要原始上下文，可设置 only_need_context=True 并自行解析来源</pre>
+<h3>按 source/category/product_id 过滤</h3>
+<p>LightRAG 目前不直接支持 metadata 过滤。推荐两种策略：</p>
+<ul>
+<li><strong>预过滤 Pre-filtering：</strong>入库时按 category/product 拆分为多个 LightRAG 工作目录（子库），查询时先选择对应 adapter。</li>
+<li><strong>后过滤 Post-filtering：</strong>全库 hybrid 查询后，对返回的 chunk/source 元数据做正则/字典匹配，剔除不在目标范围的片段；必要时重新查询。</li>
+</ul>
+<h3>SSE 流式与引用包装</h3>
+<p>FastAPI 可调用 <code>adapter.stream_query(question, mode='hybrid')</code> 返回 SSE。LightRAG 返回的答案可能携带引用标记；FastAPI 可在 SSE 结束后追加 <code>sources</code> 字段或在前端渲染 <code>[1][2]</code> 引用。</p>
+<pre class='code'># src/rag_kb/api/routes.py
+import json
+import re
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+from rag_kb.lightrag.adapter import LightRAGAdapter
+
+router = APIRouter()
+rag = LightRAGAdapter()
+
+def extract_sources(answer):
+    # 简单示例：从答案中匹配形如 [DATA:...] 的标记
+    return re.findall(r'\[DATA:([^\]]+)\]', answer)
+
+@router.post('/chat/completions')
+async def chat_completions(body: dict):
+    question = body['messages'][-1]['content']
+    mode = body.get('mode', 'hybrid')
+    answer = rag.query(question, mode=mode)
+    sources = extract_sources(answer)
+    return {'answer': answer, 'sources': sources}</pre>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li>四种模式 <code>naive / local / global / hybrid</code> 均可返回结果。</li>
+<li><code>hybrid</code> 模式在测试问题上召回相关 chunk。</li>
+<li>SSE 流式输出正常，答案包含来源引用标记。</li>
+</ol>
+</section>
+<section class='card' id='s9'>
+<h2>Phase 5 FastAPI 后端与 Open WebUI 集成 Backend &amp; Frontend Integration</h2>
+<p>用 FastAPI 暴露 /ingest、/search、/chat/completions（SSE）三个核心端点，并将 Open WebUI 配置为聊天前端。后端核心逻辑委托给 <code>LightRAGAdapter</code>，问答时调用 <code>rag.query(..., mode='hybrid')</code> 并返回 SSE。</p>
+<h3>FastAPI 路由</h3>
+<pre class='code'># src/rag_kb/api/main.py
+import json
+from typing import AsyncIterator
+from fastapi import FastAPI, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
+from rag_kb.config import settings
+from rag_kb.ingest.pipeline import IngestPipeline
+from rag_kb.lightrag.adapter import LightRAGAdapter
+from rag_kb.security.acl import build_acl_filter
+
+app = FastAPI(title=settings.app_name)
+
+@app.get('/health')
+def health():
+    return {'status': 'ok'}
+
+@app.post('/api/v1/ingest')
+async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
+    upload_path = settings.data_dir / 'uploads' / file.filename
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(await file.read())
+    pipeline = IngestPipeline()
+    doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+    return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+
+@app.post('/api/v1/search')
+async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8):
+    user_acl = {'dept': [dept], 'level': [level]}
+    rag = LightRAGAdapter()
+    answer = rag.query(q, mode='hybrid')
+    # 元数据过滤通过后过滤或按子库实现
+    return {'answer': answer, 'sources': []}
+
+async def _stream_answer(rag, prompt, mode='hybrid'):
+    import asyncio
+    loop = asyncio.get_event_loop()
+    answer = await loop.run_in_executor(None, rag.query, prompt, mode)
+    NL = chr(10)
+    SSE_END = NL * 2
+    buf = ''
+    for ch in answer:
+        buf += ch
+        if ch in ('。', '？', '！', '.', '?', '!', NL):
+            payload = json.dumps({'choices': [{'delta': {'content': buf}}]})
+            yield 'data: ' + payload + SSE_END
+            buf = ''
+    if buf:
+        yield 'data: ' + json.dumps({'choices': [{'delta': {'content': buf}}]}) + SSE_END
+    yield 'data: [DONE]' + SSE_END
+
+@app.post('/api/v1/chat/completions')
+async def chat_completions(body: dict):
+    question = body['messages'][-1]['content']
+    # user_acl = body.get('user_acl', {'dept': [], 'level': ['Internal']})
+    rag = LightRAGAdapter()
+    mode = settings.lightrag_query_mode or 'hybrid'
+    return StreamingResponse(
+        _stream_answer(rag, question, mode=mode),
+        media_type='text/event-stream',
+    )</pre>
+<h3>Open WebUI 配置说明</h3>
+<pre class='code'># Open WebUI Configuration (Admin Panel -&gt; Settings -&gt; Connections)
+# Point Open WebUI to the custom FastAPI backend as an OpenAI-compatible API.
+
+OPENAI_API_BASE_URL=http://localhost:8000/api/v1
+OPENAI_API_KEY=not-needed-for-local
+DEFAULT_MODEL=rag-kb-pipeline
+
+# Or if you mount /chat/completions at root:
+# OPENAI_API_BASE_URL=http://localhost:8000
+
+# Important:
+# - Open WebUI is the chat frontend.
+# - Bulk 10K document ingestion must use /api/v1/ingest on the backend,
+#   not the Open WebUI built-in RAG upload (limited to small file sets).
+# - The backend uses LightRAG (hybrid mode) for retrieval and generation.</pre>
+<div class='warn'><strong>Open WebUI 能力边界</strong>
+<ul>
+<li>Open WebUI 是出色的 ChatGPT 式前端，但内置 RAG 面向少量文件与简单切片。</li>
+<li>万级长文档的结构切片、LightRAG 索引、增量更新应由后端完成。</li>
+<li>批量 10K 入库请使用 <code>/api/v1/ingest</code>，而非 WebUI 上传按钮。</li>
+</ul>
+</div>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li><code>uvicorn rag_kb.api.main:app --reload</code> 启动成功。</li>
+<li><code>/health</code> 返回 <code>{"status": "ok"}</code>。</li>
+<li><code>/api/v1/ingest</code> 上传 PDF 返回 doc_id。</li>
+<li>Open WebUI 配置 OpenAI API Base 为后端地址后可正常问答。</li>
+</ol>
+</section>
+<section class='card' id='s10'>
+<h2>Phase 6 测试、评估与脚本 Testing, Evaluation &amp; Scripts</h2>
+<p>可测试驱动与可评估是工程化 RAG 的关键。本阶段给出 pytest 用例、简化版 RAGAS 指标与 Windows 一键启动脚本。</p>
+<h3>pytest 示例：解析与切片</h3>
+<pre class='code'># tests/test_ingest.py
+from pathlib import Path
+from rag_kb.ingest.pipeline import IngestPipeline
+from rag_kb.parsers.pdf_pymupdf import PyMuPDFParser
+
+SAMPLE = Path(__file__).parent / &#x27;samples&#x27; / &#x27;sample.pdf&#x27;
+
+def test_pymupdf_parser_can_parse_pdf():
+    parser = PyMuPDFParser()
+    assert parser.can_parse(SAMPLE)
+
+def test_ingest_pipeline_returns_document(tmp_path):
+    # Place a real sample.pdf under tests/samples for integration runs
+    pipeline = IngestPipeline()
+    doc = pipeline.run(SAMPLE, acl={&#x27;dept&#x27;: [&#x27;Sales&#x27;], &#x27;level&#x27;: [&#x27;Internal&#x27;]})
+    assert doc.doc_id
+    assert doc.content</pre>
+<pre class='code'># tests/test_chunking.py
+from rag_kb.chunkers.structured import StructuredChunker
+from rag_kb.models import Document
+
+def test_structure_chunker_preserves_headings():
+    doc = Document(doc_id=&#x27;d1&#x27;, content=&#x27;# Title\npara1\n## Section\npara2&#x27;)
+    chunks = StructuredChunker().chunk(doc)
+    assert len(chunks) &gt;= 2
+    assert chunks[0].level == 1
+    assert &#x27;Section&#x27; in chunks[-1].section_path</pre>
+<h3>RAGAS / Simple Metrics</h3>
+<pre class='code'># tests/test_eval.py
+from typing import List
+from rag_kb.models import SearchResult
+
+def simple_faithfulness(answer: str, contexts: List[SearchResult]) -&gt; float:
+    &#x27;&#x27;&#x27;Simplified faithfulness: ratio of answer words present in contexts.&#x27;&#x27;&#x27;
+    answer_words = set(answer.lower().split())
+    context_words = set(&#x27; &#x27;.join(c.text.lower() for c in contexts).split())
+    if not answer_words:
+        return 0.0
+    return len(answer_words &amp; context_words) / len(answer_words)
+
+# Optional RAGAS integration
+# from ragas.metrics import faithfulness, answer_relevancy
+# from ragas import evaluate</pre>
+<h3>PowerShell 启动脚本</h3>
+<pre class='code'># scripts/start.ps1
+# Run in an elevated PowerShell after installing dependencies
+
+$ollama = Start-Process ollama -ArgumentList &#x27;serve&#x27; -PassThru
+Start-Sleep -Seconds 5
+
+$backend = Start-Process python -ArgumentList &#x27;-m&#x27;,&#x27;uvicorn&#x27;,&#x27;rag_kb.api.main:app&#x27;,&#x27;--reload&#x27;,&#x27;--host&#x27;,&#x27;0.0.0.0&#x27;,&#x27;--port&#x27;,&#x27;8000&#x27; -PassThru
+Start-Sleep -Seconds 3
+
+$webui = Start-Process open-webui -ArgumentList &#x27;serve&#x27; -PassThru
+
+Write-Host &#x27;RAG KB services started. Press Enter to stop...&#x27;
+Read-Host
+Stop-Process -InputObject $ollama,$backend,$webui -Force</pre>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li><code>pytest</code> 通过解析、切片、检索测试。</li>
+<li>Faithfulness 与 Answer Relevance 指标可在固定测试集上计算。</li>
+<li><code>scripts/start.ps1</code> 能一键启动 Ollama、后端、Open WebUI。</li>
+<li>CI 流水线至少执行 lint 与 pytest。</li>
+</ol>
+</section>
+<section class='card' id='s11'>
+<h2>Phase 7 运维、增量更新与安全 Operations, Incremental Update &amp; Security</h2>
+<p>生产环境必须支持文档增删改、权限隔离与可观测。本阶段实现基于文件 hash 的增量更新、DocID↔source/category 映射、LightRAG working_dir 重建策略与 ACL 过滤。</p>
+<h3>文件 Hash 增量更新与映射</h3>
+<pre class='code'># src/rag_kb/ingest/incremental.py
+import hashlib
+import json
+import shutil
+from pathlib import Path
+from typing import List, Set, Tuple
+
+CHUNK_MAP = Path('./data/chunk_map.json')
+CATEGORY_DIR = Path('./data/category_dbs')
+
+def load_doc_chunk_map():
+    if CHUNK_MAP.exists():
+        return json.loads(CHUNK_MAP.read_text(encoding='utf-8'))
+    return {}
+
+def save_doc_chunk_map(m: dict):
+    CHUNK_MAP.write_text(json.dumps(m, indent=2, ensure_ascii=False), encoding='utf-8')
+
+def compute_file_hash(path: Path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def plan_update(docs_dir: Path, known: dict):
+    current = {}
+    for p in docs_dir.rglob('*'):
+        if p.is_file():
+            current[compute_file_hash(p)] = p
+    to_add = [v for h, v in current.items() if h not in known]
+    to_delete = {doc_id for doc_id, info in known.items() if info.get('hash') not in current}
+    return to_add, to_delete
+
+def update_doc_chunk_map(doc_id: str, file_hash: str, source: str, category: str, m: dict):
+    m[doc_id] = {'hash': file_hash, 'source': source, 'category': category}</pre>
+<h3>LightRAG 索引更新策略</h3>
+<p>LightRAG 当前不直接支持按 doc_id 删除单个 chunk。推荐按 source/category 拆分子库，更新时重建对应子库，避免脏索引。</p>
+<pre class='code'># src/rag_kb/ingest/incremental.py (continued)
+def rebuild_category(category: str, docs: list, adapter_factory):
+    cat_dir = CATEGORY_DIR / category
+    if cat_dir.exists():
+        shutil.rmtree(cat_dir)
+    adapter = adapter_factory(cat_dir)
+    for doc in docs:
+        adapter.insert_chunks(doc.chunks)
+    # Note: caller updates chunk_map with current docs after rebuild
+    return adapter
+
+# On delete/update:
+# 1. Load chunk_map, find affected doc_ids and their categories.
+# 2. Collect remaining docs in each affected category.
+# 3. rebuild_category(category, docs, adapter_factory)
+# 4. Update chunk_map.</pre>
+<h3>RBAC / ACL 与 source/category 过滤</h3>
+<p>LightRAG 不原生暴露 metadata where 查询。ACL 与产品/类别过滤通过子库选择和后过滤实现。</p>
+<pre class='code'># src/rag_kb/security/acl.py
+from typing import Dict, List
+from rag_kb.models import SearchResult
+
+def allowed_sources(user_roles: Dict[str, List[str]]):
+    # Example: map dept/level to allowed source prefixes.
+    return []
+
+def filter_results(results: List[SearchResult], user_roles: Dict[str, List[str]]):
+    filtered = []
+    for r in results:
+        ok = True
+        for key, allowed in user_roles.items():
+            value = r.metadata.get(f'acl_{key}')
+            if value is None or value not in allowed:
+                ok = False
+                break
+        if ok:
+            filtered.append(r)
+    return filtered
+
+def filter_by_source(answer: str, allowed: List[str]):
+    # LightRAG injects source/category/product_id into chunk text headers.
+    # Post-filter can drop chunks whose [source=...;category=...] is not in allowed.
+    return answer</pre>
+<h3>可观测性</h3>
+<ul>
+<li>记录每次 query 的 mode、latency、source/category 过滤结果与 LLM token 数。</li>
+<li>使用结构化日志（如 <code>structlog</code> 或标准 <code>logging</code>）。</li>
+<li>定期抽样人工评估 hybrid vs naive/local/global 的效果差异。</li>
+</ul>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li>文档更新后，对应 category 的 LightRAG working_dir 被重建，旧索引不残留。</li>
+<li>DocID 与 source/category 映射持久化在 <code>data/chunk_map.json</code>。</li>
+<li>用户角色被正确转换为 source/category 过滤条件，未授权 chunk 被过滤。</li>
+<li>结构化日志记录每次 query、retrieve、generate 的关键元数据。</li>
+</ol>
+</section>
+<section class='card' id='s12'>
+<h2>Phase 8 后续：LightRAG 图增强检索 LightRAG Extension</h2>
+<p>LightRAG 在 MVP 中即为主力检索+生成引擎。本阶段不是"额外大图数据库"，而是针对个人项目的调优、扩展与边界管理。</p>
+<h3>LightRAG 高级用法 Advanced Usage</h3>
+<ul>
+<li><strong>多子库 Multi-Working-Dir：</strong>按 source/category/product_id 拆分多个 working_dir，查询时按条件路由到对应 adapter。</li>
+<li><strong>自定义查询模式：</strong>根据问题类型选择 naive（简单）、local（实体关系）、global（宏观）、hybrid（默认）。</li>
+<li><strong>扩展 LLM / Embedding：</strong>将 <code>llm_model_func</code> 与 <code>embedding_func</code> 替换为 OpenAI-compatible 或本地 sentence-transformers。</li>
+<li><strong>缓存与并发：</strong>开启 <code>enable_llm_cache=True</code>，对高频问题缓存生成结果；SSE 使用线程池避免阻塞。</li>
+</ul>
+<h3>LightRAG 与自定义后端的边界 Boundaries</h3>
+<ul>
+<li><strong>后端保留职责：</strong>文档上传、解析、结构切片、元数据注入、source/category 过滤、SSE 封装、审计日志。</li>
+<li><strong>LightRAG 负责：</strong>内部 chunk、Embedding、向量+图索引构建、hybrid/local/global 查询、LLM 生成。</li>
+<li><strong>何时需要额外数据库：</strong>若 NetworkX/NanoVectorDB 在超过 10k 文档且图非常稠密时变慢，再考虑引入持久化图/向量库；MVP 阶段不必要。</li>
+</ul>
+<h3>性能调优提示 Tuning Tips</h3>
+<ul>
+<li>控制 <code>chunk_token_size</code> 与 <code>max_token</code> 以平衡显存与答案质量。</li>
+<li>定期清理 <code>working_dir</code> 中的过期 <code>kv_store.json</code> / <code>graph.pkl</code> 并重新索引，避免实体重复。</li>
+<li>对抽取噪声用领域词表做后处理；可关闭 graph 模式（naive）做对比。</li>
+</ul>
+<h3>验收检查 Acceptance</h3>
+<ol>
+<li>multi-working-dir 路由逻辑可正确选择对应 adapter。</li>
+<li>四种查询模式均可调用，hybrid 为默认。</li>
+<li>更新文档后旧索引可被清理或增量覆盖。</li>
+</ol>
+</section>
+<section class='card' id='s13'>
+<h2>风险与常见陷阱 Risks &amp; Pitfalls</h2>
+<p>以下为落地过程中最常见的风险与缓解措施。</p>
+<h3>风险矩阵 Risk Matrix</h3>
+<table>
+<tr><th>风险 Risk</th><th>影响 Impact</th><th>缓解 Mitigation</th></tr>
+<tr><td>Python 3.11 环境未就绪</td><td>Open WebUI 无法安装</td><td>部署机器使用 Python 3.11；开发机可用 miniconda 创建独立环境</td></tr>
+<tr><td>解析库体积大 / 安装失败</td><td>pymupdf / pdfplumber 在 Windows 下编译报错</td><td>使用预编译 wheel；必要时降级到稳定版本</td></tr>
+<tr><td>Windows 多进程 / 路径问题</td><td>LightRAG / uvicorn 启动异常</td><td>避免路径中的空格；使用 <code>if __name__ == "__main__":</code> 保护</td></tr>
+<tr><td>Ollama 单点性能不足</td><td>并发 embedding/LLM 延迟高</td><td>开启 Ollama GPU 支持；远程模型做 fallback</td></tr>
+<tr><td>LightRAG 本地存储写冲突</td><td>多 worker 同时写入导致索引损坏</td><td>索引服务单写者多读者；队列化批量入库</td></tr>
+<tr><td>Open WebUI 被当作完整 RAG</td><td>复杂切片、图增强检索、增量更新缺失</td><td>明确前后端边界，Open WebUI 只做聊天界面</td></tr>
+<tr><td>LightRAG 抽取噪声</td><td>错误关系被放大</td><td>规则后处理 + 抽样人工校验 + 分阶段上线</td></tr>
+<tr><td>ACL 未在检索层过滤</td><td>越权访问敏感文档</td><td>将 ACL 作为 source/category 过滤条件与后端二次过滤</td></tr>
+</table>
+<div class='warn'><strong>常见陷阱 Common Pitfalls</strong>
+<ul>
+<li>Lost in the Middle：LLM 对长上下文中间信息关注度下降，送入 LLM 的 chunk 控制在 3–8 个。</li>
+<li>表格直接切片会丢失行列关系；应转为 Markdown 并在命中后传原表。</li>
+<li>缺少 DocID↔ChunkID 映射会导致更新/删除后向量库残留过期数据。</li>
+<li>仅依赖单一查询模式会漏掉关系或事实；应根据问题类型切换 hybrid/local/global/naive。</li>
+<li>没有 RAGAS 或类似评估，无法量化优化效果。</li>
+</ul>
+</div>
+</section>
+<section class='card' id='s14'>
+<h2>附录：文件清单、配置示例与命令速查 Appendix</h2>
+<p>本附录汇总 MVP 阶段文件清单、配置示例与常用命令，方便快速参考。</p>
+<h3>MVP 文件创建清单</h3>
+<table>
+<tr><th>文件 File</th><th>状态 Status</th><th>说明 Note</th></tr>
+<tr><td>pyproject.toml</td><td>新建</td><td>项目元数据与依赖</td></tr>
+<tr><td>requirements.txt</td><td>新建</td><td>可选的 pip 安装清单</td></tr>
+<tr><td>configs/config.example.yaml</td><td>新建</td><td>Ollama / OpenAI / LightRAG 配置模板</td></tr>
+<tr><td>src/rag_kb/config.py</td><td>新建</td><td>Pydantic Settings</td></tr>
+<tr><td>src/rag_kb/models.py</td><td>新建</td><td>Document/Chunk/SearchResult</td></tr>
+<tr><td>src/rag_kb/parsers/base.py</td><td>新建</td><td>BaseParser 接口</td></tr>
+<tr><td>src/rag_kb/parsers/pdf_pymupdf.py</td><td>新建</td><td>PyMuPDF 实现</td></tr>
+<tr><td>src/rag_kb/chunkers/structured.py</td><td>新建</td><td>结构感知切片</td></tr>
+<tr><td>src/rag_kb/chunkers/parent_child.py</td><td>新建</td><td>父子块切片</td></tr>
+<tr><td>src/rag_kb/lightrag/adapter.py</td><td>新建</td><td>LightRAG 适配器（insert/query/stream）</td></tr>
+<tr><td>src/rag_kb/lightrag/llm_funcs.py</td><td>新建</td><td>Ollama LLM 注入函数</td></tr>
+<tr><td>src/rag_kb/lightrag/embedding_funcs.py</td><td>新建</td><td>Ollama Embedding 注入函数</td></tr>
+<tr><td>src/rag_kb/api/main.py</td><td>新建</td><td>FastAPI 路由</td></tr>
+<tr><td>src/rag_kb/security/acl.py</td><td>新建</td><td>ACL 过滤</td></tr>
+<tr><td>tests/test_ingest.py</td><td>新建</td><td>解析测试</td></tr>
+<tr><td>tests/test_lightrag.py</td><td>新建</td><td>LightRAG 索引/查询测试</td></tr>
+<tr><td>scripts/start.ps1</td><td>新建</td><td>一键启动脚本</td></tr>
+</table>
+<h3>配置示例 config.example.yaml</h3>
+<pre class='code'># config.example.yaml — Ollama / OpenAI-compatible settings for rag-kb
+app:
+  name: rag-kb
+  data_dir: ./data
+  lightrag_working_dir: ./lightrag_db
+  log_level: INFO
+
+embedding:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: nomic-embed-text
+  # Alternative: sentence-transformers (CPU-only, no Ollama needed)
+  # provider: sentence-transformers
+  # model: BAAI/bge-m3
+
+llm:
+  # Mode 1: local Ollama (default for Windows native deployment)
+  provider: ollama
+  base_url: http://localhost:11434
+  model: qwen2.5
+  temperature: 0.3
+  top_p: 0.9
+  max_tokens: 2048
+
+  # Mode 2: OpenAI / OpenAI-compatible / domestic providers
+  # provider: openai
+  # base_url: https://api.openai.com/v1
+  # api_key: ${OPENAI_API_KEY}
+  # model: gpt-4o
+  # temperature: 0.3
+  # top_p: 0.9
+  # max_tokens: 2048
+
+  # Mode 3: domestic OpenAI-compatible endpoint
+  # provider: openai
+  # base_url: https://your-provider.example.com/v1
+  # api_key: ${PROVIDER_API_KEY}
+
+lightrag:
+  working_dir: ./lightrag_db
+  chunk_token_size: 1200
+  max_token: 4096
+  query_mode: hybrid
+  enable_llm_cache: true
+
+security:
+  default_acl:
+    dept: []
+    level: ['Internal']</pre>
+<h3>命令速查表 Command Cheat Sheet</h3>
+<table>
+<tr><th>命令 Command</th><th>用途 Usage</th></tr>
+<tr><td>python -m venv .venv</td><td>创建虚拟环境</td></tr>
+<tr><td>.venv\Scripts\activate</td><td>激活 Windows 虚拟环境</td></tr>
+<tr><td>pip install -e .</td><td>以可编辑模式安装项目</td></tr>
+<tr><td>pip install lightrag-hku</td><td>安装 LightRAG 主引擎</td></tr>
+<tr><td>pytest</td><td>运行测试</td></tr>
+<tr><td>pytest -q</td><td>快速运行测试</td></tr>
+<tr><td>python -m uvicorn rag_kb.api.main:app --reload</td><td>启动 FastAPI 后端</td></tr>
+<tr><td>ollama serve</td><td>启动 Ollama 服务</td></tr>
+<tr><td>ollama pull qwen2.5 nomic-embed-text</td><td>拉取默认模型</td></tr>
+<tr><td>open-webui serve</td><td>启动 Open WebUI 前端</td></tr>
+<tr><td>python -m rag_kb.ingest.ingest_bulk data/raw</td><td>批量入库示例</td></tr>
+</table>
+<h3>参考 References</h3>
+<ul>
+<li>RAG_KB_Plan.html — 本项目规划与设计文档</li>
+<li>万级长文档 RAG 知识库系统架构与前端设计指南.html</li>
+<li>海量长文档企业级 RAG 知识库落地指南.html</li>
+<li>海量长文档（万级）知识库构建方案.html</li>
+</ul>
+</section>
+</main>
+<footer>
+<p>Generated for the 10K Long-Document RAG Knowledge Base project. Keeps RAG_KB_Plan.html unchanged.</p>
+<p>本文件由实施框架生成脚本创建，作为 <code>RAG_KB_Plan.html</code> 的独立配套文档。</p>
+</footer>
+</div>
+</body>
+</html>

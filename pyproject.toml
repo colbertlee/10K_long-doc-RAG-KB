@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-kb"
+version = "0.1.0"
+description = "10K long-document RAG knowledge base"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "python-multipart",
+    "requests",
+    "pyyaml",
+    "pymupdf>=1.23",
+    "pdfplumber>=0.10",
+    "python-docx",
+    "beautifulsoup4",
+    "lightrag-hku",
+    "ollama",
+    "httpx",
+    "sentence-transformers>=2.3",
+    "numpy",
+    "pytest>=8.0",
+    "open-webui",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

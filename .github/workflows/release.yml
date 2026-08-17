@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: |
+          python -m build
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Release ${{ github.ref_name }}
+            
+            ### Installation
+            ```bash
+            pip install rag-kb==${{ github.ref_name }}
+            ```
+            
+            ### Documentation
+            - [Installation Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/INSTALLATION.md)
+            - [User Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/USER_GUIDE.md)
+            - [Developer Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/DEVELOPER.md)
+            
+            ### What's Changed
+            See [CHANGELOG.md](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/RELEASE_NOTES.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
