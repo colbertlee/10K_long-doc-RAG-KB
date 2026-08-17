@@ -3,7 +3,12 @@
 import asyncio
 import json
 from pathlib import Path
-from lightrag import LightRAG, QueryParam
+try:
+    from lightrag import LightRAG, QueryParam
+except ImportError:
+    # Fallback for testing without lightrag installed
+    LightRAG = None
+    QueryParam = None
 from rag_kb.lightrag.llm_funcs import ollama_llm
 from rag_kb.lightrag.embedding_funcs import ollama_embed
 from rag_kb.config import settings
@@ -20,6 +25,9 @@ class LightRAGAdapter:
         Args:
             working_dir: Directory for LightRAG storage (uses default from settings if None)
         """
+        if LightRAG is None:
+            raise ImportError("LightRAG is not installed. Install it with: pip install lightrag-hku")
+        
         self.working_dir = Path(working_dir or settings.lightrag_working_dir)
         self.working_dir.mkdir(parents=True, exist_ok=True)
         self.rag = LightRAG(
@@ -27,7 +35,6 @@ class LightRAGAdapter:
             llm_model_func=ollama_llm,
             embedding_func=ollama_embed,
             chunk_token_size=settings.lightrag_chunk_token_size,
-            max_token=settings.lightrag_max_token,
         )
 
     def insert_chunks(self, chunks):

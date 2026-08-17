@@ -1,6 +1,7 @@
 """Configuration management for RAG KB."""
 
 from pathlib import Path
+from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -41,8 +42,8 @@ class Settings(BaseSettings):
     lightrag_enable_llm_cache: bool = True
 
     # OpenAI-compatible remote LLM (optional)
-    openai_api_key: str | None = Field(default=None)
-    openai_base_url: str | None = Field(default=None)
+    openai_api_key: Optional[str] = Field(default=None)
+    openai_base_url: Optional[str] = Field(default=None)
 
 
 # Global settings instance
