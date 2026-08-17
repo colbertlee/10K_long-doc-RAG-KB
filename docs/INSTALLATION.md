@@ -9,9 +9,10 @@
 - **GPU**: Optional (for Ollama acceleration)
 
 ### Software Requirements
-- **Operating System**: Windows 10/11 (native), Linux/macOS (with modifications)
-- **Python**: 3.11 or higher (required for Open WebUI)
+- **Operating System**: Windows 10/11 (native support)
+- **Python**: 3.9 or higher (3.11+ recommended for Open WebUI)
 - **Ollama**: Latest version for local LLM and embedding models
+- **Git**: For cloning repository (optional)
 
 ## Installation Methods
 
@@ -35,27 +36,31 @@ pip install -e .
 ```
 
 #### Step 4: Install Ollama
-1. Download Ollama from https://ollama.ai
-2. Install and run Ollama
-3. Verify installation:
-   ```bash
+1. Visit https://ollama.ai/download
+2. Download Windows version of Ollama installer
+3. Run the installer and follow the prompts
+4. Verify installation:
+   ```powershell
    ollama --version
    ```
 
-#### Step 5: Pull Required Models
-```bash
+#### Step 5: Start Ollama and Pull Models
+```powershell
+# Start Ollama in a new PowerShell window
 ollama serve
+
+# In another PowerShell window, pull models
 ollama pull qwen2.5
 ollama pull nomic-embed-text
 ```
 
 #### Step 6: Configure the System
-```bash
+```powershell
 copy configs\config.example.yaml configs\config.yaml
 copy .env.example .env
 ```
 
-Edit `configs\config.yaml` and `.env` with your settings.
+Edit `configs\config.yaml` and `.env` files according to your environment.
 
 ### Method 2: Development Installation
 
