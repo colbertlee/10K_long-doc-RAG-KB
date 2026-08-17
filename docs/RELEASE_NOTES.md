@@ -1,5 +1,30 @@
 # Release Notes
 
+## [0.1.1] - 2026-08-17
+
+### New Features
+- Local folder import functionality
+- PowerShell import script
+- Simple mode with auto user/knowledge base creation
+- Folder import API endpoints
+- Detailed import statistics and progress display
+- File skipping and error handling
+
+### Improvements
+- Updated user guide with folder import instructions
+- Enhanced user data management system
+- Support for batch document import
+- Added file duplicate detection
+
+### New API Endpoints
+- POST /users/{user_id}/kbs/{kb_name}/import-folder - Import folder to user knowledge base
+- POST /import-local-folder - Simple mode folder import
+
+### Documentation Updates
+- Updated USER_GUIDE.md and USER_GUIDE_CN.md
+- Added local folder import usage instructions
+- Added troubleshooting guide
+
 ## [0.1.0] - 2026-08-17
 
 ### Added
