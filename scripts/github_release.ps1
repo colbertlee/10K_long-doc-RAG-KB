@@ -2,8 +2,8 @@
 # This script helps push the repository to GitHub and create a release
 
 # Configuration
-$GITHUB_USERNAME = "YOUR_USERNAME"  # Replace with your GitHub username
-$REPO_NAME = "10K_long-doc-RAG-KB"  # Replace with your repository name
+$GITHUB_USERNAME = "colbertlee"  # GitHub username
+$REPO_NAME = "10K_long-doc-RAG-KB"  # Repository name
 $VERSION = "v0.1.0"
 
 Write-Host "=== GitHub Release Automation ===" -ForegroundColor Green
