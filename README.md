@@ -2,6 +2,8 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
+[中文文档](README_CN.md) | [English Documentation](README.md)
+
 ## Features
 
 - **Structure-aware Chunking**: Semantic document segmentation preserving hierarchy and context
@@ -29,7 +31,7 @@ The system follows a layered pipeline architecture:
 
 ### Prerequisites
 
-- Python 3.11 or higher (required for Open WebUI)
+- Python 3.9 or higher (3.11+ required for Open WebUI)
 - Ollama for local LLM and embedding models
 - Windows 10/11 (native deployment)
 
@@ -177,7 +179,7 @@ The implementation follows 8 phases:
 
 ## Technology Stack
 
-- **Backend**: FastAPI, Python 3.11+
+- **Backend**: FastAPI, Python 3.9+
 - **RAG Engine**: LightRAG (lightrag-hku)
 - **Vector Store**: NanoVectorDB (built into LightRAG)
 - **Graph Store**: NetworkX (built into LightRAG)
