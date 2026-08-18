@@ -1,5 +1,59 @@
 # 发布说明
 
+## [0.2.1] - 2026-08-18
+
+### 关键修复
+- 修复Open WebUI启动失败问题（HuggingFace模型下载问题）
+- 解决PowerShell脚本启动失败问题（Open WebUI尝试下载模型时）
+- 消除Open WebUI启动对网络的依赖
+
+### 新增功能
+- 添加生产就绪的配置文件（configs/config.yaml）
+- 添加全面的故障排除指南（英文和中文）
+- 添加文档管理和聊天界面之间的导航链接
+
+### 所做更改
+
+#### 启动脚本（scripts/open_webui.ps1, scripts/start.ps1）：
+- 配置Open WebUI使用Ollama嵌入模型而不是HuggingFace
+- 添加--ollama-embedding-model nomic-embed-text参数
+- 添加--embedding-engine ollama参数
+- 消除对HuggingFace模型下载的依赖
+
+#### 配置（configs/config.yaml）：
+- 添加生产就绪的配置文件，使用Ollama默认设置
+- 配置嵌入提供商为ollama，使用nomic-embed-text模型
+- 配置LLM提供商为ollama，使用qwen2.5模型
+- 包含sentence-transformers和OpenAI的注释替代方案
+
+#### 界面集成（src/rag_kb/api/docs_ui.py）：
+- 添加从文档管理到Open WebUI的导航链接
+- 添加到API文档的导航链接
+- 改进用户体验，提供清晰的界面切换
+
+#### 文档：
+- 添加全面的故障排除指南（docs/TROUBLESHOOTING.md）
+- 添加中文故障排除指南（docs/TROUBLESHOOTING_CN.md）
+- 更新Open WebUI集成指南，包含新工作流程
+- 更新README文件，引用故障排除指南
+
+#### Git配置（.gitignore）：
+- 将configs/config.yaml添加到跟踪文件（之前被忽略）
+- 添加data/users/*以忽略用户特定数据
+- 改进数据目录结构处理
+
+### 优势
+- Open WebUI现在可以可靠启动，无需网络依赖
+- 所有模型都通过Ollama在本地运行
+- 文档管理和聊天界面之间有更好的集成
+- 为用户提供全面的故障排除文档
+- 包含生产就绪的配置
+
+### 测试
+- 配置文件验证通过
+- 设置模块正确加载Ollama提供商
+- 所有更改已测试和验证
+
 ## [0.2.0] - 2026-08-18
 
 ### 重大更新

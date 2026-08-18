@@ -1,5 +1,59 @@
 # Release Notes
 
+## [0.2.1] - 2026-08-18
+
+### Critical Fixes
+- Fixed Open WebUI startup failure due to HuggingFace model download issues
+- Resolved PowerShell script startup failures when Open WebUI tries to download models
+- Eliminated network dependency for Open WebUI startup
+
+### New Features
+- Added production-ready configuration file (configs/config.yaml)
+- Added comprehensive troubleshooting guide (English and Chinese)
+- Added navigation links between document management and chat interfaces
+
+### Changes Made
+
+#### Startup Scripts (scripts/open_webui.ps1, scripts/start.ps1):
+- Configure Open WebUI to use Ollama embeddings instead of HuggingFace
+- Add --ollama-embedding-model nomic-embed-text parameter
+- Add --embedding-engine ollama parameter
+- Eliminate dependency on HuggingFace model downloads
+
+#### Configuration (configs/config.yaml):
+- Add production-ready config file with Ollama defaults
+- Configure embedding provider as ollama with nomic-embed-text model
+- Configure LLM provider as ollama with qwen2.5 model
+- Include commented alternatives for sentence-transformers and OpenAI
+
+#### Interface Integration (src/rag_kb/api/docs_ui.py):
+- Add navigation links from document management to Open WebUI
+- Add navigation link to API documentation
+- Improve user experience with clear interface switching
+
+#### Documentation:
+- Add comprehensive troubleshooting guide (docs/TROUBLESHOOTING.md)
+- Add Chinese troubleshooting guide (docs/TROUBLESHOOTING_CN.md)
+- Update Open WebUI integration guide with new workflow
+- Update README files to reference troubleshooting guides
+
+#### Git Configuration (.gitignore):
+- Add configs/config.yaml to tracked files (was previously ignored)
+- Add data/users/* to ignore user-specific data
+- Improve data directory structure handling
+
+### Benefits
+- Open WebUI now starts reliably without network dependencies
+- All models run locally via Ollama
+- Better integration between document management and chat interfaces
+- Comprehensive troubleshooting documentation for users
+- Production-ready configuration included
+
+### Testing
+- Configuration file validation passed
+- Settings module loads correctly with Ollama providers
+- All changes tested and verified
+
 ## [0.2.0] - 2026-08-18
 
 ### Major Updates
