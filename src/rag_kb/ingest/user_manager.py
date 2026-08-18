@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from rag_kb.models import Document
 from rag_kb.ingest.pipeline import IngestPipeline
-from rag_kb.ingest.incremental import IncrementalIndexer
 
 
 class UserDataManager:
