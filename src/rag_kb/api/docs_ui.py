@@ -138,7 +138,10 @@ async def document_management_ui():
                     <input type="text" id="folder-path" placeholder="C:\\Users\\YourName\\Documents\\KB">
                 </div>
                 <div class="form-group">
-                    <button class="btn btn-secondary" onclick="browseFolder()">📁 浏览文件夹</button>
+                    <label>或选择文件夹（支持批量文件选择）</label>
+                    <input type="file" id="folder-input" webkitdirectory directory multiple style="display: none" onchange="handleFolderSelect(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('folder-input').click()">📁 选择文件夹</button>
+                    <small style="color: #666; display: block; margin-top: 5px;">支持选择文件夹内的所有文件进行批量导入</small>
                 </div>
                 <div id="folder-progress" class="progress-bar" style="display: none;">
                     <div class="progress-bar-fill" id="folder-progress-fill" style="width: 0%"></div>
@@ -290,9 +293,26 @@ async def document_management_ui():
         }
 
         function browseFolder() {
-            // Note: File system access is limited in browsers
-            // This is a placeholder for future enhancement
-            alert('请在文件夹路径输入框中手动输入文件夹路径，或使用文件选择器。\\n\\n注意：由于浏览器安全限制，无法直接浏览文件夹。');
+            // Use the folder input instead
+            document.getElementById('folder-input').click();
+        }
+
+        function handleFolderSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                // Get the folder path from the first file's webkitRelativePath
+                const firstFile = files[0];
+                const folderPath = firstFile.webkitRelativePath.split('/')[0];
+                
+                // Update the folder path input with the folder name
+                document.getElementById('folder-path').value = folderPath;
+                
+                // Show selected files count
+                showStatus('folder-status', `已选择文件夹: ${folderPath}，包含 ${files.length} 个文件`, 'info');
+                
+                // Store files for later upload
+                window.selectedFolderFiles = files;
+            }
         }
 
         async function importFolder() {
@@ -300,12 +320,19 @@ async def document_management_ui():
             const kbName = document.getElementById('folder-kb-name').value;
             const folderPath = document.getElementById('folder-path').value;
 
-            if (!folderPath) {
-                showStatus('folder-status', '请输入文件夹路径', 'error');
+            // Check if files were selected via folder picker
+            if (window.selectedFolderFiles && window.selectedFolderFiles.length > 0) {
+                await importSelectedFiles(userId, kbName);
                 return;
             }
 
-            showStatus('folder-status', '正在导入文件夹...', 'info');
+            // Fallback to server-side folder import
+            if (!folderPath) {
+                showStatus('folder-status', '请选择文件夹或输入文件夹路径', 'error');
+                return;
+            }
+
+            showStatus('folder-status', '正在通过服务器导入文件夹...', 'info');
             updateProgress('folder-progress', 20);
 
             try {
@@ -332,6 +359,60 @@ async def document_management_ui():
                 } else {
                     showStatus('folder-status', '导入失败', 'error');
                 }
+
+            } catch (error) {
+                showStatus('folder-status', '导入失败: ' + error.message, 'error');
+            }
+        }
+
+        async function importSelectedFiles(userId, kbName) {
+            const files = window.selectedFolderFiles;
+            
+            showStatus('folder-status', '正在上传选中的文件...', 'info');
+            updateProgress('folder-progress', 10);
+
+            try {
+                // Create knowledge base if needed
+                await fetch('/api/v1/users/' + userId + '/kbs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'kb_name=' + encodeURIComponent(kbName)
+                });
+
+                updateProgress('folder-progress', 20);
+
+                // Upload files
+                let uploadedCount = 0;
+                for (let i = 0; i < files.length; i++) {
+                    const formData = new FormData();
+                    formData.append('file', files[i]);
+
+                    await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    uploadedCount++;
+                    updateProgress('folder-progress', 20 + (uploadedCount / files.length) * 60);
+                }
+
+                // Ingest documents
+                updateProgress('folder-progress', 90);
+                await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/ingest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        acl: { read: [userId], write: [userId] }
+                    })
+                });
+
+                updateProgress('folder-progress', 100);
+                showStatus('folder-status', '成功导入 ' + files.length + ' 个文档！', 'success');
+                
+                // Clear selected files
+                window.selectedFolderFiles = null;
+                document.getElementById('folder-input').value = '';
+                document.getElementById('folder-path').value = '';
 
             } catch (error) {
                 showStatus('folder-status', '导入失败: ' + error.message, 'error');

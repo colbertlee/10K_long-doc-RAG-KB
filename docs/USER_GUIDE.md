@@ -104,7 +104,8 @@ The document management interface includes three main feature tabs:
 - Support for PDF, Word, Markdown, Text formats
 
 #### 2. 📁 Folder Import
-- Local folder path input
+- Folder selection via browser file picker
+- Local folder path input (alternative method)
 - One-click import of entire folders
 - Import progress and statistics display
 - Automatic duplicate file skipping
@@ -126,8 +127,12 @@ The document management interface includes three main feature tabs:
 #### Import Folder
 1. Select "Folder Import" tab
 2. Enter user ID and knowledge base name
-3. Enter local folder path (e.g., `C:\Users\YourName\Documents\KB`)
+3. Choose one of the following methods:
+   - **Method 1 (Recommended)**: Click "Select Folder" button and choose a folder from your computer
+   - **Method 2**: Manually enter the local folder path (e.g., `C:\Users\YourName\Documents\KB`)
 4. Click "Start Import"
+
+**Note**: The folder selection method works directly in the browser and uploads files from your selected folder. The manual path method requires server-side access to the specified folder.
 
 #### Manage Documents
 1. Select "Document Management" tab
