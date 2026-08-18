@@ -1,5 +1,18 @@
 # Release Notes
 
+## [0.1.5] - 2026-08-18
+
+### Fixes
+- Fixed NameError on startup (IncrementalIndexer undefined)
+- Removed IncrementalIndexer usage from user_manager.py
+- Removed unused imports from docs_ui.py
+- Fixed document management UI not loading issue
+
+### Improvements
+- Service now starts correctly
+- Document management UI is accessible
+- Resolved circular dependency issues
+
 ## [0.1.4] - 2026-08-18
 
 ### New Features
