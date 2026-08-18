@@ -1,7 +1,19 @@
 ﻿# Release Notes
+## [0.2.4] - 2026-08-18
+
+### Release Notes
+- Version bump from 0.2.3 to 0.2.4
+- For detailed changes, see commit history
+
 ## [0.2.3] - 2026-08-18
 
 ### Release Notes
+## [0.2.4] - 2026-08-18
+
+### Release Notes
+- Version bump from 0.2.3 to 0.2.4
+- For detailed changes, see commit history
+
 - Version bump from 0.2.2 to 0.2.3
 - For detailed changes, see commit history
 
@@ -380,3 +392,4 @@
 - Documentation: See README.md and /docs directory
 - Issues: Please report via GitHub Issues
 - References: RAG_KB_Plan.html and RAG_KB_Implementation_Framework.html
+
