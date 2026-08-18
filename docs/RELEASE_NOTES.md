@@ -1,5 +1,41 @@
 ﻿# Release Notes
 
+## [0.2.7] - 2026-08-18
+
+### Release Notes
+- Fixed upgrade.ps1 script to handle Git conflicts with untracked files
+- Updated upgrade documentation to remove PyPI references
+- Added git stash to prevent conflicts with local config files
+- Improved error handling for Git operations
+- Fixed version display after upgrade
+
+### Changes Made
+
+#### Upgrade Script Fixes:
+- Added automatic git stash before pulling updates
+- Prevents conflicts with configs/config.yaml and other local files
+- Better error handling and user feedback
+- Re-reads version after update to display correct version
+- Handles untracked files gracefully
+
+#### Documentation Updates:
+- Updated UPGRADE_GUIDE.md to remove PyPI upgrade methods
+- Updated UPGRADE_GUIDE_CN.md to remove PyPI upgrade methods
+- Added clear warning that project is not published to PyPI
+- Documented correct upgrade methods using GitHub only
+
+### Benefits
+- ✅ Upgrade script now works correctly with local config files
+- ✅ No more Git conflicts during upgrade
+- ✅ Accurate version display after upgrade
+- ✅ Better user experience for upgrades
+- ✅ Clear documentation on upgrade process
+
+### Fixes
+- Fixed upgrade.ps1 failing on configs/config.yaml conflicts
+- Fixed version display showing old version after upgrade
+- Fixed documentation suggesting non-working PyPI commands
+
 ## [0.2.6] - 2026-08-18
 
 ### Release Notes
