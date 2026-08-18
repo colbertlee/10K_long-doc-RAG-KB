@@ -263,4 +263,5 @@ For issues and questions, please refer to the project documentation or create an
 - [Upgrade Guide](docs/UPGRADE_GUIDE.md)
 - [Release Notes](docs/RELEASE_NOTES.md)
 - [Open WebUI Integration Guide](docs/OPENWEBUI_INTEGRATION.md)
+- [Open WebUI iframe Integration](docs/OPENWEBUI_IFRAME_INTEGRATION.md)
 - [Naming Conventions](docs/NAMING_CONVENTIONS.md)

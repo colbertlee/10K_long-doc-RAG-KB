@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档管理 - RAG知识库</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-primary:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .main-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+        
+        .status-dot.warning {
+            background: #ff9800;
+        }
+        
+        .status-dot.error {
+            background: #f44336;
+        }
+        
+        .iframe-container {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .action-card h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .action-card p {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .main-container {
+                padding: 10px;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>📚 RAG知识库文档管理</h1>
+            <p>上传、导入和管理您的文档</p>
+        </div>
+        <div class="header-actions">
+            <a href="http://localhost:8000/docs/docs-ui" target="_blank" class="btn btn-primary">
+                🔗 新窗口打开
+            </a>
+            <a href="http://localhost:8080" class="btn btn-secondary">
+                💬 返回Open WebUI
+            </a>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="rag-status"></div>
+                <span>RAG知识库服务: <span id="rag-status-text">检查中...</span></span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="webui-status"></div>
+                <span>Open WebUI: <span id="webui-status-text">检查中...</span></span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="ollama-status"></div>
+                <span>Ollama服务: <span id="ollama-status-text">检查中...</span></span>
+            </div>
+        </div>
+        
+        <div class="iframe-container">
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">正在加载文档管理界面...</div>
+            </div>
+            <iframe 
+                src="http://localhost:8000/docs/docs-ui" 
+                title="文档管理界面"
+                allow="clipboard-write; clipboard-read"
+                onload="hideLoading()"
+                onerror="showError()">
+            </iframe>
+        </div>
+    </div>
+    
+    <script>
+        // 检查服务状态
+        async function checkServices() {
+            // 检查RAG知识库服务
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                updateStatus('rag-status', 'rag-status-text', data.status === 'ok', '运行中');
+                updateStatus('ollama-status', 'ollama-status-text', data.ollama_status === 'running', data.ollama_status);
+            } catch (error) {
+                updateStatus('rag-status', 'rag-status-text', false, '未运行');
+                updateStatus('ollama-status', 'ollama-status-text', false, '未知');
+            }
+            
+            // 检查Open WebUI服务
+            try {
+                const response = await fetch('http://localhost:8080');
+                updateStatus('webui-status', 'webui-status-text', true, '运行中');
+            } catch (error) {
+                updateStatus('webui-status', 'webui-status-text', false, '未运行');
+            }
+        }
+        
+        function updateStatus(dotId, textId, isRunning, statusText) {
+            const dot = document.getElementById(dotId);
+            const text = document.getElementById(textId);
+            
+            if (isRunning) {
+                dot.className = 'status-dot';
+            } else {
+                dot.className = 'status-dot error';
+            }
+            
+            text.textContent = statusText;
+        }
+        
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('hidden');
+        }
+        
+        function showError() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.innerHTML = `
+                <div style="text-align: center; color: #f44336;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                    <div style="font-size: 18px; margin-bottom: 10px;">加载失败</div>
+                    <div style="font-size: 14px; color: #666;">无法连接到文档管理界面</div>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        重新加载
+                    </button>
+                </div>
+            `;
+        }
+        
+        // 页面加载时检查服务
+        window.addEventListener('load', checkServices);
+        
+        // 每30秒检查一次服务状态
+        setInterval(checkServices, 30000);
+    </script>
+</body>
+</html>

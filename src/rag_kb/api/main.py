@@ -4,9 +4,11 @@ import json
 import asyncio
 import requests
 from typing import AsyncIterator
+from pathlib import Path
 from fastapi import FastAPI, File, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from rag_kb.config import settings
 from rag_kb.ingest.pipeline import IngestPipeline
 from rag_kb.lightrag.adapter import LightRAGAdapter
@@ -25,9 +27,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files directory
+static_dir = Path(__file__).parent.parent.parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # Include routers
 app.include_router(docs_ui_router, prefix="/docs")
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get('/openwebui-integration')
+async def openwebui_integration():
+    """Open WebUI integration page with iframe."""
+    static_file = static_dir / "openwebui_integration.html"
+    if static_file.exists():
+        return HTMLResponse(content=static_file.read_text(encoding='utf-8'))
+    return HTMLResponse(content="<h1>Integration page not found</h1>", status_code=404)
 
 
 @app.get('/health')
@@ -52,13 +68,14 @@ def health():
         return {
             'status': 'ok',
             'service': 'rag-kb',
-            'version': '0.1.6',
+            'version': '0.1.8',
             'data_dir_exists': data_dir_exists,
             'ollama_status': ollama_status,
             'endpoints': {
                 'api_docs': '/docs',
                 'docs_ui': '/docs/docs-ui',
-                'current_user': '/api/v1/current-user'
+                'current_user': '/api/v1/current-user',
+                'openwebui_integration': '/openwebui-integration'
             }
         }
     except Exception as e:
