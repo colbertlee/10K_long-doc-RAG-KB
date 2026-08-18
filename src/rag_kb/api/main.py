@@ -37,6 +37,44 @@ if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
+@app.get('/openwebui-integration')
+async def openwebui_integration():
+    """Open WebUI integration page."""
+    integration_file = static_dir / "openwebui_integration.html"
+    if integration_file.exists():
+        return HTMLResponse(content=integration_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>Open WebUI Integration</title></head>
+        <body>
+        <h1>Open WebUI Integration</h1>
+        <p>Integration page not found. Please ensure static files are properly configured.</p>
+        <p>Expected file: static/openwebui_integration.html</p>
+        </body>
+        </html>
+        """)
+
+
+@app.get('/rag-kb-integration')
+async def rag_kb_integration():
+    """RAG KB integration page."""
+    integration_file = static_dir / "rag_kb_integration.html"
+    if integration_file.exists():
+        return HTMLResponse(content=integration_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>RAG KB Integration</title></head>
+        <body>
+        <h1>RAG KB Integration</h1>
+        <p>Integration page not found. Please ensure static files are properly configured.</p>
+        <p>Expected file: static/rag_kb_integration.html</p>
+        </body>
+        </html>
+        """)
+
+
 @app.get('/health')
 def health():
     """Health check endpoint with detailed status."""
@@ -59,7 +97,7 @@ def health():
         return {
             'status': 'ok',
             'service': 'rag-kb',
-            'version': '0.1.8',
+            'version': '0.3.0',
             'data_dir_exists': data_dir_exists,
             'ollama_status': ollama_status,
             'endpoints': {

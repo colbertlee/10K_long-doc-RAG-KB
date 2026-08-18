@@ -1,5 +1,38 @@
 ﻿# Release Notes
 
+## [0.3.0] - 2026-08-18
+
+### Release Notes
+- Added missing integration endpoints (/openwebui-integration and /rag-kb-integration)
+- Fixed 404 errors for integration pages
+- Improved folder selection functionality
+- Added proper error handling for integration endpoints
+- Updated health check to reflect current version
+
+### Changes Made
+
+#### API Endpoints:
+- Added /openwebui-integration endpoint serving static HTML
+- Added /rag-kb-integration endpoint serving static HTML
+- Added fallback HTML when static files are missing
+- Fixed 404 errors reported by users
+
+#### Integration Improvements:
+- Integration pages now properly accessible
+- Better error messages for missing static files
+- Improved user experience for integration workflows
+
+### Benefits
+- ✅ Integration endpoints now work correctly
+- ✅ No more 404 errors for integration pages
+- ✅ Better error handling and user feedback
+- ✅ Improved integration workflow
+
+### Fixes
+- Fixed 404 Not Found errors for /openwebui-integration
+- Fixed 404 Not Found errors for /rag-kb-integration
+- Fixed health check version display
+
 ## [0.2.9] - 2026-08-18
 
 ### Release Notes
