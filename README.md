@@ -84,7 +84,17 @@ This will start:
 - Ollama service (localhost:11434)
 - FastAPI backend (localhost:8000)
 - Document Management UI (auto-opens in browser)
-- Open WebUI (localhost:8080, if installed)
+
+### Starting Open WebUI
+
+Open WebUI uses Python 3.12 for compatibility. Start it separately with:
+
+`powershell
+# Start Open WebUI
+.\scripts\open_webui.ps1
+`
+
+**Note**: Open WebUI may show HuggingFace model download warnings during startup, but this does not affect basic functionality.
 
 ### Accessing Interfaces
 
@@ -92,12 +102,15 @@ After starting services, you can access the following interfaces:
 
 - **Document Management UI**: http://localhost:8000/docs/docs-ui
 - **API Documentation**: http://localhost:8000/docs
-- **Open WebUI**: http://localhost:8080 (if installed)
+- **Open WebUI**: http://localhost:8080 (if started separately)
 
 The Document Management UI provides:
 - 📄 Document upload (with drag-and-drop support)
 - 📁 Local folder import
-- 📋 Document management and statistics
+- 🗄️ Knowledge base management
+- 🕸️ Knowledge graph visualization
+
+For detailed integration instructions, see [Open WebUI Integration Guide](docs/OPENWEBUI_INTEGRATION.md).
 
 ### Manual Startup
 

@@ -21,13 +21,31 @@ Start-Sleep -Seconds 3
 # Start Open WebUI (if installed and not disabled)
 if (-not $NoOpenWebUI) {
     Write-Host "Starting Open WebUI with Ollama configuration..." -ForegroundColor Yellow
+    Write-Host "Using Python 3.12 for Open WebUI" -ForegroundColor Cyan
     try {
+        # Load environment variables from .env file
+        if (Test-Path ".env") {
+            Get-Content ".env" | ForEach-Object {
+                if ($_ -match '^([^#].+?)=(.+)$') {
+                    $name = $matches[1].Trim()
+                    $value = $matches[2].Trim()
+                    [Environment]::SetEnvironmentVariable($name, $value, "Process")
+                }
+            }
+        }
+        
+        # Set environment variables for Ollama embeddings
+        $env:RAG_EMBEDDING_ENGINE = "ollama"
+        $env:RAG_EMBEDDING_MODEL = "nomic-embed-text"
+        $env:RAG_EMBEDDING_FUNCTION = "false"
+        
+        $python312 = "py"
         $envArgs = @(
-            "serve",
-            "--ollama-embedding-model", "nomic-embed-text",
-            "--embedding-engine", "ollama"
+            "-3.12",
+            "-c",
+            "from open_webui import serve; serve()"
         )
-        $webui = Start-Process open-webui -ArgumentList $envArgs -PassThru
+        $webui = Start-Process $python312 -ArgumentList $envArgs -PassThru
         Write-Host "Open WebUI started successfully with Ollama embeddings" -ForegroundColor Green
     } catch {
         Write-Host "Open WebUI not found. Skipping..." -ForegroundColor Yellow
@@ -43,6 +61,7 @@ Write-Host "RAG KB services started." -ForegroundColor Green
 Write-Host "FastAPI backend: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "API docs: http://localhost:8000/docs" -ForegroundColor Cyan
 Write-Host "Document Management UI: http://localhost:8000/docs/docs-ui" -ForegroundColor Cyan
+Write-Host "Complete Integration: http://localhost:8000/rag-kb-integration" -ForegroundColor Cyan
 if ($webui) {
     Write-Host "Open WebUI: http://localhost:8080" -ForegroundColor Cyan
 }

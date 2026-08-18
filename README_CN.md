@@ -84,7 +84,17 @@
 - Ollama 服务（localhost:11434）
 - FastAPI 后端（localhost:8000）
 - 文档管理界面（自动在浏览器中打开）
-- Open WebUI（localhost:8080，如果已安装）
+
+### 启动 Open WebUI
+
+Open WebUI 使用 Python 3.12 启动，单独启动：
+
+`powershell
+# 启动 Open WebUI
+.\scripts\open_webui.ps1
+`
+
+**注意**: Open WebUI 启动时可能会显示 HuggingFace 模型下载警告，但这不影响基本功能。
 
 ### 访问界面
 
@@ -92,12 +102,15 @@
 
 - **文档管理界面**: http://localhost:8000/docs/docs-ui
 - **API 文档**: http://localhost:8000/docs
-- **Open WebUI**: http://localhost:8080（如果已安装）
+- **Open WebUI**: http://localhost:8080（如果单独启动）
 
 文档管理界面提供：
 - 📄 文档上传（支持拖拽）
 - 📁 本地文件夹导入
-- 📋 文档管理和统计
+- 🗄️ 知识库管理
+- 🕸️ 知识图谱可视化
+
+详细的集成说明请参阅 [Open WebUI 集成指南](docs/OPENWEBUI_INTEGRATION_CN.md)。
 
 ### 手动启动
 

@@ -27,23 +27,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files directory
-static_dir = Path(__file__).parent.parent.parent.parent / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
 # Include routers
 app.include_router(docs_ui_router, prefix="/docs")
 app.include_router(api_router, prefix="/api/v1")
 
-
-@app.get('/openwebui-integration')
-async def openwebui_integration():
-    """Open WebUI integration page with iframe."""
-    static_file = static_dir / "openwebui_integration.html"
-    if static_file.exists():
-        return HTMLResponse(content=static_file.read_text(encoding='utf-8'))
-    return HTMLResponse(content="<h1>Integration page not found</h1>", status_code=404)
+# Mount static files directory (after routers to avoid conflicts)
+static_dir = Path(__file__).parent.parent.parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.get('/health')
@@ -75,7 +66,8 @@ def health():
                 'api_docs': '/docs',
                 'docs_ui': '/docs/docs-ui',
                 'current_user': '/api/v1/current-user',
-                'openwebui_integration': '/openwebui-integration'
+                'openwebui_integration': '/openwebui-integration',
+                'rag_kb_integration': '/rag-kb-integration'
             }
         }
     except Exception as e:

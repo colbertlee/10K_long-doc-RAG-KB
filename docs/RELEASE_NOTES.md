@@ -1,4 +1,48 @@
 ﻿# Release Notes
+
+## [0.2.6] - 2026-08-18
+
+### Release Notes
+- Updated Open WebUI integration to use Python 3.12 for compatibility
+- Simplified integration approach to use separate interfaces
+- Updated documentation to reflect current integration method
+- Removed complex iframe integration due to routing conflicts
+- Open WebUI now runs independently with HuggingFace warnings (non-critical)
+- Document management UI remains fully functional with all features
+
+### Changes Made
+
+#### Open WebUI Integration:
+- Updated open_webui.ps1 to use Python 3.12 via `py -3.12`
+- Configured Open WebUI to use Ollama embeddings (nomic-embed-text)
+- Added environment variable configuration in .env file
+- Simplified startup scripts for better reliability
+
+#### Documentation Updates:
+- Updated OPENWEBUI_INTEGRATION.md with simplified integration guide
+- Updated OPENWEBUI_INTEGRATION_CN.md with Chinese version
+- Updated README.md to reflect current integration approach
+- Updated README_CN.md with Chinese version
+- Removed references to complex iframe integration
+
+#### Code Cleanup:
+- Removed duplicate integration routes
+- Simplified main.py routing structure
+- Cleaned up docs_ui.py integration endpoints
+- Removed unused static file integration attempts
+
+### Benefits
+- ✅ More reliable Open WebUI startup
+- ✅ Clearer separation of concerns
+- ✅ Better documentation accuracy
+- ✅ Simplified user workflow
+- ✅ All core functionality preserved
+
+### Known Issues
+- Open WebUI shows HuggingFace model download warnings during startup (non-critical)
+- This does not affect basic chat and query functionality
+- Users can safely ignore these warnings
+
 ## [0.2.5] - 2026-08-18
 
 ### Release Notes
@@ -14,27 +58,8 @@
 ## [0.2.3] - 2026-08-18
 
 ### Release Notes
-## [0.2.5] - 2026-08-18
-
-### Release Notes
-- Version bump from 0.2.4 to 0.2.5
-- For detailed changes, see commit history
-
-## [0.2.4] - 2026-08-18
-
-### Release Notes
-## [0.2.5] - 2026-08-18
-
-### Release Notes
-- Version bump from 0.2.4 to 0.2.5
-- For detailed changes, see commit history
-
-- Version bump from 0.2.3 to 0.2.4
-- For detailed changes, see commit history
-
 - Version bump from 0.2.2 to 0.2.3
 - For detailed changes, see commit history
-
 
 ## [0.2.2] - 2026-08-18
 
@@ -410,5 +435,3 @@
 - Documentation: See README.md and /docs directory
 - Issues: Please report via GitHub Issues
 - References: RAG_KB_Plan.html and RAG_KB_Implementation_Framework.html
-
-
