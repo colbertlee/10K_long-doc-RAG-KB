@@ -7,8 +7,14 @@ from pathlib import Path
 from typing import Optional
 import shutil
 import json
+import os
 
 router = APIRouter()
+
+
+def get_current_user_id():
+    """Get current user ID from environment or default."""
+    return os.environ.get('RAGKB_CURRENT_USER', 'default')
 
 
 @router.get("/docs-ui", response_class=HTMLResponse)
@@ -92,7 +98,8 @@ async def document_management_ui():
                 <h2>上传文档</h2>
                 <div class="form-group">
                     <label>用户ID</label>
-                    <input type="text" id="upload-user-id" value="default" placeholder="输入用户ID">
+                    <input type="text" id="upload-user-id" value="" placeholder="输入用户ID">
+                    <small style="color: #666;">当前登录用户</small>
                 </div>
                 <div class="form-group">
                     <label>知识库名称</label>
@@ -115,7 +122,8 @@ async def document_management_ui():
                 <h2>导入本地文件夹</h2>
                 <div class="form-group">
                     <label>用户ID</label>
-                    <input type="text" id="folder-user-id" value="default" placeholder="输入用户ID">
+                    <input type="text" id="folder-user-id" value="" placeholder="输入用户ID">
+                    <small style="color: #666;">当前登录用户</small>
                 </div>
                 <div class="form-group">
                     <label>知识库名称</label>
@@ -140,7 +148,8 @@ async def document_management_ui():
                 <h2>文档管理</h2>
                 <div class="form-group">
                     <label>用户ID</label>
-                    <input type="text" id="manage-user-id" value="default" placeholder="输入用户ID">
+                    <input type="text" id="manage-user-id" value="" placeholder="输入用户ID">
+                    <small style="color: #666;">当前登录用户</small>
                 </div>
                 <div class="form-group">
                     <label>知识库名称</label>
@@ -165,6 +174,35 @@ async def document_management_ui():
     </div>
 
     <script>
+        // Load current user ID on page load
+        async function loadCurrentUserId() {
+            try {
+                const response = await fetch('/api/v1/current-user');
+                const userData = await response.json();
+                const currentUserId = userData.user_id || 'default';
+                
+                // Set current user ID in all input fields
+                document.getElementById('upload-user-id').value = currentUserId;
+                document.getElementById('folder-user-id').value = currentUserId;
+                document.getElementById('manage-user-id').value = currentUserId;
+                
+                // Update placeholder text
+                document.getElementById('upload-user-id').placeholder = `当前用户: ${currentUserId}`;
+                document.getElementById('folder-user-id').placeholder = `当前用户: ${currentUserId}`;
+                document.getElementById('manage-user-id').placeholder = `当前用户: ${currentUserId}`;
+            } catch (error) {
+                console.error('Failed to load current user:', error);
+                // Fallback to default
+                const defaultUser = 'default';
+                document.getElementById('upload-user-id').value = defaultUser;
+                document.getElementById('folder-user-id').value = defaultUser;
+                document.getElementById('manage-user-id').value = defaultUser;
+            }
+        }
+        
+        // Load current user when page loads
+        window.addEventListener('DOMContentLoaded', loadCurrentUserId);
+
         function switchTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));

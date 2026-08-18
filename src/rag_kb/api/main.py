@@ -2,23 +2,70 @@
 
 import json
 import asyncio
+import requests
 from typing import AsyncIterator
 from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from rag_kb.config import settings
 from rag_kb.ingest.pipeline import IngestPipeline
 from rag_kb.lightrag.adapter import LightRAGAdapter
 from rag_kb.security.acl import build_acl_filter
 from rag_kb.api.docs_ui import router as docs_ui_router
+from rag_kb.api.routes import router as api_router
 
 app = FastAPI(title=settings.app_name)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
 app.include_router(docs_ui_router, prefix="/docs")
+app.include_router(api_router, prefix="/api/v1")
 
 
 @app.get('/health')
 def health():
-    """Health check endpoint."""
-    return {'status': 'ok'}
+    """Health check endpoint with detailed status."""
+    try:
+        # Check if data directory exists
+        data_dir_exists = settings.data_dir.exists()
+        
+        # Check if Ollama is accessible (simple check)
+        ollama_status = "unknown"
+        try:
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('localhost', 11434))
+            sock.close()
+            ollama_status = "running" if result == 0 else "not_running"
+        except:
+            ollama_status = "not_running"
+        
+        return {
+            'status': 'ok',
+            'service': 'rag-kb',
+            'version': '0.1.6',
+            'data_dir_exists': data_dir_exists,
+            'ollama_status': ollama_status,
+            'endpoints': {
+                'api_docs': '/docs',
+                'docs_ui': '/docs/docs-ui',
+                'current_user': '/api/v1/current-user'
+            }
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'error': str(e)
+        }
 
 
 @app.post('/api/v1/ingest')

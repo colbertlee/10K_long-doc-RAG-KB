@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from rag_kb.models import Document
 from rag_kb.ingest.pipeline import IngestPipeline
+from rag_kb.utils.validation import validate_user_id, validate_kb_name, sanitize_path_component
 
 
 class UserDataManager:
@@ -28,7 +29,13 @@ class UserDataManager:
         Returns:
             Path to user's data folder
         """
-        user_folder = self.base_data_dir / user_id
+        # Validate and sanitize user ID
+        is_valid, error_msg = validate_user_id(user_id)
+        if not is_valid:
+            raise ValueError(f"Invalid user ID: {error_msg}")
+        
+        sanitized_user_id = sanitize_path_component(user_id)
+        user_folder = self.base_data_dir / sanitized_user_id
         user_folder.mkdir(parents=True, exist_ok=True)
         return user_folder
     
@@ -42,8 +49,18 @@ class UserDataManager:
         Returns:
             Path to the knowledge base folder
         """
+        # Validate user ID and knowledge base name
+        is_valid_user, user_error = validate_user_id(user_id)
+        if not is_valid_user:
+            raise ValueError(f"Invalid user ID: {user_error}")
+        
+        is_valid_kb, kb_error = validate_kb_name(kb_name)
+        if not is_valid_kb:
+            raise ValueError(f"Invalid knowledge base name: {kb_error}")
+        
         user_folder = self.get_user_folder(user_id)
-        kb_folder = user_folder / kb_name
+        sanitized_kb_name = sanitize_path_component(kb_name)
+        kb_folder = user_folder / sanitized_kb_name
         kb_folder.mkdir(parents=True, exist_ok=True)
         
         # Create subdirectories

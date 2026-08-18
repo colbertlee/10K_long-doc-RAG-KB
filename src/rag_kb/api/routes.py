@@ -8,10 +8,25 @@ from fastapi.responses import StreamingResponse
 from rag_kb.lightrag.adapter import LightRAGAdapter
 from rag_kb.ingest.user_manager import UserDataManager
 from rag_kb.config import settings
+from rag_kb.utils.validation import validate_user_id, validate_kb_name, get_current_user
 
 router = APIRouter()
 rag = LightRAGAdapter()
 user_manager = UserDataManager(settings.data_dir / "users")
+
+
+@router.get('/current-user')
+async def get_current_user_endpoint():
+    """Get current logged-in user ID.
+    
+    Returns:
+        Current user information
+    """
+    current_user = get_current_user()
+    return {
+        "user_id": current_user,
+        "authenticated": current_user != "default"
+    }
 
 
 def extract_sources(answer):
@@ -56,6 +71,15 @@ async def create_user_kb(user_id: str, kb_name: str = Form(...)):
     Returns:
         Knowledge base creation result
     """
+    # Validate inputs
+    is_valid_user, user_error = validate_user_id(user_id)
+    if not is_valid_user:
+        raise HTTPException(status_code=400, detail=f"Invalid user ID: {user_error}")
+    
+    is_valid_kb, kb_error = validate_kb_name(kb_name)
+    if not is_valid_kb:
+        raise HTTPException(status_code=400, detail=f"Invalid knowledge base name: {kb_error}")
+    
     try:
         kb_path = user_manager.create_user_kb(user_id, kb_name)
         return {
@@ -64,6 +88,8 @@ async def create_user_kb(user_id: str, kb_name: str = Form(...)):
             "kb_name": kb_name,
             "kb_path": str(kb_path)
         }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
