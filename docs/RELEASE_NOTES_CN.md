@@ -1,5 +1,24 @@
 ﻿# 发布说明
 
+## [0.2.8] - 2026-08-18
+
+### 发布说明
+- 修复pyproject.toml中的UTF-8 BOM导致pip安装失败
+- 移除BOM以防止安装期间的tomllib.TOMLDecodeError
+- 文件现在使用标准UTF-8编码，不带BOM
+
+### 变更内容
+
+#### 错误修复:
+- 从pyproject.toml中移除UTF-8 BOM
+- BOM导致Python的tomllib解析文件失败
+- 现在使用标准UTF-8编码
+
+### 优势
+- ✅ pip install现在可以正常工作
+- ✅ 安装期间不再有TOMLDecodeError
+- ✅ 与Python的tomllib模块更好的兼容性
+
 ## [0.2.7] - 2026-08-18
 
 ### 发布说明

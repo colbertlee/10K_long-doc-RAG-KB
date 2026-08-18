@@ -1,5 +1,24 @@
 ﻿# Release Notes
 
+## [0.2.8] - 2026-08-18
+
+### Release Notes
+- Fixed UTF-8 BOM in pyproject.toml causing pip install failure
+- Removed BOM to prevent tomllib.TOMLDecodeError during installation
+- File now uses standard UTF-8 encoding without BOM
+
+### Changes Made
+
+#### Bug Fixes:
+- Removed UTF-8 BOM from pyproject.toml
+- BOM was causing Python's tomllib to fail parsing the file
+- Now uses standard UTF-8 encoding
+
+### Benefits
+- ✅ pip install now works correctly
+- ✅ No more TOMLDecodeError during installation
+- ✅ Better compatibility with Python's tomllib module
+
 ## [0.2.7] - 2026-08-18
 
 ### Release Notes
