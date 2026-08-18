@@ -1,5 +1,20 @@
 # Release Notes
 
+## [0.1.8] - 2026-08-18
+
+### Fixes
+- Fixed LightRAG v1.5.6 compatibility issues
+- Updated adapter to support new LightRAG API
+- Fixed EmbeddingFunc initialization errors
+- Added proper async LLM and embedding functions
+- Used wrap_embedding_func_with_attrs decorator
+
+### Testing
+- Verified health check endpoint works correctly
+- Tested current user API endpoint
+- Validated user ID and knowledge base name validation
+- Tested user and knowledge base creation functionality
+
 ## [0.1.7] - 2026-08-18
 
 ### New Features
