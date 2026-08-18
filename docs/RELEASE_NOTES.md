@@ -1,5 +1,31 @@
 # Release Notes
 
+## [0.1.2] - 2026-08-18
+
+### New Features
+- Modern document management web interface
+- Document upload functionality (with drag-and-drop support)
+- Local folder import interface
+- Document management and statistics features
+- Open WebUI integration support
+- Real-time progress display
+- Multi-user and knowledge base management interface
+
+### Improvements
+- Enhanced user experience
+- Visual document management
+- Simplified document import process
+- Support for batch operations
+
+### New Endpoints
+- GET /docs/docs-ui - Document management interface
+- Full document management operations support
+
+### Documentation Updates
+- Added Open WebUI integration guide
+- Updated user guide with new UI features
+- Detailed interface usage instructions
+
 ## [0.1.1] - 2026-08-17
 
 ### New Features
