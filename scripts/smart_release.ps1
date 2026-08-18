@@ -91,8 +91,8 @@ Write-Host ""
 
 # Confirm release
 if (-not $DryRun) {
-    $response = Read-Host "Continue with release? (y/N)"
-    if ($response -ne 'y' -and $response -ne 'Y') {
+    $response = Read-Host "Continue with release? (Y/n)"
+    if ($response -eq 'n' -or $response -eq 'N') {
         Write-Host "Release cancelled" -ForegroundColor Yellow
         exit 0
     }
