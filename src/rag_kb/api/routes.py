@@ -308,3 +308,68 @@ async def import_local_folder_simple(folder_path: str, user_id: str = "default",
         return await import_folder(user_id, kb_name, folder_path, acl)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/users/{user_id}/kbs/{kb_name}/graph')
+async def get_knowledge_graph(user_id: str, kb_name: str):
+    """Get knowledge graph data for visualization.
+    
+    Args:
+        user_id: User identifier
+        kb_name: Knowledge base name
+        
+    Returns:
+        Graph data with nodes and edges
+    """
+    try:
+        # Get the knowledge base directory
+        kb_folder = user_manager.get_user_folder(user_id) / kb_name
+        graph_file = kb_folder / "graph_data.json"
+        
+        # Check if graph data exists
+        if graph_file.exists():
+            import json
+            with open(graph_file, 'r', encoding='utf-8') as f:
+                graph_data = json.load(f)
+            return graph_data
+        else:
+            # Try to extract from LightRAG
+            try:
+                import networkx as nx
+                from pathlib import Path
+                
+                # Look for LightRAG graph files
+                lightrag_dir = kb_folder / "index"
+                if lightrag_dir.exists():
+                    # Try to read NetworkX graph if available
+                    vdb_files = list(lightrag_dir.glob("*.json"))
+                    if vdb_files:
+                        # Create a simple graph representation
+                        # This is a placeholder - actual implementation would parse LightRAG's internal format
+                        return {
+                            "nodes": [
+                                {"id": "entity1", "label": "示例实体1"},
+                                {"id": "entity2", "label": "示例实体2"},
+                                {"id": "entity3", "label": "示例实体3"}
+                            ],
+                            "edges": [
+                                {"source": "entity1", "target": "entity2", "label": "关系1"},
+                                {"source": "entity2", "target": "entity3", "label": "关系2"}
+                            ],
+                            "message": "示例数据 - 需要实现LightRAG图谱解析"
+                        }
+                
+                # Return empty graph if no data found
+                return {
+                    "nodes": [],
+                    "edges": [],
+                    "message": "没有找到知识图谱数据。请先导入文档以生成知识图谱。"
+                }
+            except ImportError:
+                return {
+                    "nodes": [],
+                    "edges": [],
+                    "message": "知识图谱可视化需要NetworkX库。请安装: pip install networkx"
+                }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

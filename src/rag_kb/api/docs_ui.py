@@ -100,6 +100,7 @@ async def document_management_ui():
                 <div class="tab active" onclick="switchTab('upload')">📄 文档上传</div>
                 <div class="tab" onclick="switchTab('folder')">📁 文件夹导入</div>
                 <div class="tab" onclick="switchTab('kbs')">🗄️ 知识库管理</div>
+                <div class="tab" onclick="switchTab('graph')">🕸️ 知识图谱</div>
                 <div class="tab" onclick="switchTab('manage')">📋 文档管理</div>
             </div>
 
@@ -190,6 +191,53 @@ async def document_management_ui():
                 </div>
             </div>
 
+            <!-- 知识图谱 -->
+            <div id="graph-tab" class="tab-content">
+                <h2>知识图谱可视化</h2>
+                <div class="form-group">
+                    <label>用户ID</label>
+                    <input type="text" id="graph-user-id" value="" placeholder="输入用户ID">
+                    <small style="color: #666;">当前登录用户</small>
+                </div>
+                <div class="form-group">
+                    <label>知识库名称</label>
+                    <select id="graph-kb-name" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="default">default</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" onclick="loadKnowledgeGraph()">🔄 加载知识图谱</button>
+                    <button class="btn btn-secondary" onclick="clearGraph()">🗑️ 清除图谱</button>
+                </div>
+                
+                <div id="graph-stats" class="stats-grid" style="display: none;">
+                    <div class="stat-card">
+                        <h3 id="graph-nodes">0</h3>
+                        <p>实体节点</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="graph-edges">0</h3>
+                        <p>关系边</p>
+                    </div>
+                </div>
+                
+                <div id="graph-container" style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 10px; background: #f8f9fa; display: none; position: relative;">
+                    <canvas id="graph-canvas" style="width: 100%; height: 100%;"></canvas>
+                    <div id="graph-info" style="position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px; font-size: 12px; display: none;">
+                        <strong>节点信息:</strong> <span id="node-info"></span>
+                    </div>
+                </div>
+                
+                <div id="graph-placeholder" style="text-align: center; padding: 60px; color: #666;">
+                    <p>🕸️ 知识图谱可视化</p>
+                    <p style="font-size: 14px; margin-top: 10px;">LightRAG在后台自动构建知识图谱，包含文档中的实体和关系。</p>
+                    <p style="font-size: 14px; margin-top: 10px;">点击"加载知识图谱"按钮查看图谱结构。</p>
+                    <div style="margin-top: 20px; font-size: 13px; color: #888;">
+                        <p>注意：需要先导入文档才能看到知识图谱</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- 文档管理 -->
             <div id="manage-tab" class="tab-content">
                 <h2>文档管理</h2>
@@ -235,12 +283,14 @@ async def document_management_ui():
                 document.getElementById('folder-user-id').value = currentUserId;
                 document.getElementById('manage-user-id').value = currentUserId;
                 document.getElementById('kb-user-id').value = currentUserId;
+                document.getElementById('graph-user-id').value = currentUserId;
                 
                 // Update placeholder text
                 document.getElementById('upload-user-id').placeholder = `当前用户: ${currentUserId}`;
                 document.getElementById('folder-user-id').placeholder = `当前用户: ${currentUserId}`;
                 document.getElementById('manage-user-id').placeholder = `当前用户: ${currentUserId}`;
                 document.getElementById('kb-user-id').placeholder = `当前用户: ${currentUserId}`;
+                document.getElementById('graph-user-id').placeholder = `当前用户: ${currentUserId}`;
             } catch (error) {
                 console.error('Failed to load current user:', error);
                 // Fallback to default
@@ -249,6 +299,7 @@ async def document_management_ui():
                 document.getElementById('folder-user-id').value = defaultUser;
                 document.getElementById('manage-user-id').value = defaultUser;
                 document.getElementById('kb-user-id').value = defaultUser;
+                document.getElementById('graph-user-id').value = defaultUser;
             }
         }
         
@@ -272,6 +323,11 @@ async def document_management_ui():
             // Auto-load KB list when switching to document management
             if (tabName === 'manage') {
                 loadKnowledgeBasesForSelect();
+            }
+            
+            // Auto-load KB list when switching to graph tab
+            if (tabName === 'graph') {
+                loadKnowledgeBasesForGraph();
             }
         }
 
@@ -631,6 +687,192 @@ async def document_management_ui():
             } catch (error) {
                 alert('获取统计信息失败: ' + error.message);
             }
+        }
+
+        // Knowledge Graph Visualization Functions
+        async function loadKnowledgeBasesForGraph() {
+            const userId = document.getElementById('graph-user-id').value;
+            const kbSelect = document.getElementById('graph-kb-name');
+            
+            try {
+                const response = await fetch('/api/v1/users/' + userId + '/kbs');
+                const data = await response.json();
+                
+                kbSelect.innerHTML = '<option value="default">default</option>';
+                
+                if (data.knowledge_bases && data.knowledge_bases.length > 0) {
+                    data.knowledge_bases.forEach(kb => {
+                        if (kb !== 'default') {
+                            const option = document.createElement('option');
+                            option.value = kb;
+                            option.textContent = kb;
+                            kbSelect.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load knowledge bases for graph:', error);
+            }
+        }
+
+        async function loadKnowledgeGraph() {
+            const userId = document.getElementById('graph-user-id').value;
+            const kbName = document.getElementById('graph-kb-name').value;
+            
+            try {
+                // Show loading state
+                document.getElementById('graph-placeholder').style.display = 'none';
+                document.getElementById('graph-container').style.display = 'block';
+                document.getElementById('graph-stats').style.display = 'grid';
+                
+                // Try to get graph data from LightRAG
+                const response = await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/graph');
+                
+                if (response.ok) {
+                    const graphData = await response.json();
+                    
+                    if (graphData.nodes && graphData.edges) {
+                        // Update stats
+                        document.getElementById('graph-nodes').textContent = graphData.nodes.length;
+                        document.getElementById('graph-edges').textContent = graphData.edges.length;
+                        
+                        // Draw graph
+                        drawGraph(graphData);
+                    } else {
+                        showGraphPlaceholder('没有找到知识图谱数据。请先导入文档以生成知识图谱。');
+                    }
+                } else {
+                    // Graph endpoint not available, show info
+                    showGraphPlaceholder('知识图谱可视化功能正在开发中。LightRAG在后台构建知识图谱，但可视化界面还需要进一步开发。');
+                }
+            } catch (error) {
+                showGraphPlaceholder('加载知识图谱失败: ' + error.message + '。此功能需要后端API支持。');
+            }
+        }
+
+        function showGraphPlaceholder(message) {
+            document.getElementById('graph-container').style.display = 'none';
+            document.getElementById('graph-stats').style.display = 'none';
+            document.getElementById('graph-placeholder').style.display = 'block';
+            document.getElementById('graph-placeholder').innerHTML = '<p style="color: #666;">' + message + '</p>';
+        }
+
+        function clearGraph() {
+            const canvas = document.getElementById('graph-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('graph-info').style.display = 'none';
+            showGraphPlaceholder('知识图谱已清除。点击"加载知识图谱"重新加载。');
+        }
+
+        function drawGraph(graphData) {
+            const canvas = document.getElementById('graph-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            
+            // Simple force-directed layout
+            const nodes = graphData.nodes.map((node, i) => ({
+                id: node.id || i,
+                label: node.label || node.id || 'Node ' + i,
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: 0,
+                vy: 0
+            }));
+            
+            const edges = graphData.edges.map(edge => ({
+                source: nodes.find(n => n.id === edge.source),
+                target: nodes.find(n => n.id === edge.target)
+            })).filter(e => e.source && e.target);
+            
+            // Simple layout simulation
+            for (let i = 0; i < 100; i++) {
+                // Repulsion between nodes
+                for (let j = 0; j < nodes.length; j++) {
+                    for (let k = j + 1; k < nodes.length; k++) {
+                        const dx = nodes[k].x - nodes[j].x;
+                        const dy = nodes[k].y - nodes[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const force = 1000 / (dist * dist);
+                        
+                        nodes[j].vx -= (dx / dist) * force;
+                        nodes[j].vy -= (dy / dist) * force;
+                        nodes[k].vx += (dx / dist) * force;
+                        nodes[k].vy += (dy / dist) * force;
+                    }
+                }
+                
+                // Attraction along edges
+                edges.forEach(edge => {
+                    const dx = edge.target.x - edge.source.x;
+                    const dy = edge.target.y - edge.source.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const force = (dist - 100) * 0.01;
+                    
+                    edge.source.vx += (dx / dist) * force;
+                    edge.source.vy += (dy / dist) * force;
+                    edge.target.vx -= (dx / dist) * force;
+                    edge.target.vy -= (dy / dist) * force;
+                });
+                
+                // Apply velocity
+                nodes.forEach(node => {
+                    node.x += node.vx;
+                    node.y += node.vy;
+                    node.vx *= 0.9;
+                    node.vy *= 0.9;
+                    
+                    // Keep in bounds
+                    node.x = Math.max(20, Math.min(canvas.width - 20, node.x));
+                    node.y = Math.max(20, Math.min(canvas.height - 20, node.y));
+                });
+            }
+            
+            // Draw edges
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            edges.forEach(edge => {
+                ctx.beginPath();
+                ctx.moveTo(edge.source.x, edge.source.y);
+                ctx.lineTo(edge.target.x, edge.target.y);
+                ctx.stroke();
+            });
+            
+            // Draw nodes
+            nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#667eea';
+                ctx.fill();
+                ctx.strokeStyle = '#5568d3';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw labels
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.label.substring(0, 10), node.x, node.y - 12);
+            });
+            
+            // Add click interaction
+            canvas.onclick = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                nodes.forEach(node => {
+                    const dx = x - node.x;
+                    const dy = y - node.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < 12) {
+                        document.getElementById('node-info').textContent = node.label;
+                        document.getElementById('graph-info').style.display = 'block';
+                    }
+                });
+            };
         }
 
         // Drag and drop handling
