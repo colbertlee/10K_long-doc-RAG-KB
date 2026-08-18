@@ -1,5 +1,55 @@
 # Release Notes
 
+## [0.2.2] - 2026-08-18
+
+### Bug Fixes
+- Fixed folder browse button error in document management UI
+- Implemented proper folder selection using browser file picker API
+- Replaced error alert with functional folder selection
+
+### New Features
+- Added browser-based folder selection for document import
+- Implemented dual import methods (browser picker + manual path)
+- Added file count display when folder is selected
+- Improved user feedback during folder import process
+
+### Changes Made
+
+#### Document Management UI (src/rag_kb/api/docs_ui.py):
+- Replace error alert with functional folder selection using webkitdirectory
+- Add HTML file input with webkitdirectory and directory attributes
+- Implement handleFolderSelect() function to process selected files
+- Add importSelectedFiles() function for browser-based file upload
+- Maintain backward compatibility with server-side folder import
+- Show file count and folder name when folder is selected
+- Provide clear user feedback during import process
+
+#### User Experience Improvements:
+- Users can now click "选择文件夹" button to select folders
+- System automatically uploads all files from selected folder
+- Shows number of files selected for import
+- Maintains manual path input as alternative method
+- Clear progress indication during file upload
+
+#### Documentation Updates:
+- Update troubleshooting guides with folder selection instructions
+- Update user guides with new folder import workflow
+- Add browser compatibility notes
+- Provide clear step-by-step instructions
+
+### Benefits
+- ✅ Folder selection now works in modern browsers
+- ✅ No more error alerts when browsing folders
+- ✅ Better user experience for folder import
+- ✅ Supports both browser-based and server-side import
+- ✅ Clear feedback during import process
+
+### Technical Details
+- Uses webkitdirectory attribute for Chrome/Edge support
+- Falls back to manual path input for server-side access
+- Maintains existing API endpoints for backward compatibility
+- Processes files through existing upload pipeline
+
 ## [0.2.1] - 2026-08-18
 
 ### Critical Fixes
