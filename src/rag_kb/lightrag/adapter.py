@@ -2,18 +2,60 @@
 
 import asyncio
 import json
+import os
+import numpy as np
 from pathlib import Path
+from functools import partial
 try:
     from lightrag import LightRAG, QueryParam
+    from lightrag.utils import EmbeddingFunc, wrap_embedding_func_with_attrs
+    from lightrag.llm.ollama import ollama_embed
 except ImportError:
-    # Fallback for testing without lightrag installed
     LightRAG = None
     QueryParam = None
-from rag_kb.lightrag.llm_funcs import ollama_llm
-from rag_kb.lightrag.embedding_funcs import ollama_embed
+    EmbeddingFunc = None
+    wrap_embedding_func_with_attrs = None
+    ollama_embed = None
 from rag_kb.config import settings
 
 NL = chr(10)
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    """LLM function for LightRAG using Ollama."""
+    import ollama
+    client = ollama.Client(host=settings.llm_base_url)
+    
+    messages = []
+    if system_prompt:
+        messages.append({'role': 'system', 'content': system_prompt})
+    messages.extend(history_messages)
+    messages.append({'role': 'user', 'content': prompt})
+    
+    resp = client.chat(
+        model=settings.llm_model,
+        messages=messages,
+        options={
+            'temperature': settings.llm_temperature,
+            'top_p': settings.llm_top_p,
+            'num_predict': settings.llm_max_tokens,
+        },
+    )
+    return resp['message']['content']
+
+
+@wrap_embedding_func_with_attrs(
+    embedding_dim=1024,
+    max_token_size=8192,
+)
+async def embedding_func(texts: list) -> np.ndarray:
+    """Embedding function for LightRAG using Ollama."""
+    import ollama
+    client = ollama.Client(host=settings.embedding_base_url)
+    resp = client.embed(model=settings.embedding_model, input=texts)
+    return np.array(resp['embeddings'], dtype=np.float32)
 
 
 class LightRAGAdapter:
@@ -30,12 +72,25 @@ class LightRAGAdapter:
         
         self.working_dir = Path(working_dir or settings.lightrag_working_dir)
         self.working_dir.mkdir(parents=True, exist_ok=True)
-        self.rag = LightRAG(
-            working_dir=str(self.working_dir),
-            llm_model_func=ollama_llm,
-            embedding_func=ollama_embed,
-            chunk_token_size=settings.lightrag_chunk_token_size,
-        )
+        
+        # Initialize LightRAG with proper async functions
+        try:
+            self.rag = LightRAG(
+                working_dir=str(self.working_dir),
+                llm_model_func=llm_model_func,
+                embedding_func=embedding_func,
+                chunk_token_size=settings.lightrag_chunk_token_size,
+            )
+        except Exception as e:
+            # Fallback with minimal configuration
+            try:
+                self.rag = LightRAG(
+                    working_dir=str(self.working_dir),
+                    llm_model_func=llm_model_func,
+                    embedding_func=embedding_func,
+                )
+            except Exception as e2:
+                raise ImportError(f"Failed to initialize LightRAG: {e}, {e2}")
 
     def insert_chunks(self, chunks):
         """Insert chunks into LightRAG index.
