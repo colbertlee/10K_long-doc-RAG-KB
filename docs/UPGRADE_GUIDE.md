@@ -39,6 +39,8 @@ The upgrade script will automatically:
 
 #### Method 2: Manual Upgrade
 
+**Standard Manual Upgrade:**
+
 ```bash
 # 1. Backup current data
 Copy-Item -Recurse data data_backup_$(Get-Date -Format 'yyyyMMdd')
@@ -58,6 +60,43 @@ pip install --upgrade -r requirements.txt
 
 # 5. Restart services
 .\scripts\start.ps1
+```
+
+**Manual Upgrade with Config File Conflicts:**
+
+If you encounter Git conflicts with `configs/config.yaml`:
+
+```powershell
+# 1. Backup your local config.yaml (if you need to keep your settings)
+Copy-Item configs\config.yaml configs\config.yaml.local.backup
+
+# 2. Remove or rename the conflicting config.yaml
+Remove-Item configs\config.yaml
+
+# 3. Pull latest code
+git pull origin master
+
+# 4. Reinstall
+pip install -e .
+
+# 5. Check version
+Get-Content pyproject.toml | Select-String "version"
+
+# 6. If needed, restore your config and merge new options
+# Copy-Item configs\config.yaml.local.backup configs\config.yaml
+# Then manually merge new configuration options
+```
+
+**Manual Upgrade Using Updated Script:**
+
+```powershell
+# First pull the latest upgrade script
+git fetch origin
+git checkout master
+git pull origin master
+
+# Then run the upgrade script
+.\scripts\upgrade.ps1
 ```
 
 #### Method 3: Upgrade to Specific Version

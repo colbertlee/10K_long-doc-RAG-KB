@@ -39,6 +39,8 @@ Select-String -Path "pyproject.toml" -Pattern 'version = "'
 
 #### 方法 2：手动升级
 
+**标准手动升级：**
+
 ```bash
 # 1. 备份当前数据
 Copy-Item -Recurse data data_backup_$(Get-Date -Format 'yyyyMMdd')
@@ -58,6 +60,43 @@ pip install --upgrade -r requirements.txt
 
 # 5. 重启服务
 .\scripts\start.ps1
+```
+
+**配置文件冲突时的手动升级：**
+
+如果遇到 `configs/config.yaml` 的 Git 冲突：
+
+```powershell
+# 1. 备份您的本地 config.yaml（如果需要保留配置）
+Copy-Item configs\config.yaml configs\config.yaml.local.backup
+
+# 2. 删除或重命名冲突的 config.yaml
+Remove-Item configs\config.yaml
+
+# 3. 拉取最新代码
+git pull origin master
+
+# 4. 重新安装
+pip install -e .
+
+# 5. 检查版本
+Get-Content pyproject.toml | Select-String "version"
+
+# 6. 如果需要，恢复您的配置并合并新选项
+# Copy-Item configs\config.yaml.local.backup configs\config.yaml
+# 然后手动合并新配置选项
+```
+
+**使用更新后的脚本手动升级：**
+
+```powershell
+# 先拉取最新的升级脚本
+git fetch origin
+git checkout master
+git pull origin master
+
+# 然后运行升级脚本
+.\scripts\upgrade.ps1
 ```
 
 #### 方法 3：升级到特定版本

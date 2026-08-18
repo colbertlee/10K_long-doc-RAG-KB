@@ -185,6 +185,106 @@ ollama list
    - 现代浏览器支持文件夹选择功能
    - 如遇问题，请尝试使用Chrome或Edge浏览器
 
+## 升级问题
+
+### 问题: Git pull 失败 - config.yaml 冲突
+
+**错误信息**:
+```
+error: The following untracked working tree files would be overwritten by merge:
+        configs/config.yaml
+```
+
+**原因**: 本地有未跟踪的 `configs/config.yaml` 文件，与远程版本冲突。
+
+**解决方案**:
+
+1. **备份本地配置**:
+   ```powershell
+   Copy-Item configs\config.yaml configs\config.yaml.local.backup
+   ```
+
+2. **删除冲突文件**:
+   ```powershell
+   Remove-Item configs\config.yaml
+   ```
+
+3. **重新拉取**:
+   ```powershell
+   git pull origin master
+   ```
+
+4. **合并配置**:
+   ```powershell
+   # 如果需要，恢复并手动合并
+   Copy-Item configs\config.yaml.local.backup configs\config.yaml
+   # 手动合并新的配置选项
+   ```
+
+### 问题: pip install 失败 - TOMLDecodeError
+
+**错误信息**:
+```
+tomllib.TOMLDecodeError: Invalid statement (at line 1, column 1)
+```
+
+**原因**: `pyproject.toml` 文件包含 UTF-8 BOM（字节顺序标记），导致 Python 的 tomllib 无法解析。
+
+**解决方案**:
+
+1. **移除 BOM**:
+   ```powershell
+   python -c "from pathlib import Path; f = Path('pyproject.toml'); content = f.read_bytes(); content = content.decode('utf-8-sig').encode('utf-8'); f.write_bytes(content)"
+   ```
+
+2. **重新安装**:
+   ```powershell
+   pip install -e .
+   ```
+
+### 问题: 升级后版本未更新
+
+**原因**: Git pull 失败或 pip install 未成功执行。
+
+**解决方案**:
+
+1. **检查 Git 状态**:
+   ```powershell
+   git status
+   ```
+
+2. **强制拉取**:
+   ```powershell
+   git fetch origin
+   git reset --hard origin/master
+   ```
+
+3. **重新安装**:
+   ```powershell
+   pip uninstall rag-kb
+   pip install -e .
+   ```
+
+4. **验证版本**:
+   ```powershell
+   Get-Content pyproject.toml | Select-String "version"
+   ```
+
+### 问题: upgrade.ps1 脚本失败
+
+**错误信息**: Git 操作失败或版本显示不正确。
+
+**解决方案**:
+
+1. **使用更新的脚本**:
+   ```powershell
+   git pull origin master
+   .\scripts\upgrade.ps1
+   ```
+
+2. **手动升级**:
+   参见上面的手动升级步骤。
+
 ## 获取帮助
 
 如果以上解决方案都无法解决您的问题：
