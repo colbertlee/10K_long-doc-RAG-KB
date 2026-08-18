@@ -1,30 +1,25 @@
-"""PyMuPDF-based PDF parser."""
+"""Text file parser."""
 
 import hashlib
 from pathlib import Path
-import fitz  # PyMuPDF
 from rag_kb.models import Document
 from rag_kb.parsers.base import BaseParser
 
 
-class PyMuPDFParser(BaseParser):
-    """PDF parser using PyMuPDF (fitz)."""
+class TextParser(BaseParser):
+    """Text file parser for .txt files."""
     
-    supported_ext = ('.pdf',)
+    supported_ext = ('.txt',)
 
     def parse(self, path: Path) -> Document:
-        """Parse PDF file and return Document."""
-        doc = fitz.open(path)
-        parts = []
-        for page in doc:
-            parts.append(page.get_text())
-        content = '\n\n'.join(parts)
+        """Parse text file and return Document."""
+        content = path.read_text(encoding='utf-8')
         file_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
         return Document(
             doc_id=file_hash[:16],
             title=path.stem,
             source=str(path),
             content=content,
-            metadata={'pages': len(doc), 'parser': 'pymupdf'},
+            metadata={'parser': 'text', 'lines': len(content.splitlines())},
             file_hash=file_hash,
         )
