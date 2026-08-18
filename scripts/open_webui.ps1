@@ -13,10 +13,24 @@ try {
     $openwebui = Get-Command open-webui -ErrorAction Stop
     Write-Host "Open WebUI found at: $($openwebui.Source)" -ForegroundColor Cyan
 } catch {
-    Write-Host "Open WebUI not found. Installing..." -ForegroundColor Yellow
-    Write-Host "Please run: pip install open-webui" -ForegroundColor Cyan
-    Write-Host "Then run this script again." -ForegroundColor Yellow
-    exit 1
+    Write-Host "Open WebUI not found." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Open WebUI requires manual installation due to npm dependencies." -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Installation options:" -ForegroundColor Yellow
+    Write-Host "1. Docker (Recommended):" -ForegroundColor White
+    Write-Host "   docker run -d -p 8080:8080 -v open-webui:/app/backend/data ghcr.io/open-webui/open-webui:main" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "2. Manual installation:" -ForegroundColor White
+    Write-Host "   Visit: https://docs.openwebui.com/getting-started/installation" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "3. Skip Open WebUI:" -ForegroundColor White
+    Write-Host "   Use the document management UI directly: http://localhost:8000/docs/docs-ui" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "For now, opening the document management UI instead..." -ForegroundColor Cyan
+    Start-Sleep -Seconds 3
+    Start-Process "http://localhost:8000/docs/docs-ui"
+    exit 0
 }
 
 # Check if Ollama is running
