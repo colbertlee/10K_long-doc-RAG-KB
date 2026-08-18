@@ -1,5 +1,25 @@
 # Release Notes
 
+## [0.1.4] - 2026-08-18
+
+### New Features
+- Created automatic upgrade script (scripts/upgrade.ps1)
+- Support for automatic version checking and upgrade
+- Support for specific version upgrade
+- Automatic backup functionality
+
+### Documentation Updates
+- Updated upgrade guide to reference new upgrade script
+- Updated installation guide with upgrade instructions
+- Updated user guide to ensure document management UI information is accurate
+- Updated README files with new features and documentation links
+- Ensured all documentation accurately reflects current functionality
+
+### Improvements
+- Improved documentation consistency
+- Added Open WebUI integration guide links
+- Enhanced documentation readability and completeness
+
 ## [0.1.3] - 2026-08-18
 
 ### Fixes
