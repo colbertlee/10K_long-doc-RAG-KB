@@ -67,12 +67,17 @@ try {
 # Pull latest changes
 Write-Host "拉取最新代码..." -ForegroundColor Yellow
 try {
+    # Stash any local changes (including untracked files) to avoid conflicts
+    Write-Host "暂存本地更改..." -ForegroundColor Yellow
+    git stash push -u -m "Auto-stash before upgrade" -ErrorAction SilentlyContinue
+    
     git fetch origin
     git checkout master
     git pull origin master
     Write-Host "代码更新完成" -ForegroundColor Green
 } catch {
-    Write-Host "Git操作失败，请手动更新代码" -ForegroundColor Red
+    Write-Host "Git操作失败: $_" -ForegroundColor Red
+    Write-Host "请手动处理冲突后重新运行脚本" -ForegroundColor Yellow
     exit 1
 }
 
@@ -80,13 +85,19 @@ try {
 if ($targetVersion -ne "latest" -and $targetVersion -ne $currentVersion) {
     Write-Host "切换到版本 $targetVersion..." -ForegroundColor Yellow
     try {
+        # Stash any local changes first
+        git stash -u
         git checkout "v$targetVersion"
         Write-Host "版本切换完成" -ForegroundColor Green
     } catch {
-        Write-Host "版本切换失败" -ForegroundColor Red
+        Write-Host "版本切换失败: $_" -ForegroundColor Red
         exit 1
     }
 }
+
+# Re-read version after update
+$newVersion = (Select-String -Path "pyproject.toml" -Pattern 'version = "').Line -replace '.*version = "(.*)".*', '$1'
+Write-Host "更新后版本: $newVersion" -ForegroundColor Cyan
 
 # Update dependencies
 Write-Host "更新依赖..." -ForegroundColor Yellow
@@ -119,5 +130,5 @@ Write-Host "重启服务..." -ForegroundColor Yellow
 Write-Host "请手动运行 .\scripts\start.ps1 启动服务" -ForegroundColor Cyan
 
 Write-Host "升级完成！" -ForegroundColor Green
-Write-Host "新版本: $targetVersion" -ForegroundColor Cyan
+Write-Host "新版本: $newVersion" -ForegroundColor Cyan
 Write-Host "备份位置: $backupDir" -ForegroundColor Cyan
