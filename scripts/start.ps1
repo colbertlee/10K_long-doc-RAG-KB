@@ -26,9 +26,14 @@ try {
 Write-Host "RAG KB services started." -ForegroundColor Green
 Write-Host "FastAPI backend: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "API docs: http://localhost:8000/docs" -ForegroundColor Cyan
+Write-Host "Document Management UI: http://localhost:8000/docs/docs-ui" -ForegroundColor Cyan
 if ($webui) {
     Write-Host "Open WebUI: http://localhost:8080" -ForegroundColor Cyan
 }
+Write-Host ""
+Write-Host "Opening Document Management UI in browser..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
+Start-Process "http://localhost:8000/docs/docs-ui"
 Write-Host ""
 Write-Host "Press Enter to stop all services..." -ForegroundColor Yellow
 Read-Host
