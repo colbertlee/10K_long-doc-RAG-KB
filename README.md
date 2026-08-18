@@ -151,6 +151,8 @@ rag-kb-project/
 ├── docs/                    # Documentation
 ├── scripts/                 # Utility scripts
 │   ├── start.ps1           # Service startup script
+│   ├── open_webui.ps1      # Open WebUI startup script
+│   ├── upgrade.ps1         # Automatic upgrade script
 │   └── ingest_bulk.py      # Bulk ingestion script
 ├── src/rag_kb/             # Source code
 │   ├── api/                # FastAPI application

@@ -248,6 +248,18 @@ ollama list
 - Health endpoint returns `{"status": "ok"}`
 - Ollama lists pulled models
 
+### Test Service Startup
+```powershell
+# Use the provided startup script (recommended)
+.\scripts\start.ps1
+
+# Or start Open WebUI separately
+.\scripts\open_webui.ps1
+
+# Or manual startup
+python -m uvicorn rag_kb.api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
 ## Troubleshooting
 
 ### Python Version Issues

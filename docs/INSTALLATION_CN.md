@@ -310,8 +310,11 @@ ollama list
 
 ### 启动服务测试
 ```powershell
-# 使用提供的启动脚本
+# 使用提供的启动脚本（推荐）
 .\scripts\start.ps1
+
+# 或单独启动Open WebUI
+.\scripts\open_webui.ps1
 
 # 或手动启动
 python -m uvicorn rag_kb.api.main:app --reload --host 0.0.0.0 --port 8000

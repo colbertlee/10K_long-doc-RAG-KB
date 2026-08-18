@@ -37,10 +37,37 @@
    .\scripts\start.ps1
    ```
 
+   **可选参数**：
+   ```powershell
+   # 不启动Open WebUI
+   .\scripts\start.ps1 -NoOpenWebUI
+
+   # 不自动打开浏览器
+   .\scripts\start.ps1 -NoBrowser
+   ```
+
 4. **访问界面：**
    - API: http://localhost:8000
    - API 文档: http://localhost:8000/docs
+   - 文档管理界面: http://localhost:8000/docs/docs-ui
    - Open WebUI: http://localhost:8080（如果已安装）
+
+### 单独启动Open WebUI
+
+如果您只想启动Open WebUI界面：
+
+```powershell
+.\scripts\open_webui.ps1
+```
+
+**可选参数**：
+```powershell
+# 指定端口
+.\scripts\open_webui.ps1 -Port 8080
+
+# 不自动打开浏览器
+.\scripts\open_webui.ps1 -NoBrowser
+```
 
 ## 基本使用
 

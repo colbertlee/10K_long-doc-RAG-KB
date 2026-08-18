@@ -37,10 +37,37 @@
    .\scripts\start.ps1
    ```
 
+   **Optional parameters:**
+   ```powershell
+   # Don't start Open WebUI
+   .\scripts\start.ps1 -NoOpenWebUI
+
+   # Don't auto-open browser
+   .\scripts\start.ps1 -NoBrowser
+   ```
+
 4. **Access the interface:**
    - API: http://localhost:8000
    - API Docs: http://localhost:8000/docs
+   - Document Management UI: http://localhost:8000/docs/docs-ui
    - Open WebUI: http://localhost:8080 (if installed)
+
+### Start Open WebUI Separately
+
+If you only want to start the Open WebUI interface:
+
+```powershell
+.\scripts\open_webui.ps1
+```
+
+**Optional parameters:**
+```powershell
+# Specify port
+.\scripts\open_webui.ps1 -Port 8080
+
+# Don't auto-open browser
+.\scripts\open_webui.ps1 -NoBrowser
+```
 
 ## Basic Usage
 

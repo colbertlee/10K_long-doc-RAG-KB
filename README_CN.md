@@ -151,6 +151,8 @@ rag-kb-project/
 ├── docs/                    # 文档
 ├── scripts/                 # 实用脚本
 │   ├── start.ps1           # 服务启动脚本
+│   ├── open_webui.ps1       # Open WebUI启动脚本
+│   ├── upgrade.ps1          # 自动升级脚本
 │   └── ingest_bulk.py      # 批量导入脚本
 ├── src/rag_kb/             # 源代码
 │   ├── api/                # FastAPI 应用
