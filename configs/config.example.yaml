@@ -17,7 +17,7 @@ llm:
   # Mode 1: local Ollama (default for Windows native deployment)
   provider: ollama
   base_url: http://localhost:11434
-  model: qwen2.5
+  model: qwen3.5:4b
   temperature: 0.3
   top_p: 0.9
   max_tokens: 2048

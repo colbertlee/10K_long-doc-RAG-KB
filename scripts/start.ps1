@@ -1,88 +1,88 @@
-# PowerShell startup script for RAG KB services
-# Run in an elevated PowerShell after installing dependencies
+# PowerShell startup script for RAG KB system
+# This script starts the RAG KB API server and checks for dependencies
 
-param(
-    [switch]$NoOpenWebUI = $false,
-    [switch]$NoBrowser = $false
-)
+Write-Host "🚀 Starting RAG KB System..." -ForegroundColor Green
 
-Write-Host "Starting RAG KB services..." -ForegroundColor Green
+# Check if Python is installed
+Write-Host "📋 Checking Python installation..." -ForegroundColor Yellow
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Host "✅ Python found: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Python not found. Please install Python 3.11+ and add it to PATH." -ForegroundColor Red
+    exit 1
+}
 
-# Start Ollama
-Write-Host "Starting Ollama..." -ForegroundColor Yellow
-$ollama = Start-Process ollama -ArgumentList 'serve' -PassThru
-Start-Sleep -Seconds 5
-
-# Start FastAPI backend
-Write-Host "Starting FastAPI backend..." -ForegroundColor Yellow
-$backend = Start-Process python -ArgumentList '-m','uvicorn','rag_kb.api.main:app','--reload','--host','0.0.0.0','--port','8000' -PassThru
-Start-Sleep -Seconds 3
-
-# Start Open WebUI (if installed and not disabled)
-if (-not $NoOpenWebUI) {
-    Write-Host "Starting Open WebUI with Ollama configuration..." -ForegroundColor Yellow
-    Write-Host "Using Python 3.12 for Open WebUI" -ForegroundColor Cyan
-    try {
-        # Load environment variables from .env file
-        if (Test-Path ".env") {
-            Get-Content ".env" | ForEach-Object {
-                if ($_ -match '^([^#].+?)=(.+)$') {
-                    $name = $matches[1].Trim()
-                    $value = $matches[2].Trim()
-                    [Environment]::SetEnvironmentVariable($name, $value, "Process")
-                }
-            }
-        }
-        
-        # Set environment variables for Ollama embeddings
-        $env:RAG_EMBEDDING_ENGINE = "ollama"
-        $env:RAG_EMBEDDING_MODEL = "nomic-embed-text"
-        $env:RAG_EMBEDDING_FUNCTION = "false"
-        
-        $python312 = "py"
-        $envArgs = @(
-            "-3.12",
-            "-c",
-            "from open_webui import serve; serve()"
-        )
-        $webui = Start-Process $python312 -ArgumentList $envArgs -PassThru
-        Write-Host "Open WebUI started successfully with Ollama embeddings" -ForegroundColor Green
-    } catch {
-        Write-Host "Open WebUI not found. Skipping..." -ForegroundColor Yellow
-        Write-Host "To start Open WebUI separately, run: .\scripts\open_webui.ps1" -ForegroundColor Cyan
-        $webui = $null
+# Check if required directories exist
+Write-Host "📁 Checking directory structure..." -ForegroundColor Yellow
+$requiredDirs = @("data", "data/uploads", "data/users", "lightrag_db", "static")
+foreach ($dir in $requiredDirs) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        Write-Host "✅ Created directory: $dir" -ForegroundColor Green
+    } else {
+        Write-Host "✅ Directory exists: $dir" -ForegroundColor Green
     }
+}
+
+# Check if Ollama is running
+Write-Host "🔍 Checking Ollama service..." -ForegroundColor Yellow
+try {
+    $ollamaResponse = Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -UseBasicParsing -TimeoutSec 2
+    if ($ollamaResponse.StatusCode -eq 200) {
+        Write-Host "✅ Ollama is running" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️ Ollama service responding but may have issues" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "⚠️ Ollama is not running. Please start Ollama first." -ForegroundColor Yellow
+    Write-Host "   Download from: https://ollama.ai/" -ForegroundColor Cyan
+    Write-Host "   Run: ollama serve" -ForegroundColor Cyan
+}
+
+# Check if virtual environment exists
+Write-Host "🐍 Checking virtual environment..." -ForegroundColor Yellow
+if (Test-Path ".venv") {
+    Write-Host "✅ Virtual environment found" -ForegroundColor Green
+    # Activate virtual environment
+    & ".venv\Scripts\Activate.ps1"
 } else {
-    Write-Host "Open WebUI disabled. To start separately, run: .\scripts\open_webui.ps1" -ForegroundColor Yellow
-    $webui = $null
+    Write-Host "⚠️ No virtual environment found. Creating one..." -ForegroundColor Yellow
+    python -m venv .venv
+    & ".venv\Scripts\Activate.ps1"
+    Write-Host "✅ Virtual environment created and activated" -ForegroundColor Green
+    
+    # Install dependencies
+    Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+    pip install -e .[all]
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "✅ Dependencies installed successfully" -ForegroundColor Green
+    } else {
+        Write-Host "❌ Failed to install dependencies" -ForegroundColor Red
+        exit 1
+    }
 }
 
-Write-Host "RAG KB services started." -ForegroundColor Green
-Write-Host "FastAPI backend: http://localhost:8000" -ForegroundColor Cyan
-Write-Host "API docs: http://localhost:8000/docs" -ForegroundColor Cyan
-Write-Host "Document Management UI: http://localhost:8000/docs/docs-ui" -ForegroundColor Cyan
-Write-Host "Complete Integration: http://localhost:8000/rag-kb-integration" -ForegroundColor Cyan
-if ($webui) {
-    Write-Host "Open WebUI: http://localhost:8080" -ForegroundColor Cyan
-}
-Write-Host ""
-
-# Open browser if not disabled
-if (-not $NoBrowser) {
-    Write-Host "Opening Document Management UI in browser..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 2
-    Start-Process "http://localhost:8000/docs/docs-ui"
-    Write-Host ""
+# Check if configuration file exists
+Write-Host "⚙️  Checking configuration..." -ForegroundColor Yellow
+if (Test-Path "configs\config.yaml") {
+    Write-Host "✅ Configuration file found" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Configuration file not found. Copying example..." -ForegroundColor Yellow
+    Copy-Item "configs\config.example.yaml" "configs\config.yaml"
+    Write-Host "✅ Configuration file created from example" -ForegroundColor Green
 }
 
-Write-Host "Press Enter to stop all services..." -ForegroundColor Yellow
-Read-Host
+# Start the FastAPI server
+Write-Host "🌐 Starting FastAPI server..." -ForegroundColor Yellow
+Write-Host "   API will be available at: http://localhost:8000" -ForegroundColor Cyan
+Write-Host "   API docs at: http://localhost:8000/docs" -ForegroundColor Cyan
+Write-Host "   Press Ctrl+C to stop the server" -ForegroundColor Yellow
 
-# Stop all services
-Write-Host "Stopping services..." -ForegroundColor Yellow
-Stop-Process -InputObject $ollama,$backend -Force -ErrorAction SilentlyContinue
-if ($webui) {
-    Stop-Process -InputObject $webui -Force -ErrorAction SilentlyContinue
+try {
+    python -m uvicorn src.rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
+} catch {
+    Write-Host "❌ Failed to start server" -ForegroundColor Red
+    Write-Host "   Error: $_" -ForegroundColor Red
+    exit 1
 }
-
-Write-Host "All services stopped." -ForegroundColor Green

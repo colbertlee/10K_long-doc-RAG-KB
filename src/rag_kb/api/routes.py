@@ -54,7 +54,14 @@ async def chat_completions(body: dict):
     """
     question = body['messages'][-1]['content']
     mode = body.get('mode', 'hybrid')
-    answer = rag.query(question, mode=mode)
+    
+    # Extract user roles for ACL filtering
+    user_roles = body.get('user_roles', {})
+    if not user_roles:
+        # Default to internal access if no roles specified
+        user_roles = {'level': ['Internal']}
+    
+    answer = rag.query(question, mode=mode, user_roles=user_roles)
     sources = extract_sources(answer)
     
     return {'answer': answer, 'sources': sources}
@@ -326,49 +333,62 @@ async def get_knowledge_graph(user_id: str, kb_name: str):
         kb_folder = user_manager.get_user_folder(user_id) / kb_name
         graph_file = kb_folder / "graph_data.json"
         
-        # Check if graph data exists
+        # Check if cached graph data exists
         if graph_file.exists():
             import json
             with open(graph_file, 'r', encoding='utf-8') as f:
                 graph_data = json.load(f)
             return graph_data
         else:
-            # Try to extract from LightRAG
+            # Try to extract from LightRAG using the new graph extractor
             try:
-                import networkx as nx
-                from pathlib import Path
+                from rag_kb.lightrag.graph_extractor import LightRAGGraphExtractor
                 
-                # Look for LightRAG graph files
+                # Look for LightRAG working directory
                 lightrag_dir = kb_folder / "index"
+                if not lightrag_dir.exists():
+                    lightrag_dir = kb_folder  # Fallback to KB folder
+                
                 if lightrag_dir.exists():
-                    # Try to read NetworkX graph if available
-                    vdb_files = list(lightrag_dir.glob("*.json"))
-                    if vdb_files:
-                        # Create a simple graph representation
-                        # This is a placeholder - actual implementation would parse LightRAG's internal format
-                        return {
-                            "nodes": [
-                                {"id": "entity1", "label": "示例实体1"},
-                                {"id": "entity2", "label": "示例实体2"},
-                                {"id": "entity3", "label": "示例实体3"}
-                            ],
-                            "edges": [
-                                {"source": "entity1", "target": "entity2", "label": "关系1"},
-                                {"source": "entity2", "target": "entity3", "label": "关系2"}
-                            ],
-                            "message": "示例数据 - 需要实现LightRAG图谱解析"
-                        }
+                    # Extract graph data using the new extractor
+                    extractor = LightRAGGraphExtractor(lightrag_dir)
+                    graph_data = extractor.get_graph_data()
+                    
+                    # Cache the extracted data
+                    extractor.save_graph_data(graph_file)
+                    
+                    # Add statistics
+                    stats = extractor.get_statistics()
+                    graph_data['statistics'] = stats
+                    
+                    return graph_data
                 
                 # Return empty graph if no data found
                 return {
                     "nodes": [],
                     "edges": [],
+                    "statistics": {
+                        "total_nodes": 0,
+                        "total_edges": 0,
+                        "node_types": {},
+                        "relation_types": {},
+                        "avg_degree": 0,
+                        "connected_components": 0
+                    },
                     "message": "没有找到知识图谱数据。请先导入文档以生成知识图谱。"
                 }
             except ImportError:
                 return {
                     "nodes": [],
                     "edges": [],
+                    "statistics": {
+                        "total_nodes": 0,
+                        "total_edges": 0,
+                        "node_types": {},
+                        "relation_types": {},
+                        "avg_degree": 0,
+                        "connected_components": 0
+                    },
                     "message": "知识图谱可视化需要NetworkX库。请安装: pip install networkx"
                 }
     except Exception as e:

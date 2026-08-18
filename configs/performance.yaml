@@ -1,0 +1,87 @@
+# Performance-optimized configuration for RAG KB
+# This configuration is tuned for handling 10K+ documents efficiently
+
+app:
+  name: rag-kb
+  data_dir: ./data
+  lightrag_working_dir: ./lightrag_db
+  log_level: INFO
+
+# Performance-optimized embedding settings
+embedding:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: nomic-embed-text
+  # Alternative: sentence-transformers (faster for CPU-only systems)
+  # provider: sentence-transformers
+  # model: BAAI/bge-m3
+  batch_size: 32  # Process multiple texts at once for better throughput
+
+# Performance-optimized LLM settings
+llm:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: qwen3.5:4b
+  temperature: 0.3
+  top_p: 0.9
+  max_tokens: 2048
+  # Performance tuning
+  request_timeout: 120  # seconds
+  max_retries: 3
+  retry_delay: 1  # seconds
+
+# LightRAG performance optimization
+lightrag:
+  working_dir: ./lightrag_db
+  chunk_token_size: 800  # Smaller chunks for faster processing
+  max_token: 2048  # Reduced context window for faster generation
+  query_mode: hybrid
+  enable_llm_cache: true  # Cache LLM responses for repeated queries
+  # Performance parameters
+  chunk_overlap: 100  # Overlap between chunks
+  embedding_batch_size: 16  # Batch size for embedding operations
+
+# Hybrid search performance tuning
+hybrid_search:
+  enable_reranking: false  # Disable reranking for faster initial results
+  reranker_device: cpu  # Use CPU for reranking (set to cuda if GPU available)
+  rrf_k: 60  # Reciprocal Rank Fusion constant
+  bm25_weight: 0.4  # Weight for BM25 results
+  vector_weight: 0.6  # Weight for vector results
+  cache_results: true  # Cache search results
+  cache_ttl: 3600  # Cache time-to-live in seconds
+
+# BM25 performance tuning
+bm25:
+  k1: 1.5  # Term saturation parameter
+  b: 0.75  # Length normalization parameter
+  cache_dir: ./data/bm25_cache
+  enable_compression: true  # Compress index for faster loading
+
+# Performance monitoring
+monitoring:
+  enable_metrics: true
+  log_slow_queries: true
+  slow_query_threshold: 5.0  # seconds
+  track_memory_usage: true
+  track_query_times: true
+
+# Concurrency settings
+concurrency:
+  max_workers: 4  # Maximum number of parallel workers
+  max_ingestion_threads: 2  # Threads for document ingestion
+  max_search_threads: 4  # Threads for search operations
+
+# Memory management
+memory:
+  max_cache_size_mb: 512  # Maximum cache size in MB
+  enable_gc: true  # Enable garbage collection
+  gc_interval: 300  # GC interval in seconds
+
+# Security settings (minimal overhead)
+security:
+  default_acl:
+    dept: []
+    level: ['Internal']
+  enable_acl_caching: true  # Cache ACL decisions
+  acl_cache_ttl: 600  # ACL cache time-to-live in seconds

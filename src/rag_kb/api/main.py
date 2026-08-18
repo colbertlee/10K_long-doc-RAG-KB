@@ -15,8 +15,13 @@ from rag_kb.lightrag.adapter import LightRAGAdapter
 from rag_kb.security.acl import build_acl_filter
 from rag_kb.api.docs_ui import router as docs_ui_router
 from rag_kb.api.routes import router as api_router
+from rag_kb.utils.logging import setup_logging, PerformanceMonitor
 
 app = FastAPI(title=settings.app_name)
+
+# Setup logging
+logger = setup_logging(log_level=settings.log_level)
+logger.info(f"Starting {settings.app_name} API server")
 
 # Add CORS middleware
 app.add_middleware(
@@ -94,23 +99,48 @@ def health():
         except:
             ollama_status = "not_running"
         
+        # Get system metrics
+        system_metrics = logger.get_system_metrics()
+        
         return {
             'status': 'ok',
             'service': 'rag-kb',
             'version': '0.3.0',
             'data_dir_exists': data_dir_exists,
             'ollama_status': ollama_status,
+            'system_metrics': system_metrics,
             'endpoints': {
                 'api_docs': '/docs',
                 'docs_ui': '/docs/docs-ui',
                 'current_user': '/api/v1/current-user',
                 'openwebui_integration': '/openwebui-integration',
-                'rag_kb_integration': '/rag-kb-integration'
+                'rag_kb_integration': '/rag-kb-integration',
+                'metrics': '/metrics'
             }
         }
     except Exception as e:
+        logger.error(f"Health check failed: {e}")
         return {
             'status': 'error',
+            'error': str(e)
+        }
+
+
+@app.get('/metrics')
+def metrics():
+    """Get performance metrics and statistics."""
+    try:
+        performance_summary = logger.get_performance_summary()
+        system_metrics = logger.get_system_metrics()
+        
+        return {
+            'performance': performance_summary,
+            'system': system_metrics,
+            'timestamp': system_metrics['timestamp']
+        }
+    except Exception as e:
+        logger.error(f"Metrics collection failed: {e}")
+        return {
             'error': str(e)
         }
 
@@ -127,14 +157,17 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
     Returns:
         Document metadata
     """
-    upload_path = settings.data_dir / 'uploads' / file.filename
-    upload_path.parent.mkdir(parents=True, exist_ok=True)
-    upload_path.write_bytes(await file.read())
-    
-    pipeline = IngestPipeline()
-    doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
-    
-    return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+    with PerformanceMonitor(logger, "document_ingestion", 
+                           {"filename": file.filename, "dept": dept, "level": level}):
+        upload_path = settings.data_dir / 'uploads' / file.filename
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        upload_path.write_bytes(await file.read())
+        
+        pipeline = IngestPipeline()
+        doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+        
+        logger.info(f"Successfully ingested document: {doc.doc_id}")
+        return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
 
 
 @app.post('/api/v1/search')
@@ -150,12 +183,15 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
     Returns:
         Search results with answer and sources
     """
-    user_acl = {'dept': [dept], 'level': [level]}
+    user_acl = {'dept': [dept] if dept else [], 'level': [level] if level else ['Internal']}
     rag = LightRAGAdapter()
-    answer = rag.query(q, mode='hybrid')
+    answer = rag.query(q, mode='hybrid', user_roles=user_acl)
     
-    # Metadata filtering through post-filtering or sub-library implementation
-    return {'answer': answer, 'sources': []}
+    # Extract sources from the answer
+    import re
+    sources = re.findall(r'\[DATA:([^\]]+)\]', answer)
+    
+    return {'answer': answer, 'sources': sources, 'acl_filter': user_acl}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:

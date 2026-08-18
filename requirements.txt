@@ -14,6 +14,18 @@ ollama
 httpx
 numpy
 pytest>=8.0
+rank-bm25
+networkx
+psutil
+
+# Optional dependencies for reranking
+# Install with: pip install torch transformers
+# torch
+# transformers
+
+# Optional dependencies for evaluation
+# Install with: pip install ragas
+# ragas
 
 # Optional dependencies
 # Install with: pip install -e ".[lightrag,sentence-transformers,webui,dev]"

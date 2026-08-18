@@ -111,17 +111,24 @@ class LightRAGAdapter:
         doc_text = (NL + NL).join(parts)
         self.rag.insert(doc_text)
 
-    def query(self, question, mode=None):
-        """Query LightRAG with a question.
+    def query(self, question, mode=None, user_roles=None):
+        """Query LightRAG with a question and optional ACL filtering.
         
         Args:
             question: Query string
             mode: Query mode (naive/local/global/hybrid)
+            user_roles: Optional user roles for ACL filtering
             
         Returns:
             Query response text
         """
         mode = mode or settings.lightrag_query_mode
+        
+        # Apply ACL pre-filtering if user roles are provided
+        if user_roles:
+            from rag_kb.security.acl import apply_pre_filter_query
+            question = apply_pre_filter_query(question, user_roles)
+        
         return self.rag.query(
             question,
             param=QueryParam(mode=mode, only_need_context=False),

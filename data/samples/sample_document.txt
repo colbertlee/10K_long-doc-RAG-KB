@@ -1,0 +1,24 @@
+# Machine Learning Basics
+
+Machine learning is a subset of artificial intelligence that focuses on building systems that learn from data. It enables computers to improve their performance on a specific task through experience.
+
+## Key Concepts
+
+### Supervised Learning
+In supervised learning, the algorithm is trained on labeled data. The model learns to map input data to the correct output.
+
+### Unsupervised Learning  
+Unsupervised learning deals with unlabeled data. The algorithm tries to find patterns and structures in the data without explicit guidance.
+
+### Deep Learning
+Deep learning is a subset of machine learning that uses neural networks with multiple layers to model complex patterns in large datasets.
+
+## Applications
+
+Machine learning is used in various fields:
+- Healthcare: Disease diagnosis and drug discovery
+- Finance: Fraud detection and algorithmic trading
+- Technology: Image recognition and natural language processing
+- Transportation: Autonomous vehicles and route optimization
+
+The field continues to evolve rapidly with new algorithms and applications emerging regularly.

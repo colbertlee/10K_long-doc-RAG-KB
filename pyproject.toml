@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "rag-kb"
 version = "0.3.0"
 description = "10K long-document RAG knowledge base"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
@@ -23,12 +23,16 @@ dependencies = [
     "httpx",
     "numpy",
     "pytest>=8.0",
+    "rank-bm25",
+    "networkx",
+    "psutil",
 ]
 
 [project.optional-dependencies]
 lightrag = ["lightrag-hku"]
 sentence-transformers = ["sentence-transformers>=2.3"]
 webui = ["open-webui>=0.1.0"]
+reranking = ["torch", "transformers", "rank-bm25"]
 dev = [
     "black>=23.0.0",
     "isort>=5.12.0",
@@ -37,7 +41,7 @@ dev = [
     "pytest-cov>=4.0.0",
 ]
 all = [
-    "rag-kb[lightrag,sentence-transformers,webui,dev]",
+    "rag-kb[lightrag,sentence-transformers,webui,reranking,dev]",
 ]
 
 [tool.setuptools.packages.find]

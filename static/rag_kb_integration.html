@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG知识库 - 完整集成界面</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 1.1em; }
+        .integration-info { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .integration-info h2 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .integration-info p { color: #666; line-height: 1.6; margin-bottom: 10px; }
+        .integration-info ul { margin-left: 20px; color: #666; }
+        .integration-info li { margin-bottom: 8px; }
+        .iframe-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .iframe-header { background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .iframe-header h3 { color: #333; margin: 0; }
+        .iframe-iframe { width: 100%; height: 800px; border: none; }
+        .status-bar { background: #e8f4fd; padding: 15px 20px; border-radius: 10px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .status-item { text-align: center; }
+        .status-item strong { display: block; font-size: 1.5em; color: #667eea; }
+        .status-item span { color: #666; font-size: 0.9em; }
+        .refresh-btn { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .refresh-btn:hover { background: #5568d3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 RAG知识库 - 完整集成界面</h1>
+            <p>文档管理 + 知识图谱 + 智能查询的一体化解决方案</p>
+        </div>
+
+        <div class="integration-info">
+            <h2>📋 系统集成说明</h2>
+            <p>这是一个完整的RAG知识库集成界面，整合了以下功能：</p>
+            <ul>
+                <li>📄 <strong>文档管理</strong>：上传、导入、管理文档</li>
+                <li>🗄️ <strong>知识库管理</strong>：创建、删除、管理知识库</li>
+                <li>🕸️ <strong>知识图谱</strong>：可视化查看文档间的关联关系</li>
+                <li>💬 <strong>智能查询</strong>：通过Open WebUI进行RAG增强查询</li>
+            </ul>
+            <p><strong>工作流程</strong>：</p>
+            <ol>
+                <li>在下方界面中上传和管理文档</li>
+                <li>查看知识图谱了解文档关联</li>
+                <li>访问Open WebUI进行智能查询</li>
+            </ol>
+        </div>
+
+        <div class="iframe-container">
+            <div class="iframe-header">
+                <h3>📚 RAG知识库文档管理界面</h3>
+                <button class="refresh-btn" onclick="refreshIframe()">🔄 刷新界面</button>
+            </div>
+            <iframe id="rag-kb-iframe" class="iframe-iframe" src="http://localhost:8000/docs/docs-ui"></iframe>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <strong id="rag-kb-status">✅</strong>
+                <span>RAG KB API</span>
+            </div>
+            <div class="status-item">
+                <strong id="ollama-status">✅</strong>
+                <span>Ollama服务</span>
+            </div>
+            <div class="status-item">
+                <a href="http://localhost:8080" target="_blank" style="color: #667eea; text-decoration: none; background: white; padding: 10px 20px; border-radius: 5px; border: 1px solid #667eea;">
+                    💬 打开Open WebUI
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check service status
+        async function checkServices() {
+            try {
+                // Check RAG KB API
+                const ragResponse = await fetch('http://localhost:8000/health');
+                const ragStatus = document.getElementById('rag-kb-status');
+                ragStatus.textContent = ragResponse.ok ? '✅' : '❌';
+            } catch (error) {
+                document.getElementById('rag-kb-status').textContent = '❌';
+            }
+
+            try {
+                // Check Ollama
+                const ollamaResponse = await fetch('http://localhost:11434/api/tags');
+                const ollamaStatus = document.getElementById('ollama-status');
+                ollamaStatus.textContent = ollamaResponse.ok ? '✅' : '❌';
+            } catch (error) {
+                document.getElementById('ollama-status').textContent = '❌';
+            }
+        }
+
+        function refreshIframe() {
+            const iframe = document.getElementById('rag-kb-iframe');
+            iframe.src = iframe.src;
+        }
+
+        // Check services on load
+        checkServices();
+        
+        // Refresh status every 30 seconds
+        setInterval(checkServices, 30000);
+    </script>
+</body>
+</html>
