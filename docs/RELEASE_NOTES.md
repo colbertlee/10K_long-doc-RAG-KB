@@ -1,5 +1,39 @@
 # Release Notes
 
+## [0.2.0] - 2026-08-18
+
+### Major Updates
+- Complete Open WebUI iframe integration
+- Document parser system refactoring
+- Added text and Markdown parser support
+- Fixed parser inheritance issues
+
+### New Features
+- Added Open WebUI iframe integration page
+- Created pre-built integration page with service monitoring
+- Added TextParser for .txt files
+- Added MarkdownParser for .md files
+- Added static file serving
+- Real-time service status monitoring
+
+### Fixes
+- Fixed parser inheritance (inherit from BaseParser)
+- Fixed document indexing functionality
+- Fixed user ID validation (avoid reserved names)
+- Updated Open WebUI installation script to handle npm issues
+
+### Documentation Updates
+- Added Open WebUI iframe integration guide (English and Chinese)
+- Added naming conventions documentation (English and Chinese)
+- Updated all README files
+- Added detailed integration step instructions
+
+### Improvements
+- Added /openwebui-integration endpoint
+- Improved health check endpoint to show new endpoints
+- Optimized integration page user experience
+- Added responsive design support
+
 ## [0.1.9] - 2026-08-18
 
 ### New Features
