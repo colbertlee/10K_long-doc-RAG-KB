@@ -7,47 +7,79 @@
 To check your current installed version:
 
 ```bash
-pip show rag-kb
+# Check version in local pyproject.toml
+Select-String -Path "pyproject.toml" -Pattern 'version = "'
 ```
 
 ### Upgrading from GitHub
 
-#### Method 1: Using pip (Recommended)
+This project is not published to PyPI, so upgrades must be done through the GitHub repository.
 
-```bash
-# Upgrade to the latest version
-pip install --upgrade rag-kb
+#### Method 1: Using Automatic Upgrade Script (Recommended)
 
-# Or upgrade to a specific version
-pip install rag-kb==0.2.0
+```powershell
+# Upgrade to latest version
+.\scripts\upgrade.ps1
+
+# Upgrade to specific version
+.\scripts\upgrade.ps1 -TargetVersion "0.2.6"
+
+# Skip backup (not recommended)
+.\scripts\upgrade.ps1 -SkipBackup
 ```
 
-#### Method 2: From GitHub Repository
+The upgrade script will automatically:
+1. Check current version and latest version
+2. Create data backup
+3. Stop running services
+4. Pull latest code
+5. Update dependencies
+6. Verify installation
+7. Provide guidance for restarting services
+
+#### Method 2: Manual Upgrade
 
 ```bash
-# Clone or pull latest changes
+# 1. Backup current data
+Copy-Item -Recurse data data_backup_$(Get-Date -Format 'yyyyMMdd')
+Copy-Item -Recurse lightrag_db lightrag_db_backup_$(Get-Date -Format 'yyyyMMdd')
+
+# 2. Pull latest code
 cd 10K_long-doc-RAG-KB
+git fetch origin
+git checkout master
 git pull origin master
 
-# Reinstall with latest changes
+# 3. Reinstall with latest changes
 pip install -e .
+
+# 4. Update dependencies
+pip install --upgrade -r requirements.txt
+
+# 5. Restart services
+.\scripts\start.ps1
+```
+
+#### Method 3: Upgrade to Specific Version
+
+```bash
+# 1. Backup data
+Copy-Item -Recurse data data_backup_$(Get-Date -Format 'yyyyMMdd')
+
+# 2. Checkout specific version tag
+git fetch --tags
+git checkout v0.2.6
+
+# 3. Reinstall
+pip install -e .
+
+# 4. Restart services
+.\scripts\start.ps1
 ```
 
 ### Post-Upgrade Steps
 
-#### 1. Backup Current Data
-
-Before upgrading, always backup your data:
-
-```bash
-# Backup data directory
-Copy-Item -Recurse data data_backup_$(Get-Date -Format 'yyyyMMdd')
-
-# Backup LightRAG database
-Copy-Item -Recurse lightrag_db lightrag_db_backup_$(Get-Date -Format 'yyyyMMdd')
-```
-
-#### 2. Update Configuration
+#### 1. Check Configuration Updates
 
 Check if there are any new configuration options in the latest `config.example.yaml`:
 
@@ -56,7 +88,7 @@ Check if there are any new configuration options in the latest `config.example.y
 Compare-Object (Get-Content configs\config.yaml) (Get-Content configs\config.example.yaml)
 ```
 
-#### 3. Update Dependencies
+#### 2. Update Dependencies
 
 ```bash
 # Update all dependencies
@@ -66,7 +98,7 @@ pip install --upgrade -r requirements.txt
 pip install --upgrade -e ".[lightrag,sentence-transformers]"
 ```
 
-#### 4. Database Migration (if required)
+#### 3. Database Migration (if required)
 
 Some versions may require database migrations. Check the release notes for specific migration instructions.
 
@@ -75,7 +107,7 @@ Some versions may require database migrations. Check the release notes for speci
 # from the release notes
 ```
 
-#### 5. Restart Services
+#### 4. Restart Services
 
 ```bash
 # Stop current services
@@ -87,27 +119,39 @@ Some versions may require database migrations. Check the release notes for speci
 
 ### Version-Specific Upgrade Instructions
 
-#### Upgrading to v0.2.0 (Example)
+#### Upgrading to v0.2.6
 
-When v0.2.0 is released, follow these steps:
+Key changes in v0.2.6:
+- Updated Open WebUI integration to use Python 3.12
+- Simplified integration to use separate interfaces
+- Removed complex iframe integration
 
-1. **Check Release Notes**: Read `docs/RELEASE_NOTES.md` for v0.2.0 changes
+Upgrade steps:
+1. **Check Release Notes**: Read `docs/RELEASE_NOTES.md` for v0.2.6 changes
 2. **Backup Data**: Backup your `data/` and `lightrag_db/` directories
-3. **Update Configuration**: Add any new configuration options
-4. **Run Migration**: If database schema changed, run migration scripts
-5. **Test**: Verify basic functionality before production use
+3. **Update Configuration**: Check for new configuration options
+4. **Run Upgrade**: `.\scripts\upgrade.ps1 -TargetVersion "0.2.6"`
+5. **Test**: Verify document management UI and Open WebUI functionality
 
 ### Rollback Instructions
 
 If you need to rollback to a previous version:
 
 ```bash
-# Install specific previous version
-pip install rag-kb==0.1.0
+# 1. Stop services
+# Stop all running services
 
-# Or from git
-git checkout tags/v0.1.0
+# 2. Checkout specific version tag
+git checkout v0.2.5
+
+# 3. Reinstall
 pip install -e .
+
+# 4. Restore backup (if needed)
+Copy-Item -Recurse data_backup_YYYYMMDD data
+
+# 5. Restart services
+.\scripts\start.ps1
 ```
 
 ### Troubleshooting Upgrades
@@ -123,6 +167,21 @@ python -m pip cache purge
 # Reinstall the package
 pip uninstall rag-kb
 pip install -e .
+```
+
+#### Git Operation Failures
+
+If git pull fails:
+
+```bash
+# Check current status
+git status
+
+# If there are uncommitted changes, commit or stash them
+git stash
+
+# Then pull again
+git pull origin master
 ```
 
 #### Configuration Issues
@@ -151,30 +210,6 @@ Copy-Item -Recurse lightrag_db lightrag_db_backup
 python scripts\ingest_bulk.py
 ```
 
-### Automatic Upgrade Script
-
-Use the provided automatic upgrade script:
-
-```powershell
-# Upgrade to latest version
-.\scripts\upgrade.ps1
-
-# Upgrade to specific version
-.\scripts\upgrade.ps1 -TargetVersion "0.1.3"
-
-# Skip backup (not recommended)
-.\scripts\upgrade.ps1 -SkipBackup
-```
-
-The upgrade script will automatically:
-1. Check current version and latest version
-2. Create data backup
-3. Stop running services
-4. Pull latest code
-5. Update dependencies
-6. Verify installation
-7. Provide guidance for restarting services
-
 ### Monitoring Upgrade Health
 
 After upgrading, monitor the system:
@@ -187,7 +222,6 @@ After upgrading, monitor the system:
 ### Getting Help
 
 If you encounter issues during upgrade:
-
 1. Check the [Release Notes](RELEASE_NOTES.md) for known issues
 2. Review [Troubleshooting](USER_GUIDE.md#troubleshooting) section
 3. Open a GitHub Issue with detailed error information
@@ -217,3 +251,12 @@ Recommended upgrade schedule:
 - **Development**: Latest features, may be unstable
 
 Choose the appropriate release channel based on your needs.
+
+### Important Notes
+
+⚠️ **This project is not published to PyPI**
+
+- Do NOT use `pip install --upgrade rag-kb` command
+- Do NOT use `pip install rag-kb==<version>` command
+- Upgrades must be done through GitHub repository only
+- Use `git pull` or `upgrade.ps1` script for upgrades
