@@ -1,5 +1,27 @@
 # Release Notes
 
+## [0.1.9] - 2026-08-18
+
+### New Features
+- Added Open WebUI iframe integration functionality
+- Created pre-built Open WebUI integration page
+- Added real-time service status monitoring
+- Implemented static file serving
+- Added beautiful gradient header design
+- Added loading states and error handling
+- Added responsive design support
+- Added quick action buttons
+
+### Documentation Updates
+- Added Open WebUI iframe integration guide (English and Chinese)
+- Updated README files with new documentation links
+- Provided detailed integration steps and configuration instructions
+
+### Improvements
+- Added /openwebui-integration endpoint
+- Improved health check endpoint to show new integration endpoint
+- Optimized integration page user experience
+
 ## [0.1.8] - 2026-08-18
 
 ### Fixes
