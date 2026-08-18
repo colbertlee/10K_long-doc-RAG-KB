@@ -63,9 +63,15 @@ try {
     Write-Host "Continuing with Open WebUI startup anyway..." -ForegroundColor Cyan
 }
 
-# Start Open WebUI
-Write-Host "Starting Open WebUI on port $Port..." -ForegroundColor Yellow
-$webui = Start-Process open-webui -ArgumentList "serve", "--port", $Port -PassThru
+# Start Open WebUI with Ollama configuration to avoid HuggingFace model download
+Write-Host "Starting Open WebUI on port $Port with Ollama configuration..." -ForegroundColor Yellow
+$envArgs = @(
+    "serve",
+    "--port", $Port,
+    "--ollama-embedding-model", "nomic-embed-text",
+    "--embedding-engine", "ollama"
+)
+$webui = Start-Process open-webui -ArgumentList $envArgs -PassThru
 
 # Wait for Open WebUI to start
 Write-Host "Waiting for Open WebUI to start..." -ForegroundColor Yellow

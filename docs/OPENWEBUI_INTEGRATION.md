@@ -33,6 +33,8 @@ http://localhost:8000/docs/docs-ui
 
 这样用户可以在Open WebUI界面中直接访问文档管理功能。
 
+**注意**: 文档管理界面现在也包含了指向Open WebUI的链接，方便用户在两个界面之间切换。
+
 ### 方法2: 通过iframe嵌入（高级）
 
 如果您希望将文档管理界面直接嵌入到Open WebUI中，可以使用iframe：

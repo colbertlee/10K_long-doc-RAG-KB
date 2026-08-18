@@ -20,10 +20,15 @@ Start-Sleep -Seconds 3
 
 # Start Open WebUI (if installed and not disabled)
 if (-not $NoOpenWebUI) {
-    Write-Host "Starting Open WebUI..." -ForegroundColor Yellow
+    Write-Host "Starting Open WebUI with Ollama configuration..." -ForegroundColor Yellow
     try {
-        $webui = Start-Process open-webui -ArgumentList 'serve' -PassThru
-        Write-Host "Open WebUI started successfully" -ForegroundColor Green
+        $envArgs = @(
+            "serve",
+            "--ollama-embedding-model", "nomic-embed-text",
+            "--embedding-engine", "ollama"
+        )
+        $webui = Start-Process open-webui -ArgumentList $envArgs -PassThru
+        Write-Host "Open WebUI started successfully with Ollama embeddings" -ForegroundColor Green
     } catch {
         Write-Host "Open WebUI not found. Skipping..." -ForegroundColor Yellow
         Write-Host "To start Open WebUI separately, run: .\scripts\open_webui.ps1" -ForegroundColor Cyan

@@ -1,0 +1,49 @@
+# config.yaml — Ollama / OpenAI-compatible settings for rag-kb
+app:
+  name: rag-kb
+  data_dir: ./data
+  lightrag_working_dir: ./lightrag_db
+  log_level: INFO
+
+embedding:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: nomic-embed-text
+  # Alternative: sentence-transformers (CPU-only, no Ollama needed)
+  # provider: sentence-transformers
+  # model: BAAI/bge-m3
+
+llm:
+  # Mode 1: local Ollama (default for Windows native deployment)
+  provider: ollama
+  base_url: http://localhost:11434
+  model: qwen2.5
+  temperature: 0.3
+  top_p: 0.9
+  max_tokens: 2048
+
+  # Mode 2: OpenAI / OpenAI-compatible / domestic providers
+  # provider: openai
+  # base_url: https://api.openai.com/v1
+  # api_key: ${OPENAI_API_KEY}
+  # model: gpt-4o
+  # temperature: 0.3
+  # top_p: 0.9
+  # max_tokens: 2048
+
+  # Mode 3: domestic OpenAI-compatible endpoint
+  # provider: openai
+  # base_url: https://your-provider.example.com/v1
+  # api_key: ${PROVIDER_API_KEY}
+
+lightrag:
+  working_dir: ./lightrag_db
+  chunk_token_size: 1200
+  max_token: 4096
+  query_mode: hybrid
+  enable_llm_cache: true
+
+security:
+  default_acl:
+    dept: []
+    level: ['Internal']

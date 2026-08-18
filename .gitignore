@@ -150,12 +150,17 @@ Thumbs.db
 data/raw/*
 data/uploads/*
 data/category_dbs/*
+data/users/*
 lightrag_db/
 *.db
 *.pkl
 *.json
 !configs/config.example.yaml
+!configs/config.yaml
 !.env.example
+
+# Test files
+test_documents/
 
 # Logs
 logs/

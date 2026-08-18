@@ -84,6 +84,10 @@ async def document_management_ui():
         <div class="header">
             <h1>📚 RAG知识库 - 文档管理</h1>
             <p>轻松管理您的文档，构建智能知识库</p>
+            <div style="margin-top: 15px;">
+                <a href="http://localhost:8080" target="_blank" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 5px; margin-right: 10px;">💬 打开聊天界面 (Open WebUI)</a>
+                <a href="http://localhost:8000/docs" target="_blank" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 5px;">📖 API文档</a>
+            </div>
         </div>
 
         <div class="card">

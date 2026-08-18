@@ -265,3 +265,4 @@ pytest
 - [Open WebUI 集成指南](docs/OPENWEBUI_INTEGRATION_CN.md)
 - [Open WebUI iframe集成](docs/OPENWEBUI_IFRAME_INTEGRATION.md)
 - [命名规范](docs/NAMING_CONVENTIONS_CN.md)
+- [故障排除指南](docs/TROUBLESHOOTING.md)
