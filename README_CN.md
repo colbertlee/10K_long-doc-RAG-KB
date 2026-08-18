@@ -15,6 +15,9 @@
 - **Windows 原生**：专为 Windows 部署设计，使用 Ollama 本地模型
 - **Open WebUI 集成**：现代化的聊天界面用于查询
 - **FastAPI 后端**：提供 OpenAI 兼容端点的 RESTful API
+- **文档管理界面**：现代化的Web界面，支持文档上传、文件夹导入和管理
+- **多用户支持**：用户隔离的知识库管理
+- **本地文件夹导入**：一键导入本地文件夹到知识库
 
 ## 架构
 
@@ -80,7 +83,21 @@
 这将启动：
 - Ollama 服务（localhost:11434）
 - FastAPI 后端（localhost:8000）
+- 文档管理界面（自动在浏览器中打开）
 - Open WebUI（localhost:8080，如果已安装）
+
+### 访问界面
+
+启动服务后，您可以访问以下界面：
+
+- **文档管理界面**: http://localhost:8000/docs/docs-ui
+- **API 文档**: http://localhost:8000/docs
+- **Open WebUI**: http://localhost:8080（如果已安装）
+
+文档管理界面提供：
+- 📄 文档上传（支持拖拽）
+- 📁 本地文件夹导入
+- 📋 文档管理和统计
 
 ### 手动启动
 
@@ -243,3 +260,4 @@ pytest
 - [开发者指南](docs/DEVELOPER_CN.md)
 - [升级指南](docs/UPGRADE_GUIDE_CN.md)
 - [发布说明](docs/RELEASE_NOTES_CN.md)
+- [Open WebUI 集成指南](docs/OPENWEBUI_INTEGRATION_CN.md)

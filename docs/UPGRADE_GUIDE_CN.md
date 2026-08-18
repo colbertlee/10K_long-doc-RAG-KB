@@ -152,30 +152,27 @@ python scripts\ingest_bulk.py
 
 ### 自动升级脚本
 
-创建自动升级脚本：
+使用提供的自动升级脚本：
 
 ```powershell
-# scripts/upgrade.ps1
+# 升级到最新版本
+.\scripts\upgrade.ps1
 
-Write-Host "开始升级过程..." -ForegroundColor Green
+# 升级到特定版本
+.\scripts\upgrade.ps1 -TargetVersion "0.1.3"
 
-# 备份
-$backup_date = Get-Date -Format 'yyyyMMdd'
-Copy-Item -Recurse data "data_backup_$backup_date"
-Copy-Item -Recurse lightrag_db "lightrag_db_backup_$backup_date"
-Write-Host "备份完成：data_backup_$backup_date" -ForegroundColor Cyan
-
-# 更新代码
-git pull origin master
-Write-Host "代码已从 GitHub 更新" -ForegroundColor Cyan
-
-# 更新依赖
-pip install --upgrade -e .
-Write-Host "依赖已更新" -ForegroundColor Cyan
-
-# 重启服务
-Write-Host "请手动使用 .\scripts\start.ps1 重启服务" -ForegroundColor Yellow
+# 跳过备份（不推荐）
+.\scripts\upgrade.ps1 -SkipBackup
 ```
+
+升级脚本会自动：
+1. 检查当前版本和最新版本
+2. 创建数据备份
+3. 停止运行中的服务
+4. 拉取最新代码
+5. 更新依赖
+6. 验证安装
+7. 提供重启服务的指导
 
 ### 监控升级健康状态
 

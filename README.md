@@ -15,6 +15,9 @@ An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system d
 - **Windows Native**: Designed for Windows deployment with Ollama local models
 - **Open WebUI Integration**: Modern chat interface for querying
 - **FastAPI Backend**: RESTful API with OpenAI-compatible endpoints
+- **Document Management UI**: Modern web interface for document upload, folder import, and management
+- **Multi-user Support**: User-isolated knowledge base management
+- **Local Folder Import**: One-click import of local folders to knowledge base
 
 ## Architecture
 
@@ -80,7 +83,21 @@ Use the provided PowerShell script to start all services:
 This will start:
 - Ollama service (localhost:11434)
 - FastAPI backend (localhost:8000)
+- Document Management UI (auto-opens in browser)
 - Open WebUI (localhost:8080, if installed)
+
+### Accessing Interfaces
+
+After starting services, you can access the following interfaces:
+
+- **Document Management UI**: http://localhost:8000/docs/docs-ui
+- **API Documentation**: http://localhost:8000/docs
+- **Open WebUI**: http://localhost:8080 (if installed)
+
+The Document Management UI provides:
+- 📄 Document upload (with drag-and-drop support)
+- 📁 Local folder import
+- 📋 Document management and statistics
 
 ### Manual Startup
 
@@ -235,3 +252,12 @@ Specify your license here.
 ## Support
 
 For issues and questions, please refer to the project documentation or create an issue in the repository.
+
+## Documentation
+
+- [Installation Guide](docs/INSTALLATION.md)
+- [User Guide](docs/USER_GUIDE.md)
+- [Developer Guide](docs/DEVELOPER.md)
+- [Upgrade Guide](docs/UPGRADE_GUIDE.md)
+- [Release Notes](docs/RELEASE_NOTES.md)
+- [Open WebUI Integration Guide](docs/OPENWEBUI_INTEGRATION.md)

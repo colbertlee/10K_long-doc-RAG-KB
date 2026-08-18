@@ -337,7 +337,20 @@ pip uninstall open-webui
 
 ## Upgrading
 
-### Upgrade Application
+### Using Automatic Upgrade Script (Recommended)
+
+```powershell
+# Upgrade to latest version
+.\scripts\upgrade.ps1
+
+# Upgrade to specific version
+.\scripts\upgrade.ps1 -TargetVersion "0.1.3"
+```
+
+For detailed upgrade instructions, refer to the [Upgrade Guide](UPGRADE_GUIDE.md).
+
+### Manual Upgrade
+
 ```bash
 # Pull latest changes
 git pull origin main

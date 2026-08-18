@@ -153,30 +153,27 @@ python scripts\ingest_bulk.py
 
 ### Automatic Upgrade Script
 
-Create an automatic upgrade script:
+Use the provided automatic upgrade script:
 
 ```powershell
-# scripts/upgrade.ps1
+# Upgrade to latest version
+.\scripts\upgrade.ps1
 
-Write-Host "Starting upgrade process..." -ForegroundColor Green
+# Upgrade to specific version
+.\scripts\upgrade.ps1 -TargetVersion "0.1.3"
 
-# Backup
-$backup_date = Get-Date -Format 'yyyyMMdd'
-Copy-Item -Recurse data "data_backup_$backup_date"
-Copy-Item -Recurse lightrag_db "lightrag_db_backup_$backup_date"
-Write-Host "Backup completed: data_backup_$backup_date" -ForegroundColor Cyan
-
-# Update code
-git pull origin master
-Write-Host "Code updated from GitHub" -ForegroundColor Cyan
-
-# Update dependencies
-pip install --upgrade -e .
-Write-Host "Dependencies updated" -ForegroundColor Cyan
-
-# Restart services
-Write-Host "Please restart services manually using .\scripts\start.ps1" -ForegroundColor Yellow
+# Skip backup (not recommended)
+.\scripts\upgrade.ps1 -SkipBackup
 ```
+
+The upgrade script will automatically:
+1. Check current version and latest version
+2. Create data backup
+3. Stop running services
+4. Pull latest code
+5. Update dependencies
+6. Verify installation
+7. Provide guidance for restarting services
 
 ### Monitoring Upgrade Health
 
