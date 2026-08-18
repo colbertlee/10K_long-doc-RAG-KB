@@ -8,13 +8,7 @@ from typing import Optional
 import shutil
 import json
 
-from rag_kb.ingest.user_manager import UserDataManager
-from rag_kb.ingest.pipeline import IngestPipeline
-from rag_kb.config import settings
-
 router = APIRouter()
-user_manager = UserDataManager(settings.data_dir / "users")
-pipeline = IngestPipeline()
 
 
 @router.get("/docs-ui", response_class=HTMLResponse)

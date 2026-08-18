@@ -18,7 +18,6 @@ class UserDataManager:
         self.base_data_dir = Path(base_data_dir or "./data/users")
         self.base_data_dir.mkdir(parents=True, exist_ok=True)
         self.pipeline = IngestPipeline()
-        self.incremental_indexer = IncrementalIndexer()
     
     def get_user_folder(self, user_id: str) -> Path:
         """Get user-specific data folder.
