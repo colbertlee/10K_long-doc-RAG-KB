@@ -270,22 +270,65 @@ tomllib.TOMLDecodeError: Invalid statement (at line 1, column 1)
    Get-Content pyproject.toml | Select-String "version"
    ```
 
-### 问题: upgrade.ps1 脚本失败
+### Problem: upgrade.ps1 script fails
 
-**错误信息**: Git 操作失败或版本显示不正确。
+**Error message**: Git operation failed or version display incorrect.
 
-**解决方案**:
+**Solution**:
 
-1. **使用更新的脚本**:
+1. **Use updated script**:
    ```powershell
    git pull origin master
    .\scripts\upgrade.ps1
    ```
 
-2. **手动升级**:
-   参见上面的手动升级步骤。
+2. **Manual upgrade**:
+   Refer to the manual upgrade steps above.
 
-## 获取帮助
+## Document Management UI Issues
+
+### Problem: Folder selection button shows "Cannot browse folder directly"
+
+**Error message**:
+```
+Please manually enter the folder path in the folder path input box, or use the file picker.
+Note: Due to browser security restrictions, direct folder browsing is not possible.
+```
+
+**Cause**:
+1. Browser does not support `webkitdirectory` attribute
+2. Browser security policies restrict folder access
+3. Incompatible browser version
+
+**Solution**:
+
+1. **Use supported browser**:
+   - Recommended: Chrome or Edge (latest version)
+   - Firefox also supports folder selection
+   - Avoid using older browser versions
+
+2. **Manually enter folder path**:
+   ```powershell
+   # Enter full path in the folder path input box
+   C:\Users\YourName\Documents\MyDocuments
+   ```
+
+3. **Check browser compatibility**:
+   - Ensure browser is latest version
+   - Clear browser cache
+   - Try using incognito mode
+
+4. **Use file picker alternative**:
+   - Click "Select Folder" button
+   - Select all files in the folder (multi-select)
+   - System will batch upload selected files
+
+5. **Server-side folder import**:
+   - Ensure server has read access to target folder
+   - Use absolute path instead of relative path
+   - Avoid using network paths (e.g., `\\server\share`)
+
+## Getting Help
 
 如果以上解决方案都无法解决您的问题：
 
