@@ -147,7 +147,7 @@ async def document_management_ui():
                 <div class="form-group">
                     <label>或选择文件夹（支持批量文件选择）</label>
                     <input type="file" id="folder-input" webkitdirectory directory multiple style="display: none" onchange="handleFolderSelect(event)">
-                    <button class="btn btn-secondary" onclick="document.getElementById('folder-input').click()">📁 选择文件夹</button>
+                    <button class="btn btn-secondary" onclick="selectFolder()">📁 选择文件夹</button>
                     <small style="color: #666; display: block; margin-top: 5px;">支持选择文件夹内的所有文件进行批量导入</small>
                 </div>
                 <div id="folder-progress" class="progress-bar" style="display: none;">
@@ -408,6 +408,12 @@ async def document_management_ui():
             document.getElementById('folder-input').click();
         }
 
+        function selectFolder() {
+            // Trigger folder selection
+            const folderInput = document.getElementById('folder-input');
+            folderInput.click();
+        }
+
         function handleFolderSelect(event) {
             const files = event.target.files;
             if (files.length > 0) {
@@ -423,6 +429,9 @@ async def document_management_ui():
                 
                 // Store files for later upload
                 window.selectedFolderFiles = files;
+            } else {
+                // No files selected, show helpful message
+                showStatus('folder-status', '未选择文件。请确保选择了包含文档的文件夹。', 'warning');
             }
         }
 

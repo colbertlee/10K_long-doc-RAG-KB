@@ -1,5 +1,39 @@
 ﻿# Release Notes
 
+## [0.2.9] - 2026-08-18
+
+### Release Notes
+- Fixed folder selection button in document management UI
+- Added selectFolder function to properly trigger folder picker
+- Added better error handling for empty folder selection
+- Fixed toFixed error in loadDocuments function
+- Added troubleshooting documentation for folder selection issues
+
+### Changes Made
+
+#### Document Management UI Fixes:
+- Replaced inline onclick with dedicated selectFolder function
+- Added null check for total_size_mb in loadDocuments
+- Improved error messages for folder selection
+- Added helpful feedback when no files are selected
+
+#### Documentation Updates:
+- Added folder selection issue troubleshooting
+- Added loadDocuments toFixed error troubleshooting
+- Updated upgrade guides with manual steps
+- Added comprehensive upgrade troubleshooting
+
+### Benefits
+- ✅ Folder selection now works correctly in supported browsers
+- ✅ Better error handling and user feedback
+- ✅ More robust document loading
+- ✅ Comprehensive troubleshooting documentation
+
+### Fixes
+- Fixed folder selection button not triggering file picker
+- Fixed toFixed error when loading document statistics
+- Improved user experience for folder import
+
 ## [0.2.8] - 2026-08-18
 
 ### Release Notes
