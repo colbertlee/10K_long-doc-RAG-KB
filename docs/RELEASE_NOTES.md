@@ -1,5 +1,21 @@
 # Release Notes
 
+## [0.1.3] - 2026-08-18
+
+### Fixes
+- Fixed startup import error (IncrementalIndexer import issue)
+- Removed unused import in user_manager.py
+
+### Improvements
+- Auto-open document management UI on startup
+- Display document management UI URL in startup output
+- Improved user experience with direct access
+
+### User Experience Enhancements
+- Document management interface opens automatically after service startup
+- No need to manually enter URL to access the interface
+- More intuitive service startup process
+
 ## [0.1.2] - 2026-08-18
 
 ### New Features
