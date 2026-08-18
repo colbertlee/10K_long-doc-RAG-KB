@@ -1,5 +1,26 @@
 # Release Notes
 
+## [0.1.6] - 2026-08-18
+
+### New Features
+- Created dedicated Open WebUI startup script (scripts/open_webui.ps1)
+- Enhanced start.ps1 script with optional parameters
+- Support for disabling Open WebUI startup (-NoOpenWebUI parameter)
+- Support for disabling auto-browser opening (-NoBrowser parameter)
+- Open WebUI script supports custom port (-Port parameter)
+
+### Improvements
+- More flexible service management options
+- Users can selectively start services
+- Improved user experience for startup scripts
+- Better error handling and dependency checking
+
+### Documentation Updates
+- Updated user guide with new script usage instructions
+- Updated installation guide with new startup options
+- Updated README files with new script documentation
+- Provided detailed parameter descriptions
+
 ## [0.1.5] - 2026-08-18
 
 ### Fixes
