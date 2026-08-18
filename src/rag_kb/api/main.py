@@ -9,8 +9,10 @@ from rag_kb.config import settings
 from rag_kb.ingest.pipeline import IngestPipeline
 from rag_kb.lightrag.adapter import LightRAGAdapter
 from rag_kb.security.acl import build_acl_filter
+from rag_kb.api.docs_ui import router as docs_ui_router
 
 app = FastAPI(title=settings.app_name)
+app.include_router(docs_ui_router, prefix="/docs")
 
 
 @app.get('/health')

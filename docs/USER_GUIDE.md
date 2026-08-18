@@ -3,12 +3,13 @@
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [Basic Usage](#basic-usage)
-3. [Document Ingestion](#document-ingestion)
-4. [Local Folder Import](#local-folder-import)
-5. [Querying the Knowledge Base](#querying-the-knowledge-base)
-6. [Using Open WebUI](#using-open-webui)
-7. [Configuration](#configuration)
-8. [Troubleshooting](#troubleshooting)
+3. [Document Management UI](#document-management-ui)
+4. [Document Ingestion](#document-ingestion)
+5. [Local Folder Import](#local-folder-import)
+6. [Querying the Knowledge Base](#querying-the-knowledge-base)
+7. [Using Open WebUI](#using-open-webui)
+8. [Configuration](#configuration)
+9. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -53,6 +54,72 @@ Expected response:
 ```json
 {"status": "ok"}
 ```
+
+## Document Management UI
+
+The RAG Knowledge Base provides a modern web interface for document management, including document upload, folder import, and document management features.
+
+### Access Document Management UI
+
+After starting the service, access:
+```
+http://localhost:8000/docs/docs-ui
+```
+
+### Interface Features
+
+The document management interface includes three main feature tabs:
+
+#### 1. 📄 Document Upload
+- Support for batch file upload
+- Drag and drop upload support
+- Real-time upload progress display
+- Support for PDF, Word, Markdown, Text formats
+
+#### 2. 📁 Folder Import
+- Local folder path input
+- One-click import of entire folders
+- Import progress and statistics display
+- Automatic duplicate file skipping
+
+#### 3. 📋 Document Management
+- View document list in knowledge base
+- Document statistics information
+- User and knowledge base management
+
+### Using Document Management Interface
+
+#### Upload Documents
+1. Access http://localhost:8000/docs/docs-ui
+2. Select "Document Upload" tab
+3. Enter user ID and knowledge base name
+4. Click upload area or drag files
+5. Click "Start Upload"
+
+#### Import Folder
+1. Select "Folder Import" tab
+2. Enter user ID and knowledge base name
+3. Enter local folder path (e.g., `C:\Users\YourName\Documents\KB`)
+4. Click "Start Import"
+
+#### Manage Documents
+1. Select "Document Management" tab
+2. Enter user ID and knowledge base name
+3. Click "Load Document List"
+4. View document statistics and list
+
+### Integration with Open WebUI
+
+The document management interface can be seamlessly integrated with Open WebUI:
+
+1. **Start Service**: `.\scripts\start.ps1`
+2. **Access Open WebUI**: http://localhost:8080
+3. **Configure Connection**: Settings → Connection → API URL: `http://localhost:8000/api/v1`
+4. **Access Document Management**: Add custom link in Open WebUI to document management interface
+5. **Import Documents**: Use document management interface to import documents
+6. **Query Documents**: Return to Open WebUI for RAG queries
+
+For detailed integration guide, refer to [Open WebUI Integration Guide](OPENWEBUI_INTEGRATION.md).
 
 ## Document Ingestion
 
