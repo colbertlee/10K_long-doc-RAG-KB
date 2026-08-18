@@ -328,6 +328,36 @@ tomllib.TOMLDecodeError: Invalid statement (at line 1, column 1)
    - 使用绝对路径而不是相对路径
    - 避免使用网络路径（如 `\\server\share`）
 
+### 问题: 加载文档列表失败 - toFixed错误
+
+**错误信息**:
+```
+加载失败: Cannot read properties of undefined (reading 'toFixed')
+```
+
+**原因**: API返回的统计数据中 `total_size_mb` 字段为 `undefined` 或 `null`。
+
+**解决方案**:
+
+1. **确保知识库存在**:
+   - 先创建知识库
+   - 确保知识库中有文档
+
+2. **检查API响应**:
+   - 打开浏览器开发者工具
+   - 查看网络请求
+   - 检查 `/api/v1/users/{user_id}/kbs/{kb_name}/stats` 响应
+
+3. **手动验证**:
+   ```powershell
+   # 测试API端点
+   curl http://localhost:8000/api/v1/users/default/kbs/default/stats
+   ```
+
+**临时解决方案**:
+- 已在代码中添加空值检查
+- 如果问题持续，请确保知识库中有文档数据
+
 ## 获取帮助
 
 如果以上解决方案都无法解决您的问题：

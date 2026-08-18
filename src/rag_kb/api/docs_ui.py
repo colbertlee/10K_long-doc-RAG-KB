@@ -545,7 +545,8 @@ async def document_management_ui():
 
                 // Show stats
                 document.getElementById('stat-total').textContent = stats.file_count;
-                document.getElementById('stat-size').textContent = stats.total_size_mb.toFixed(2) + ' MB';
+                const totalSize = stats.total_size_mb || 0;
+                document.getElementById('stat-size').textContent = totalSize.toFixed(2) + ' MB';
                 document.getElementById('document-stats').style.display = 'grid';
 
                 // Load document list (placeholder)

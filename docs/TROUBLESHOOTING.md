@@ -328,6 +328,36 @@ Note: Due to browser security restrictions, direct folder browsing is not possib
    - Use absolute path instead of relative path
    - Avoid using network paths (e.g., `\\server\share`)
 
+### Problem: Load document list fails - toFixed error
+
+**Error message**:
+```
+Load failed: Cannot read properties of undefined (reading 'toFixed')
+```
+
+**Cause**: The `total_size_mb` field in the API response is `undefined` or `null`.
+
+**Solution**:
+
+1. **Ensure knowledge base exists**:
+   - Create knowledge base first
+   - Ensure knowledge base has documents
+
+2. **Check API response**:
+   - Open browser developer tools
+   - Check network requests
+   - Examine `/api/v1/users/{user_id}/kbs/{kb_name}/stats` response
+
+3. **Manual verification**:
+   ```powershell
+   # Test API endpoint
+   curl http://localhost:8000/api/v1/users/default/kbs/default/stats
+   ```
+
+**Temporary solution**:
+- Added null check in code
+- If problem persists, ensure knowledge base has document data
+
 ## Getting Help
 
 如果以上解决方案都无法解决您的问题：
