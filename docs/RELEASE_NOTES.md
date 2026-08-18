@@ -1,4 +1,10 @@
-# Release Notes
+﻿# Release Notes
+## [0.2.3] - 2026-08-18
+
+### Release Notes
+- Version bump from 0.2.2 to 0.2.3
+- For detailed changes, see commit history
+
 
 ## [0.2.2] - 2026-08-18
 
