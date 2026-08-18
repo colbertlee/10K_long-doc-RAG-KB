@@ -263,3 +263,4 @@ pytest
 - [升级指南](docs/UPGRADE_GUIDE_CN.md)
 - [发布说明](docs/RELEASE_NOTES_CN.md)
 - [Open WebUI 集成指南](docs/OPENWEBUI_INTEGRATION_CN.md)
+- [命名规范](docs/NAMING_CONVENTIONS_CN.md)

@@ -1,5 +1,32 @@
 # Release Notes
 
+## [0.1.7] - 2026-08-18
+
+### New Features
+- Added user ID and knowledge base name validation
+- Implemented current user ID auto-display
+- Added path sanitization to prevent path traversal attacks
+- Enhanced health check endpoint with detailed system status
+- Added current user API endpoint (/api/v1/current-user)
+- Document management UI auto-loads current user ID
+
+### Security Improvements
+- Input validation to prevent special characters and security risks
+- Path sanitization to prevent directory traversal attacks
+- Reserved username validation (prevents using reserved names)
+- Length limits to prevent excessively long names
+
+### Improvements
+- Added CORS middleware for better API access
+- Friendly error messages
+- Enhanced health check showing service status
+- Document management UI user experience improvements
+
+### Documentation Updates
+- Updated health check endpoint description
+- Added user ID naming conventions
+- Provided security best practices guidance
+
 ## [0.1.6] - 2026-08-18
 
 ### New Features
