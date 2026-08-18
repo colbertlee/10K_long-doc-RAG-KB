@@ -77,6 +77,11 @@ async def document_management_ui():
         .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center; }
         .stat-card h3 { font-size: 2em; color: #667eea; margin-bottom: 5px; }
         .stat-card p { color: #666; }
+        .kb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+        .kb-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; }
+        .kb-card h3 { color: #333; margin-bottom: 15px; }
+        .kb-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-sm { padding: 8px 15px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -94,6 +99,7 @@ async def document_management_ui():
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('upload')">📄 文档上传</div>
                 <div class="tab" onclick="switchTab('folder')">📁 文件夹导入</div>
+                <div class="tab" onclick="switchTab('kbs')">🗄️ 知识库管理</div>
                 <div class="tab" onclick="switchTab('manage')">📋 文档管理</div>
             </div>
 
@@ -150,6 +156,40 @@ async def document_management_ui():
                 <button class="btn btn-success" onclick="importFolder()" style="margin-top: 20px;">开始导入</button>
             </div>
 
+            <!-- 知识库管理 -->
+            <div id="kbs-tab" class="tab-content">
+                <h2>知识库管理</h2>
+                <div class="form-group">
+                    <label>用户ID</label>
+                    <input type="text" id="kb-user-id" value="" placeholder="输入用户ID">
+                    <small style="color: #666;">当前登录用户</small>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" onclick="loadKnowledgeBases()">🔄 刷新知识库列表</button>
+                    <button class="btn btn-success" onclick="showCreateKbModal()">➕ 创建新知识库</button>
+                </div>
+                
+                <div id="kb-list" class="kb-list">
+                    <p style="color: #666; text-align: center;">点击"刷新知识库列表"查看您的知识库</p>
+                </div>
+                
+                <!-- 创建知识库模态框 -->
+                <div id="create-kb-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; width: 400px; margin: 100px auto; position: relative;">
+                        <h3 style="margin-top: 0;">创建新知识库</h3>
+                        <div class="form-group">
+                            <label>知识库名称</label>
+                            <input type="text" id="new-kb-name" placeholder="输入知识库名称" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="btn btn-success" onclick="createKnowledgeBase()">创建</button>
+                            <button class="btn btn-secondary" onclick="hideCreateKbModal()">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 文档管理 -->
             <div id="manage-tab" class="tab-content">
                 <h2>文档管理</h2>
@@ -160,7 +200,9 @@ async def document_management_ui():
                 </div>
                 <div class="form-group">
                     <label>知识库名称</label>
-                    <input type="text" id="manage-kb-name" value="default" placeholder="输入知识库名称">
+                    <select id="manage-kb-name" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="default">default</option>
+                    </select>
                 </div>
                 <button class="btn" onclick="loadDocuments()" style="margin-bottom: 20px;">加载文档列表</button>
                 
@@ -192,11 +234,13 @@ async def document_management_ui():
                 document.getElementById('upload-user-id').value = currentUserId;
                 document.getElementById('folder-user-id').value = currentUserId;
                 document.getElementById('manage-user-id').value = currentUserId;
+                document.getElementById('kb-user-id').value = currentUserId;
                 
                 // Update placeholder text
                 document.getElementById('upload-user-id').placeholder = `当前用户: ${currentUserId}`;
                 document.getElementById('folder-user-id').placeholder = `当前用户: ${currentUserId}`;
                 document.getElementById('manage-user-id').placeholder = `当前用户: ${currentUserId}`;
+                document.getElementById('kb-user-id').placeholder = `当前用户: ${currentUserId}`;
             } catch (error) {
                 console.error('Failed to load current user:', error);
                 // Fallback to default
@@ -204,6 +248,7 @@ async def document_management_ui():
                 document.getElementById('upload-user-id').value = defaultUser;
                 document.getElementById('folder-user-id').value = defaultUser;
                 document.getElementById('manage-user-id').value = defaultUser;
+                document.getElementById('kb-user-id').value = defaultUser;
             }
         }
         
@@ -218,6 +263,16 @@ async def document_management_ui():
             // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
             event.target.classList.add('active');
+            
+            // Auto-load knowledge bases when switching to KB management tab
+            if (tabName === 'kbs') {
+                loadKnowledgeBases();
+            }
+            
+            // Auto-load KB list when switching to document management
+            if (tabName === 'manage') {
+                loadKnowledgeBasesForSelect();
+            }
         }
 
         function showStatus(elementId, message, type) {
@@ -443,6 +498,138 @@ async def document_management_ui():
 
             } catch (error) {
                 showStatus('document-list', '加载失败: ' + error.message, 'error');
+            }
+        }
+
+        // Knowledge Base Management Functions
+        async function loadKnowledgeBases() {
+            const userId = document.getElementById('kb-user-id').value;
+            const kbListDiv = document.getElementById('kb-list');
+            
+            try {
+                kbListDiv.innerHTML = '<p style="color: #666; text-align: center;">加载中...</p>';
+                
+                const response = await fetch('/api/v1/users/' + userId + '/kbs');
+                const data = await response.json();
+                
+                if (data.knowledge_bases && data.knowledge_bases.length > 0) {
+                    let kbHTML = '<div class="kb-grid">';
+                    data.knowledge_bases.forEach(kb => {
+                        kbHTML += '<div class="kb-card"><h3>📚 ' + kb + '</h3><div class="kb-actions"><button class="btn btn-sm" onclick="loadKbStats(\'' + userId + '\', \'' + kb + '\')">📊 统计</button><button class="btn btn-sm btn-danger" onclick="deleteKnowledgeBase(\'' + userId + '\', \'' + kb + '\')">🗑️ 删除</button></div></div>';
+                    });
+                    kbHTML += '</div>';
+                    kbListDiv.innerHTML = kbHTML;
+                } else {
+                    kbListDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>还没有知识库</p><button class="btn btn-success" onclick="showCreateKbModal()" style="margin-top: 15px;">➕ 创建第一个知识库</button></div>';
+                }
+            } catch (error) {
+                kbListDiv.innerHTML = '<p style="color: red; text-align: center;">加载失败: ' + error.message + '</p>';
+            }
+        }
+
+        async function loadKnowledgeBasesForSelect() {
+            const userId = document.getElementById('manage-user-id').value;
+            const kbSelect = document.getElementById('manage-kb-name');
+            
+            try {
+                const response = await fetch('/api/v1/users/' + userId + '/kbs');
+                const data = await response.json();
+                
+                // Clear existing options except default
+                kbSelect.innerHTML = '<option value="default">default</option>';
+                
+                if (data.knowledge_bases && data.knowledge_bases.length > 0) {
+                    data.knowledge_bases.forEach(kb => {
+                        if (kb !== 'default') {
+                            const option = document.createElement('option');
+                            option.value = kb;
+                            option.textContent = kb;
+                            kbSelect.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load knowledge bases:', error);
+            }
+        }
+
+        function showCreateKbModal() {
+            document.getElementById('create-kb-modal').style.display = 'block';
+            document.getElementById('new-kb-name').value = '';
+            document.getElementById('new-kb-name').focus();
+        }
+
+        function hideCreateKbModal() {
+            document.getElementById('create-kb-modal').style.display = 'none';
+        }
+
+        async function createKnowledgeBase() {
+            const userId = document.getElementById('kb-user-id').value;
+            const kbName = document.getElementById('new-kb-name').value.trim();
+            
+            if (!kbName) {
+                alert('请输入知识库名称');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('kb_name', kbName);
+                
+                const response = await fetch('/api/v1/users/' + userId + '/kbs', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    hideCreateKbModal();
+                    loadKnowledgeBases();
+                    alert('知识库创建成功！');
+                } else {
+                    alert('创建失败: ' + JSON.stringify(result));
+                }
+            } catch (error) {
+                alert('创建失败: ' + error.message);
+            }
+        }
+
+        async function deleteKnowledgeBase(userId, kbName) {
+            if (!confirm('确定要删除知识库 "' + kbName + '" 吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/users/' + userId + '/kbs/' + kbName, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadKnowledgeBases();
+                    alert('知识库删除成功！');
+                } else {
+                    alert('删除失败: ' + JSON.stringify(result));
+                }
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        async function loadKbStats(userId, kbName) {
+            try {
+                const response = await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/stats');
+                const stats = await response.json();
+                
+                if (stats.error) {
+                    alert('获取统计信息失败: ' + stats.error);
+                } else {
+                    alert('知识库 "' + kbName + '" 统计信息:\n\n文档数: ' + stats.file_count + '\n总大小: ' + stats.total_size_mb.toFixed(2) + ' MB\n文件数: ' + (stats.total_files || 0));
+                }
+            } catch (error) {
+                alert('获取统计信息失败: ' + error.message);
             }
         }
 
