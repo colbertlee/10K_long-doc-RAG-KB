@@ -1,5 +1,10 @@
 # User Guide - RAG Knowledge Base
 
+**Current Version**: v0.3.2 (Stable)  
+**Release Date**: 2026-08-23
+
+> **Important**: This guide is for v0.3.2 stable version. v0.5.0 has known technical issues and is not recommended for use.
+
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [Basic Usage](#basic-usage)

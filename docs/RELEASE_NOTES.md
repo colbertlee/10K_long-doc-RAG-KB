@@ -1,5 +1,36 @@
 ﻿# Release Notes
 
+## [0.3.2] - 2026-08-23
+
+### User Journey Analysis and Documentation Update
+
+**Status**: Stable Release  
+**Recommendation**: Use this version for production
+
+#### New Features
+- **User Journey Analysis**: Complete analysis of 7-step user workflow from system startup to knowledge retrieval
+- **Problem Identification**: Detailed analysis of current issues in each step of the user journey
+- **Improvement Roadmap**: Prioritized improvement plan (P0, P1, P2) for future enhancements
+- **Usage Guidelines**: Clear workflow recommendations for optimal user experience
+
+#### Documentation Updates
+- **docs/USER_JOURNEY_SUMMARY.md**: Comprehensive user journey analysis and summary
+- **docs/USER_JOURNEY_ANALYSIS.md**: Detailed improvement plan and problem analysis
+- **README.md**: Updated with version guidance and current system status
+- **AGENTS.md**: Updated implementation status and version information
+- **README_CN.md**: Updated Chinese documentation with version guidance
+
+#### Technical Notes
+- **Version Guidance**: v0.3.0 remains the recommended stable version
+- **Known Issues**: v0.5.0 has technical issues (routes.py corruption) preventing system startup
+- **Recommendation**: Use v0.3.0 until v0.5.0 issues are resolved
+
+#### Benefits
+- ✅ Clear understanding of current user workflow issues
+- ✅ Prioritized improvement roadmap for future development
+- ✅ Comprehensive documentation for system status
+- ✅ Clear version guidance for users
+
 ## [0.3.0] - 2026-08-18
 
 ### Release Notes

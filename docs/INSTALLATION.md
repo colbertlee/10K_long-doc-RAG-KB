@@ -1,5 +1,10 @@
 # Installation Guide - RAG Knowledge Base
 
+**Current Version**: v0.3.2 (Stable)  
+**Release Date**: 2026-08-23
+
+> **Important**: This guide is for v0.3.2 stable version. v0.5.0 has known technical issues and is not recommended for use.
+
 ## System Requirements
 
 ### Hardware Requirements

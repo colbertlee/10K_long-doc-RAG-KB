@@ -4,14 +4,17 @@
 
 This is an enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed to handle 10,000+ long documents efficiently. The system integrates LightRAG for hybrid retrieval, BM25 for sparse search, Cross-Encoder reranking, comprehensive security, evaluation, and deployment capabilities.
 
-## Latest Implementation Status (v0.4.1)
+## Latest Implementation Status (v0.3.2)
 
-The system has been fully enhanced with enterprise-grade features:
+The system has been enhanced with comprehensive user journey analysis and documentation:
 
-### ✅ Completed Enhancements
+### ✅ Current Status
+- **Stable Version**: v0.3.0 (recommended for use)
+- **Latest Analysis**: v0.3.2 (documentation and user journey analysis)
+- **Known Issues**: v0.5.0 has technical issues (routes.py corruption)
+
+### ✅ Completed Enhancements (v0.3.0)
 - **Python 3.11+ Compatibility**: Updated from 3.9 to meet requirements
-- **Dependency Resolution**: Fixed critical version conflicts (pydantic_core, cryptography, numpy)
-- **LightRAG Integration**: Resolved import path and initialization issues with lightrag-hku
 - **Incremental Updates**: File hash-based change detection with document registry
 - **Enterprise Security**: Comprehensive RBAC/ACL with pre-filtering and post-filtering
 - **Hybrid Search**: BM25 sparse search + LightRAG hybrid with RRF fusion
@@ -21,12 +24,12 @@ The system has been fully enhanced with enterprise-grade features:
 - **Deployment Scripts**: PowerShell and batch automation with health checks
 - **Performance Monitoring**: Structured logging, system metrics, and performance tracking
 - **Performance Optimization**: Configurable templates and tuning guidelines
-- **End-to-End Validation**: Comprehensive business flow validation with 100% test pass rate
-- **Complete User Interface**: Full chat interface with multi-turn conversations and history
-- **Advanced Filtering**: Time range, document type, custom metadata filtering capabilities
-- **Interactive Knowledge Graph**: Cytoscape.js-based graph visualization with multiple layouts
-- **User Feedback System**: Comprehensive feedback collection and analysis mechanism
-- **Unified Management Script**: Single entry point for all system operations (manage.ps1)
+
+### 📊 User Journey Analysis (v0.3.2)
+- **Complete Workflow Analysis**: 7-step user journey from start to finish
+- **Problem Identification**: Each step's current issues and impact
+- **Improvement Roadmap**: Prioritized improvements (P0, P1, P2)
+- **Usage Guidelines**: Recommended workflow for stable version
 
 ## Key Technical Stack
 
