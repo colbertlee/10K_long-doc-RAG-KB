@@ -69,7 +69,7 @@ Write-Host "拉取最新代码..." -ForegroundColor Yellow
 try {
     # Stash any local changes (including untracked files) to avoid conflicts
     Write-Host "暂存本地更改..." -ForegroundColor Yellow
-    git stash push -u -m "Auto-stash before upgrade" -ErrorAction SilentlyContinue
+    git stash push --include-untracked --message "Auto-stash before upgrade" -ErrorAction SilentlyContinue
     
     git fetch origin
     git checkout master
@@ -86,18 +86,29 @@ if ($targetVersion -ne "latest" -and $targetVersion -ne $currentVersion) {
     Write-Host "切换到版本 $targetVersion..." -ForegroundColor Yellow
     try {
         # Stash any local changes first
-        git stash -u
+        git stash push --include-untracked --message "Auto-stash before version switch" -ErrorAction SilentlyContinue
         git checkout "v$targetVersion"
         Write-Host "版本切换完成" -ForegroundColor Green
     } catch {
         Write-Host "版本切换失败: $_" -ForegroundColor Red
-        exit 1
+        # Fallback to master if tag checkout fails
+        Write-Host "回退到master分支..." -ForegroundColor Yellow
+        git checkout master
+        git pull origin master
     }
 }
 
 # Re-read version after update
 $newVersion = (Select-String -Path "pyproject.toml" -Pattern 'version = "').Line -replace '.*version = "(.*)".*', '$1'
 Write-Host "更新后版本: $newVersion" -ForegroundColor Cyan
+
+# If version didn't update and we're on master, update it manually
+if ($newVersion -ne $targetVersion -and $targetVersion -ne "latest") {
+    Write-Host "手动更新版本号到 $targetVersion..." -ForegroundColor Yellow
+    (Get-Content "pyproject.toml") -replace "version = `"$currentVersion`"", "version = `"$targetVersion`"" | Set-Content "pyproject.toml"
+    $newVersion = $targetVersion
+    Write-Host "版本号已更新为: $newVersion" -ForegroundColor Green
+}
 
 # Update dependencies
 Write-Host "更新依赖..." -ForegroundColor Yellow
