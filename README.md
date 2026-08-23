@@ -131,11 +131,16 @@ security:
 ### 4. 启动系统
 
 ```powershell
-# PowerShell
-.\scripts\start.ps1
+# 使用统一管理脚本启动
+.\manage.ps1 start
 
-# 或批处理
-.\scripts\start.bat
+# 其他管理命令
+.\manage.ps1 stop      # 停止系统
+.\manage.ps1 restart   # 重启系统
+.\manage.ps1 status    # 查看系统状态
+.\manage.ps1 upgrade   # 升级系统
+.\manage.ps1 open      # 在浏览器中打开系统
+.\manage.ps1 help      # 显示帮助信息
 ```
 
 ### 5. 访问系统

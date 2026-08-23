@@ -80,13 +80,18 @@ python scripts/end_to_end_test.py  # NEW: Complete business flow validation
 
 ### Starting the Server
 ```powershell
-# PowerShell with health checks
-.\scripts\start.ps1
+# Unified management script (recommended)
+.\manage.ps1 start
 
-# Batch file
-.\scripts\start.bat
+# Other management commands
+.\manage.ps1 stop      # Stop system
+.\manage.ps1 restart   # Restart system
+.\manage.ps1 status    # Check system status
+.\manage.ps1 upgrade   # Upgrade system
+.\manage.ps1 open      # Open in browser
+.\manage.ps1 help      # Show help
 
-# Manual start
+# Manual start (if needed)
 python -m uvicorn src.rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -119,12 +124,15 @@ rag-kb/
 │   └── PERFORMANCE_TUNING.md  # Performance optimization guide (NEW)
 ├── logs/                   # Log files (auto-created) (NEW)
 ├── scripts/               # Deployment scripts
-│   ├── start.ps1         # PowerShell startup
+│   ├── manage.ps1        # Unified management script (NEW)
 │   ├── install.ps1       # Installation script
-│   ├── start.bat         # Batch startup
+│   ├── upgrade.ps1       # Upgrade script
+│   ├── import_local_folder.ps1 # Folder import (NEW)
+│   ├── _start_internal.ps1 # Internal startup script (RENAMED)
 │   ├── test_ingestion.py # Ingestion testing (NEW)
 │   ├── test_hybrid_search.py # Search testing (NEW)
-│   └── test_graph_extraction.py # Graph testing (NEW)
+│   ├── test_graph_extraction.py # Graph testing (NEW)
+│   └── end_to_end_test.py # Complete business flow validation (NEW)
 ├── src/rag_kb/           # Main source code
 │   ├── api/              # API layer
 │   │   ├── main.py       # FastAPI application with monitoring (UPDATED)
