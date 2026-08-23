@@ -205,6 +205,29 @@ async def rag_kb_integration():
         """)
 
 
+@app.get('/')
+async def root():
+    """Root endpoint - redirect to simple UI."""
+    simple_ui_file = static_dir / "simple_ui.html"
+    if simple_ui_file.exists():
+        return HTMLResponse(content=simple_ui_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>RAG KB</title></head>
+        <body>
+        <h1>RAG Knowledge Base</h1>
+        <p>Welcome to RAG KB. Please visit:</p>
+        <ul>
+            <li><a href="/docs">API Documentation</a></li>
+            <li><a href="/docs/docs-ui">Document Management UI</a></li>
+            <li><a href="/health">Health Check</a></li>
+        </ul>
+        </body>
+        </html>
+        """)
+
+
 @app.post('/api/v1/ingest')
 async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
     """Ingest a document into the RAG knowledge base.

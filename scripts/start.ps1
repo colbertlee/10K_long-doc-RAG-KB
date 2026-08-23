@@ -77,6 +77,7 @@ if (Test-Path "configs\config.yaml") {
 Write-Host "🌐 Starting FastAPI server..." -ForegroundColor Yellow
 Write-Host "   API will be available at: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "   API docs at: http://localhost:8000/docs" -ForegroundColor Cyan
+Write-Host "   Document Management: http://localhost:8000/docs/docs-ui" -ForegroundColor Cyan
 Write-Host "   Press Ctrl+C to stop the server" -ForegroundColor Yellow
 
 try {
