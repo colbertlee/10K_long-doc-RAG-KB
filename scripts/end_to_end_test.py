@@ -14,7 +14,7 @@ class BusinessFlowValidator:
     """Complete business flow validator."""
     
     def __init__(self):
-        self.base_url = "http://localhost:8002"
+        self.base_url = "http://localhost:8000"
         self.test_results = []
         self.server_process = None
     
@@ -155,7 +155,7 @@ class BusinessFlowValidator:
                 sys.executable, "-m", "uvicorn",
                 "src.rag_kb.api.main:app",
                 "--host", "0.0.0.0",
-                "--port", "8002"
+                "--port", "8000"
             ]
             
             self.server_process = subprocess.Popen(
