@@ -4,7 +4,7 @@
 
 This is an enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed to handle 10,000+ long documents efficiently. The system integrates LightRAG for hybrid retrieval, BM25 for sparse search, Cross-Encoder reranking, comprehensive security, evaluation, and deployment capabilities.
 
-## Latest Implementation Status (v0.3.1)
+## Latest Implementation Status (v0.4.0)
 
 The system has been fully enhanced with enterprise-grade features:
 
@@ -22,6 +22,10 @@ The system has been fully enhanced with enterprise-grade features:
 - **Performance Monitoring**: Structured logging, system metrics, and performance tracking
 - **Performance Optimization**: Configurable templates and tuning guidelines
 - **End-to-End Validation**: Comprehensive business flow validation with 100% test pass rate
+- **Complete User Interface**: Full chat interface with multi-turn conversations and history
+- **Advanced Filtering**: Time range, document type, custom metadata filtering capabilities
+- **Interactive Knowledge Graph**: Cytoscape.js-based graph visualization with multiple layouts
+- **User Feedback System**: Comprehensive feedback collection and analysis mechanism
 
 ## Key Technical Stack
 
@@ -30,12 +34,13 @@ The system has been fully enhanced with enterprise-grade features:
 - **RAG Engine**: LightRAG (lightrag-hku>=1.5.6), BM25 (secondary)
 - **Local LLM**: Ollama with qwen3.5:4b model (or gemma4:e4b)
 - **Embedding**: Ollama with nomic-embed-text or sentence-transformers
-- **Frontend**: Open WebUI integration
+- **Frontend**: Custom interfaces with Cytoscape.js for graph visualization, Open WebUI integration
 - **Testing**: pytest with custom RAGAS evaluation framework
 - **Graph Processing**: NetworkX for knowledge graph visualization
 - **Monitoring**: psutil for system metrics tracking
 - **Performance**: rank-bm25 for sparse search optimization
 - **Dependencies**: numpy>=2.0.0,<2.8.0, pydantic-core==2.46.4, cryptography==48.0.0
+- **Visualization**: Cytoscape.js for interactive knowledge graph display
 
 ## Build and Test Commands
 
