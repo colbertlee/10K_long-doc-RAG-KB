@@ -248,7 +248,7 @@
             <a href="http://localhost:8000/docs/docs-ui" target="_blank" class="btn btn-primary">
                 🔗 新窗口打开
             </a>
-            <a href="http://localhost:8080" class="btn btn-secondary">
+            <a href="http://localhost:8000" class="btn btn-secondary">
                 💬 返回Open WebUI
             </a>
         </div>
@@ -301,7 +301,7 @@
             
             // 检查Open WebUI服务
             try {
-                const response = await fetch('http://localhost:8080');
+                const response = await fetch('http://localhost:8000');
                 updateStatus('webui-status', 'webui-status-text', true, '运行中');
             } catch (error) {
                 updateStatus('webui-status', 'webui-status-text', false, '未运行');
