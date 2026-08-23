@@ -4,7 +4,7 @@
 
 This is an enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed to handle 10,000+ long documents efficiently. The system integrates LightRAG for hybrid retrieval, BM25 for sparse search, Cross-Encoder reranking, comprehensive security, evaluation, and deployment capabilities.
 
-## Latest Implementation Status (v0.4.0)
+## Latest Implementation Status (v0.4.1)
 
 The system has been fully enhanced with enterprise-grade features:
 
@@ -26,6 +26,7 @@ The system has been fully enhanced with enterprise-grade features:
 - **Advanced Filtering**: Time range, document type, custom metadata filtering capabilities
 - **Interactive Knowledge Graph**: Cytoscape.js-based graph visualization with multiple layouts
 - **User Feedback System**: Comprehensive feedback collection and analysis mechanism
+- **Unified Management Script**: Single entry point for all system operations (manage.ps1)
 
 ## Key Technical Stack
 
