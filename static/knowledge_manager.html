@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG知识库 - 统一知识管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.5em; font-weight: 600; }
+        .header-actions { display: flex; gap: 10px; }
+        .header-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .main-container { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 280px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-title { font-size: 1.1em; font-weight: 600; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .knowledge-tree { list-style: none; }
+        .tree-item { padding: 10px 12px; border-radius: 5px; cursor: pointer; margin-bottom: 5px; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+        .tree-item:hover { background: #f0f0f0; }
+        .tree-item.active { background: #e8f4fd; color: #667eea; }
+        .tree-item .icon { font-size: 1.2em; }
+        .tree-item .count { margin-left: auto; background: #667eea; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+        
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { background: #f0f0f0; padding: 6px 12px; border-radius: 15px; font-size: 0.9em; cursor: pointer; transition: background 0.2s; }
+        .tag:hover { background: #667eea; color: white; }
+        .tag.active { background: #667eea; color: white; }
+        
+        .content-area { flex: 1; display: flex; flex-direction: column; background: white; overflow: hidden; }
+        
+        .toolbar { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
+        .toolbar-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: background 0.3s; }
+        .toolbar-btn:hover { background: #5568d3; }
+        .toolbar-btn.secondary { background: #6c757d; }
+        .toolbar-btn.secondary:hover { background: #5a6268; }
+        
+        .search-container { flex: 1; position: relative; }
+        .search-input { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 25px; font-size: 14px; }
+        .search-input:focus { outline: none; border-color: #667eea; }
+        .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #999; }
+        
+        .knowledge-list { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .knowledge-item { background: white; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; gap: 15px; transition: box-shadow 0.2s; }
+        .knowledge-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        .item-icon { font-size: 2em; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: #f8f9fa; border-radius: 8px; }
+        
+        .item-content { flex: 1; }
+        .item-title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .item-meta { color: #666; font-size: 0.9em; margin-bottom: 8px; }
+        .item-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+        .item-tag { background: #e8f4fd; color: #667eea; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; }
+        
+        .item-status { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+        .status-processed { background: #d4edda; color: #155724; }
+        .status-processing { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        
+        .item-actions { display: flex; gap: 5px; }
+        .action-btn { background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; transition: background 0.2s; }
+        .action-btn:hover { background: #f0f0f0; }
+        
+        .right-panel { width: 320px; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        
+        .panel-section { margin-bottom: 25px; }
+        .panel-title { font-size: 1.1em; font-weight: 600; color: #333; margin-bottom: 15px; }
+        
+        .upload-zone { border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
+        .upload-zone:hover { border-color: #667eea; }
+        .upload-zone.dragover { border-color: #667eea; background: #f8f9fa; }
+        .upload-icon { font-size: 2em; color: #667eea; margin-bottom: 10px; }
+        .upload-text { color: #666; margin-bottom: 10px; }
+        .upload-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: 600; color: #667eea; }
+        .stat-label { font-size: 0.9em; color: #666; margin-top: 5px; }
+        
+        .recent-list { list-style: none; }
+        .recent-item { padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 5px; transition: background 0.2s; }
+        .recent-item:hover { background: #f0f0f0; }
+        .recent-title { font-weight: 600; color: #333; margin-bottom: 3px; }
+        .recent-time { font-size: 0.8em; color: #666; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 10px; padding: 30px; max-width: 600px; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 1.3em; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 1.5em; cursor: pointer; }
+        
+        .progress-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: #667eea; transition: width 0.3s; }
+        
+        .empty-state { text-align: center; padding: 50px 20px; color: #666; }
+        .empty-icon { font-size: 3em; margin-bottom: 20px; }
+        
+        @media (max-width: 1200px) {
+            .right-panel { display: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .toolbar { flex-wrap: wrap; }
+            .search-container { order: 3; width: 100%; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 RAG知识库 - 统一知识管理</h1>
+        <div class="header-actions">
+            <button class="header-btn" onclick="openUploadModal()">📤 上传文档</button>
+            <button class="header-btn" onclick="showSystemStatus()">📊 系统状态</button>
+            <button class="header-btn" onclick="showHelp()">❓ 帮助</button>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">📂 知识库</div>
+                <ul class="knowledge-tree">
+                    <li class="tree-item active" onclick="filterByCategory('all')">
+                        <span class="icon">📚</span>
+                        <span>全部文档</span>
+                        <span class="count" id="totalCount">0</span>
+                    </li>
+                    <li class="tree-item" onclick="filterByCategory('technical')">
+                        <span class="icon">🔧</span>
+                        <span>技术文档</span>
+                        <span class="count" id="techCount">0</span>
+                    </li>
+                    <li class="tree-item" onclick="filterByCategory('product')">
+                        <span class="icon">📦</span>
+                        <span>产品资料</span>
+                        <span class="count" id="productCount">0</span>
+                    </li>
+                    <li class="tree-item" onclick="filterByCategory('project')">
+                        <span class="icon">📋</span>
+                        <span>项目文档</span>
+                        <span class="count" id="projectCount">0</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">🏷️ 标签</div>
+                <div class="tag-cloud" id="tagCloud">
+                    <span class="tag" onclick="filterByTag('Python')">Python</span>
+                    <span class="tag" onclick="filterByTag('机器学习')">机器学习</span>
+                    <span class="tag" onclick="filterByTag('架构')">架构</span>
+                    <span class="tag" onclick="filterByTag('API')">API</span>
+                    <span class="tag" onclick="filterByTag('数据库')">数据库</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">🕐 最近访问</div>
+                <ul class="recent-list" id="recentList">
+                    <li class="recent-item">
+                        <div class="recent-title">技术架构文档</div>
+                        <div class="recent-time">2分钟前</div>
+                    </li>
+                    <li class="recent-item">
+                        <div class="recent-title">产品需求文档</div>
+                        <div class="recent-time">1小时前</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="toolbar">
+                <button class="toolbar-btn" onclick="openUploadModal()">📤 上传文档</button>
+                <button class="toolbar-btn secondary" onclick="importFolder()">📁 导入文件夹</button>
+                <button class="toolbar-btn secondary" onclick="batchOperation()">📦 批量操作</button>
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜索知识..." oninput="handleSearch(this.value)">
+                    <span class="search-icon">🔍</span>
+                </div>
+            </div>
+            
+            <div class="knowledge-list" id="knowledgeList">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>暂无文档</h3>
+                    <p>点击"上传文档"开始构建您的知识库</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel-section">
+                <div class="panel-title">📤 快速上传</div>
+                <div class="upload-zone" id="uploadZone" onclick="openUploadModal()">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">拖拽文件到此处或点击上传</div>
+                    <button class="upload-btn">选择文件</button>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">📊 知识统计</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">总文档数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statProcessed">0</div>
+                        <div class="stat-label">已处理</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statSize">0 MB</div>
+                        <div class="stat-label">总大小</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statTags">0</div>
+                        <div class="stat-label">标签数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">🕸️ 知识图谱</div>
+                <div style="height: 200px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #666;">
+                    <a href="/graph-ui" style="color: #667eea; text-decoration: none;">查看完整图谱 →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 上传模态框 -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📤 上传文档</div>
+                <button class="modal-close" onclick="closeUploadModal()">×</button>
+            </div>
+            <div class="upload-zone" id="modalUploadZone">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">拖拽文件到此处或点击选择</div>
+                <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(event)">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+            </div>
+            <div id="uploadProgress" style="display: none; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span id="uploadFileName">文件名</span>
+                    <span id="uploadProgressText">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="uploadProgressBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let knowledgeData = [];
+        let currentFilter = { category: 'all', tag: null, search: '' };
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadKnowledgeData();
+            setupDragAndDrop();
+        });
+        
+        function loadKnowledgeData() {
+            // 模拟加载知识数据
+            knowledgeData = [
+                {
+                    id: 1,
+                    title: '技术架构文档',
+                    type: 'PDF',
+                    size: '2.3 MB',
+                    date: '2024-08-23',
+                    category: 'technical',
+                    tags: ['架构', '技术', 'Python'],
+                    status: 'processed'
+                },
+                {
+                    id: 2,
+                    title: '产品需求文档',
+                    type: 'DOCX',
+                    size: '1.5 MB',
+                    date: '2024-08-22',
+                    category: 'product',
+                    tags: ['产品', '需求'],
+                    status: 'processed'
+                }
+            ];
+            
+            renderKnowledgeList();
+            updateStatistics();
+        }
+        
+        function renderKnowledgeList() {
+            const container = document.getElementById('knowledgeList');
+            const filteredData = filterKnowledgeData();
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>暂无文档</h3>
+                        <p>点击"上传文档"开始构建您的知识库</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredData.map(item => `
+                <div class="knowledge-item">
+                    <div class="item-icon">${getFileIcon(item.type)}</div>
+                    <div class="item-content">
+                        <div class="item-title">${item.title}</div>
+                        <div class="item-meta">${item.type} | ${item.size} | ${item.date}</div>
+                        <div class="item-tags">
+                            ${item.tags.map(tag => `<span class="item-tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="item-status">
+                        <span class="status-badge status-${item.status}">
+                            ${item.status === 'processed' ? '✅ 已索引' : item.status === 'processing' ? '⏳ 处理中' : '❌ 错误'}
+                        </span>
+                        <div class="item-actions">
+                            <button class="action-btn" onclick="previewDocument(${item.id})">预览</button>
+                            <button class="action-btn" onclick="deleteDocument(${item.id})">删除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function filterKnowledgeData() {
+            return knowledgeData.filter(item => {
+                if (currentFilter.category !== 'all' && item.category !== currentFilter.category) {
+                    return false;
+                }
+                if (currentFilter.tag && !item.tags.includes(currentFilter.tag)) {
+                    return false;
+                }
+                if (currentFilter.search && !item.title.toLowerCase().includes(currentFilter.search.toLowerCase())) {
+                    return false;
+                }
+                return true;
+            });
+        }
+        
+        function getFileIcon(type) {
+            const icons = {
+                'PDF': '📄',
+                'DOCX': '📝',
+                'TXT': '📃',
+                'MD': '📑',
+                'default': '📄'
+            };
+            return icons[type] || icons['default'];
+        }
+        
+        function updateStatistics() {
+            document.getElementById('statTotal').textContent = knowledgeData.length;
+            document.getElementById('statProcessed').textContent = knowledgeData.filter(item => item.status === 'processed').length;
+            document.getElementById('statSize').textContent = '3.8 MB';
+            document.getElementById('statTags').textContent = 10;
+            
+            document.getElementById('totalCount').textContent = knowledgeData.length;
+            document.getElementById('techCount').textContent = knowledgeData.filter(item => item.category === 'technical').length;
+            document.getElementById('productCount').textContent = knowledgeData.filter(item => item.category === 'product').length;
+            document.getElementById('projectCount').textContent = knowledgeData.filter(item => item.category === 'project').length;
+        }
+        
+        function filterByCategory(category) {
+            currentFilter.category = category;
+            document.querySelectorAll('.tree-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            renderKnowledgeList();
+        }
+        
+        function filterByTag(tag) {
+            currentFilter.tag = currentFilter.tag === tag ? null : tag;
+            document.querySelectorAll('.tag').forEach(item => item.classList.remove('active'));
+            if (currentFilter.tag) {
+                event.currentTarget.classList.add('active');
+            }
+            renderKnowledgeList();
+        }
+        
+        function handleSearch(value) {
+            currentFilter.search = value;
+            renderKnowledgeList();
+        }
+        
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+        
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+        
+        function setupDragAndDrop() {
+            const zones = [document.getElementById('uploadZone'), document.getElementById('modalUploadZone')];
+            
+            zones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('dragover');
+                });
+                
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('dragover');
+                });
+                
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('dragover');
+                    handleFileDrop(e.dataTransfer.files);
+                });
+            });
+        }
+        
+        function handleFileSelect(event) {
+            handleFileDrop(event.target.files);
+        }
+        
+        function handleFileDrop(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            document.getElementById('uploadFileName').textContent = file.name;
+            document.getElementById('uploadProgress').style.display = 'block';
+            
+            // 模拟上传进度
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                document.getElementById('uploadProgressBar').style.width = progress + '%';
+                document.getElementById('uploadProgressText').textContent = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        // 添加到知识库
+                        knowledgeData.push({
+                            id: Date.now(),
+                            title: file.name,
+                            type: file.name.split('.').pop().toUpperCase(),
+                            size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+                            date: new Date().toISOString().split('T')[0],
+                            category: 'technical',
+                            tags: ['新上传'],
+                            status: 'processing'
+                        });
+                        
+                        renderKnowledgeList();
+                        updateStatistics();
+                        closeUploadModal();
+                        
+                        // 模拟处理完成
+                        setTimeout(() => {
+                            knowledgeData[knowledgeData.length - 1].status = 'processed';
+                            renderKnowledgeList();
+                            updateStatistics();
+                        }, 3000);
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        function importFolder() {
+            alert('文件夹导入功能开发中...');
+        }
+        
+        function batchOperation() {
+            alert('批量操作功能开发中...');
+        }
+        
+        function previewDocument(id) {
+            alert('文档预览功能开发中...');
+        }
+        
+        function deleteDocument(id) {
+            if (confirm('确定要删除这个文档吗？')) {
+                knowledgeData = knowledgeData.filter(item => item.id !== id);
+                renderKnowledgeList();
+                updateStatistics();
+            }
+        }
+        
+        function showSystemStatus() {
+            window.open('http://localhost:8000/health', '_blank');
+        }
+        
+        function showHelp() {
+            window.open('/docs/MANAGE_SCRIPT_GUIDE.md', '_blank');
+        }
+    </script>
+</body>
+</html>

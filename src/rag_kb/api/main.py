@@ -205,6 +205,24 @@ async def rag_kb_integration():
         """)
 
 
+@app.get('/knowledge-manager')
+async def knowledge_manager():
+    """Unified knowledge management interface."""
+    km_file = static_dir / "knowledge_manager.html"
+    if km_file.exists():
+        return HTMLResponse(content=km_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>Knowledge Manager</title></head>
+        <body>
+        <h1>Knowledge Manager</h1>
+        <p>Knowledge manager interface not found. Please ensure static files are properly configured.</p>
+        </body>
+        </html>
+        """)
+
+
 @app.get('/graph-ui')
 async def graph_ui():
     """Knowledge graph visualization interface."""
