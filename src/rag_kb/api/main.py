@@ -205,6 +205,42 @@ async def rag_kb_integration():
         """)
 
 
+@app.get('/graph-ui')
+async def graph_ui():
+    """Knowledge graph visualization interface."""
+    graph_ui_file = static_dir / "graph_ui.html"
+    if graph_ui_file.exists():
+        return HTMLResponse(content=graph_ui_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>Graph UI</title></head>
+        <body>
+        <h1>Knowledge Graph Visualization</h1>
+        <p>Graph interface not found. Please ensure static files are properly configured.</p>
+        </body>
+        </html>
+        """)
+
+
+@app.get('/chat-ui')
+async def chat_ui():
+    """Chat interface for conversational RAG."""
+    chat_ui_file = static_dir / "chat_ui.html"
+    if chat_ui_file.exists():
+        return HTMLResponse(content=chat_ui_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>Chat UI</title></head>
+        <body>
+        <h1>Chat Interface</h1>
+        <p>Chat interface not found. Please ensure static files are properly configured.</p>
+        </body>
+        </html>
+        """)
+
+
 @app.get('/')
 async def root():
     """Root endpoint - redirect to simple UI."""

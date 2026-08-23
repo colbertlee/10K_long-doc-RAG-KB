@@ -10,10 +10,15 @@ from rag_kb.lightrag.adapter import LightRAGAdapter
 from rag_kb.ingest.user_manager import UserDataManager
 from rag_kb.config import settings
 from rag_kb.utils.validation import validate_user_id, validate_kb_name, get_current_user
+from rag_kb.api.advanced_filters import AdvancedFilter, FilterBuilder
+from rag_kb.api.feedback import FeedbackCollector, FeedbackAnalyzer
 
 router = APIRouter()
 rag = LightRAGAdapter()
 user_manager = UserDataManager(settings.data_dir / "users")
+advanced_filter = AdvancedFilter()
+feedback_collector = FeedbackCollector(settings.data_dir / "feedback")
+feedback_analyzer = FeedbackAnalyzer(feedback_collector)
 
 
 @router.get('/current-user')
@@ -305,6 +310,79 @@ async def import_folder(user_id: str, kb_name: str, folder_path: str, acl: dict 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post('/advanced-search')
+async def advanced_search(search_request: dict):
+    """Advanced search with filtering capabilities.
+    
+    Args:
+        search_request: Dictionary containing:
+            - query: Search query string
+            - mode: Search mode (hybrid/naive/local/global)
+            - filters: Advanced filters (time_range, document_type, etc.)
+            - user_roles: User roles for ACL filtering
+            
+    Returns:
+        Search results with applied filters
+    """
+    try:
+        query = search_request.get('query', '')
+        mode = search_request.get('mode', 'hybrid')
+        filters = search_request.get('filters', {})
+        user_roles = search_request.get('user_roles', {'level': ['Internal']})
+        
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is required")
+        
+        # Perform initial search
+        if not user_roles:
+            user_roles = {'level': ['Internal']}
+        
+        try:
+            # Use async query to avoid event loop issues
+            answer = await rag.aquery(query, mode=mode, user_roles=user_roles)
+        except Exception as e:
+            # Fallback to sync query if async fails
+            try:
+                answer = rag.query(query, mode=mode, user_roles=user_roles)
+            except Exception as e2:
+                # Return a simple error response if both fail
+                return {'answer': f'Error: {str(e2)}', 'sources': []}
+        
+        # Parse sources from answer
+        sources = extract_sources(answer)
+        
+        # Apply advanced filters if provided
+        if filters and sources:
+            # Convert sources to SearchResult format for filtering
+            from rag_kb.models import SearchResult
+            search_results = []
+            for source in sources:
+                search_result = SearchResult(
+                    content=answer,  # Use the full answer as content
+                    metadata=source,
+                    score=source.get('score', 0.0)
+                )
+                search_results.append(search_result)
+            
+            # Apply filters
+            filtered_results = advanced_filter.apply_filters(search_results, filters)
+            
+            # Convert back to source format
+            filtered_sources = [result.metadata for result in filtered_results]
+        else:
+            filtered_sources = sources
+        
+        return {
+            'answer': answer,
+            'sources': filtered_sources,
+            'total_sources': len(filtered_sources),
+            'filters_applied': list(filters.keys()) if filters else []
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post('/import-local-folder')
 async def import_local_folder_simple(folder_path: str, user_id: str = "default", kb_name: str = "default", acl: dict = None):
     """Simple endpoint to import local folder without requiring user/kb creation first.
@@ -402,5 +480,92 @@ async def get_knowledge_graph(user_id: str, kb_name: str):
                     },
                     "message": "知识图谱可视化需要NetworkX库。请安装: pip install networkx"
                 }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post('/feedback')
+async def submit_feedback(feedback_data: dict):
+    """Submit user feedback for search results.
+    
+    Args:
+        feedback_data: Dictionary containing:
+            - user_id: User identifier
+            - query: User query
+            - answer: System answer
+            - rating: User rating (positive/negative/neutral or 1-5)
+            - comment: Optional user comment
+            - sources: Source documents
+            - search_mode: Search mode used
+            
+    Returns:
+        Feedback submission result
+    """
+    try:
+        success = feedback_collector.add_feedback(feedback_data)
+        if success:
+            return {
+                "success": True,
+                "message": "Feedback submitted successfully"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to submit feedback")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/feedback/statistics')
+async def get_feedback_statistics():
+    """Get feedback statistics.
+    
+    Returns:
+        Feedback statistics including total count, positive/negative counts, average rating
+    """
+    try:
+        stats = feedback_collector.get_statistics()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/feedback/analysis')
+async def get_feedback_analysis():
+    """Get feedback analysis and improvement suggestions.
+    
+    Returns:
+        Analysis results including common issues and improvement suggestions
+    """
+    try:
+        common_issues = feedback_analyzer.identify_common_issues()
+        suggestions = feedback_analyzer.suggest_improvements()
+        
+        return {
+            "common_issues": common_issues,
+            "improvement_suggestions": suggestions,
+            "statistics": feedback_collector.get_statistics()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/feedback/recent')
+async def get_recent_feedback(limit: int = 50, offset: int = 0):
+    """Get recent feedback entries.
+    
+    Args:
+        limit: Maximum number of entries to return
+        offset: Number of entries to skip
+        
+    Returns:
+        List of recent feedback entries
+    """
+    try:
+        feedbacks = feedback_collector.get_feedback(limit=limit, offset=offset)
+        return {
+            "feedbacks": feedbacks,
+            "total": len(feedbacks),
+            "limit": limit,
+            "offset": offset
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

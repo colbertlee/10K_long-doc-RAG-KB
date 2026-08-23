@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG知识库 - 知识图谱</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.5em; font-weight: 600; }
+        .header-actions { display: flex; gap: 10px; }
+        .header-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .main-container { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .sidebar h2 { font-size: 1.2em; color: #333; margin-bottom: 15px; }
+        
+        .control-group { margin-bottom: 20px; }
+        .control-label { font-weight: 600; color: #555; margin-bottom: 8px; display: block; }
+        .control-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+        .control-select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+        
+        .btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; width: 100%; }
+        .btn:hover { background: #5568d3; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .graph-container { flex: 1; position: relative; background: white; }
+        #cy { width: 100%; height: 100%; }
+        
+        .graph-stats { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stat-item { margin-bottom: 8px; }
+        .stat-label { font-size: 0.9em; color: #666; }
+        .stat-value { font-size: 1.2em; font-weight: 600; color: #333; }
+        
+        .node-info { position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 300px; display: none; }
+        .node-info.active { display: block; }
+        .node-info h3 { color: #333; margin-bottom: 10px; }
+        .node-info p { color: #666; font-size: 0.9em; margin-bottom: 5px; }
+        
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #666; }
+        .empty-state h3 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🕸️ RAG知识库 - 知识图谱</h1>
+        <div class="header-actions">
+            <button class="header-btn" onclick="refreshGraph()">🔄 刷新图谱</button>
+            <button class="header-btn" onclick="exportGraph()">📥 导出图谱</button>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <h2>🎛️ 图谱控制</h2>
+            
+            <div class="control-group">
+                <label class="control-label">实体搜索</label>
+                <input type="text" class="control-input" id="entitySearch" placeholder="搜索实体...">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">实体类型过滤</label>
+                <select class="control-select" id="entityTypeFilter">
+                    <option value="">全部类型</option>
+                    <option value="PERSON">人物</option>
+                    <option value="ORGANIZATION">组织</option>
+                    <option value="LOCATION">地点</option>
+                    <option value="CONCEPT">概念</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">关系类型过滤</label>
+                <select class="control-select" id="relationTypeFilter">
+                    <option value="">全部关系</option>
+                    <option value="RELATED_TO">相关</option>
+                    <option value="PART_OF">属于</option>
+                    <option value="LOCATED_IN">位于</option>
+                    <option value="WORKS_FOR">工作于</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">布局算法</label>
+                <select class="control-select" id="layoutAlgorithm">
+                    <option value="cose">力导向布局</option>
+                    <option value="circle">环形布局</option>
+                    <option value="grid">网格布局</option>
+                    <option value="concentric">同心圆布局</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn" onclick="applyFilters()">应用过滤</button>
+                <button class="btn btn-secondary" onclick="resetFilters()" style="margin-top: 10px;">重置过滤</button>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">显示设置</label>
+                <div>
+                    <input type="checkbox" id="showLabels" checked> 显示标签
+                </div>
+                <div style="margin-top: 5px;">
+                    <input type="checkbox" id="showEdgeLabels"> 显示关系标签
+                </div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <div id="cy"></div>
+            
+            <div class="graph-stats" id="graphStats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-label">节点数量</div>
+                    <div class="stat-value" id="nodeCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">边数量</div>
+                    <div class="stat-value" id="edgeCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">网络密度</div>
+                    <div class="stat-value" id="networkDensity">0.00</div>
+                </div>
+            </div>
+            
+            <div class="node-info" id="nodeInfo">
+                <h3 id="nodeTitle">节点信息</h3>
+                <p id="nodeType">类型: -</p>
+                <p id="nodeConnections">连接数: 0</p>
+                <p id="nodeDescription">描述: -</p>
+            </div>
+            
+            <div class="loading" id="loadingIndicator" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>加载图谱数据...</p>
+            </div>
+            
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <h3>📭 暂无图谱数据</h3>
+                <p>请先上传文档以生成知识图谱</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let cy = null;
+        let graphData = { nodes: [], edges: [] };
+        
+        // 初始化图谱
+        document.addEventListener('DOMContentLoaded', function() {
+            initGraph();
+            loadGraphData();
+            
+            // 事件监听
+            document.getElementById('entitySearch').addEventListener('input', debounce(applyFilters, 300));
+            document.getElementById('entityTypeFilter').addEventListener('change', applyFilters);
+            document.getElementById('relationTypeFilter').addEventListener('change', applyFilters);
+            document.getElementById('layoutAlgorithm').addEventListener('change', changeLayout);
+            document.getElementById('showLabels').addEventListener('change', toggleLabels);
+            document.getElementById('showEdgeLabels').addEventListener('change', toggleEdgeLabels);
+        });
+        
+        function initGraph() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: [],
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#667eea',
+                            'label': 'data(label)',
+                            'font-size': '12px',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': '#fff',
+                            'text-outline-color': '#667eea',
+                            'text-outline-width': '2px',
+                            'width': '30px',
+                            'height': '30px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="PERSON"]',
+                        style: {
+                            'background-color': '#e74c3c'
+                        }
+                    },
+                    {
+                        selector: 'node[type="ORGANIZATION"]',
+                        style: {
+                            'background-color': '#3498db'
+                        }
+                    },
+                    {
+                        selector: 'node[type="LOCATION"]',
+                        style: {
+                            'background-color': '#2ecc71'
+                        }
+                    },
+                    {
+                        selector: 'node[type="CONCEPT"]',
+                        style: {
+                            'background-color': '#f39c12'
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': '3px',
+                            'border-color': '#ff0000'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#999',
+                            'target-arrow-color': '#999',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    },
+                    {
+                        selector: 'edge:selected',
+                        style: {
+                            'line-color': '#ff0000',
+                            'target-arrow-color': '#ff0000'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500
+                }
+            });
+            
+            // 节点点击事件
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                showNodeInfo(node);
+            });
+            
+            // 背景点击事件
+            cy.on('tap', function(evt) {
+                if (evt.target === cy) {
+                    hideNodeInfo();
+                }
+            });
+        }
+        
+        async function loadGraphData() {
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/default/kbs/default/graph`);
+                const data = await response.json();
+                
+                if (response.ok && data.graph) {
+                    graphData = data.graph;
+                    renderGraph(graphData);
+                    updateGraphStats(graphData);
+                } else {
+                    showEmptyState(true);
+                }
+            } catch (error) {
+                console.error('Failed to load graph data:', error);
+                showEmptyState(true);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function renderGraph(data) {
+            if (!data || (!data.nodes && !data.edges)) {
+                showEmptyState(true);
+                return;
+            }
+            
+            showEmptyState(false);
+            
+            const elements = [];
+            
+            // 添加节点
+            if (data.nodes) {
+                data.nodes.forEach(node => {
+                    elements.push({
+                        data: {
+                            id: node.id,
+                            label: node.name || node.id,
+                            type: node.type || 'CONCEPT',
+                            description: node.description || ''
+                        }
+                    });
+                });
+            }
+            
+            // 添加边
+            if (data.edges) {
+                data.edges.forEach(edge => {
+                    elements.push({
+                        data: {
+                            id: edge.id || `${edge.source}-${edge.target}`,
+                            source: edge.source,
+                            target: edge.target,
+                            label: edge.label || edge.relation || '',
+                            relation: edge.relation || 'RELATED_TO'
+                        }
+                    });
+                });
+            }
+            
+            cy.elements().remove();
+            cy.add(elements);
+            cy.layout({
+                name: document.getElementById('layoutAlgorithm').value,
+                animate: true,
+                animationDuration: 500
+            }).run();
+        }
+        
+        function applyFilters() {
+            const searchTerm = document.getElementById('entitySearch').value.toLowerCase();
+            const entityType = document.getElementById('entityTypeFilter').value;
+            const relationType = document.getElementById('relationTypeFilter').value;
+            
+            let filteredNodes = graphData.nodes || [];
+            let filteredEdges = graphData.edges || [];
+            
+            // 按搜索词过滤节点
+            if (searchTerm) {
+                filteredNodes = filteredNodes.filter(node => 
+                    (node.name && node.name.toLowerCase().includes(searchTerm)) ||
+                    (node.id && node.id.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // 按类型过滤节点
+            if (entityType) {
+                filteredNodes = filteredNodes.filter(node => node.type === entityType);
+            }
+            
+            // 按关系类型过滤边
+            if (relationType) {
+                filteredEdges = filteredEdges.filter(edge => edge.relation === relationType);
+            }
+            
+            // 只保留连接到过滤后节点的边
+            const nodeIds = new Set(filteredNodes.map(node => node.id));
+            filteredEdges = filteredEdges.filter(edge => 
+                nodeIds.has(edge.source) && nodeIds.has(edge.target)
+            );
+            
+            const filteredData = {
+                nodes: filteredNodes,
+                edges: filteredEdges
+            };
+            
+            renderGraph(filteredData);
+            updateGraphStats(filteredData);
+        }
+        
+        function resetFilters() {
+            document.getElementById('entitySearch').value = '';
+            document.getElementById('entityTypeFilter').value = '';
+            document.getElementById('relationTypeFilter').value = '';
+            renderGraph(graphData);
+            updateGraphStats(graphData);
+        }
+        
+        function changeLayout() {
+            const layout = document.getElementById('layoutAlgorithm').value;
+            cy.layout({
+                name: layout,
+                animate: true,
+                animationDuration: 500
+            }).run();
+        }
+        
+        function toggleLabels() {
+            const showLabels = document.getElementById('showLabels').checked;
+            cy.style()
+                .selector('node')
+                .style('label', showLabels ? 'data(label)' : '')
+                .update();
+        }
+        
+        function toggleEdgeLabels() {
+            const showEdgeLabels = document.getElementById('showEdgeLabels').checked;
+            cy.style()
+                .selector('edge')
+                .style('label', showEdgeLabels ? 'data(label)' : '')
+                .update();
+        }
+        
+        function showNodeInfo(node) {
+            const nodeInfo = document.getElementById('nodeInfo');
+            const data = node.data();
+            
+            document.getElementById('nodeTitle').textContent = data.label || data.id;
+            document.getElementById('nodeType').textContent = `类型: ${data.type || '未知'}`;
+            document.getElementById('nodeConnections').textContent = `连接数: ${node.degree()}`;
+            document.getElementById('nodeDescription').textContent = `描述: ${data.description || '无描述'}`;
+            
+            nodeInfo.classList.add('active');
+        }
+        
+        function hideNodeInfo() {
+            document.getElementById('nodeInfo').classList.remove('active');
+        }
+        
+        function updateGraphStats(data) {
+            const stats = document.getElementById('graphStats');
+            const nodeCount = (data.nodes || []).length;
+            const edgeCount = (data.edges || []).length;
+            
+            // 计算网络密度
+            let density = 0;
+            if (nodeCount > 1) {
+                const maxEdges = (nodeCount * (nodeCount - 1)) / 2;
+                density = edgeCount / maxEdges;
+            }
+            
+            document.getElementById('nodeCount').textContent = nodeCount;
+            document.getElementById('edgeCount').textContent = edgeCount;
+            document.getElementById('networkDensity').textContent = density.toFixed(3);
+            
+            stats.style.display = nodeCount > 0 ? 'block' : 'none';
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+        
+        function showEmptyState(show) {
+            document.getElementById('emptyState').style.display = show ? 'block' : 'none';
+            document.getElementById('cy').style.display = show ? 'none' : 'block';
+        }
+        
+        function refreshGraph() {
+            loadGraphData();
+        }
+        
+        function exportGraph() {
+            if (!graphData.nodes && !graphData.edges) {
+                alert('没有图谱数据可导出');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(graphData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'knowledge_graph.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

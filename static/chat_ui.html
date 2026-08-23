@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG知识库 - 智能对话</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.5em; font-weight: 600; }
+        .header-actions { display: flex; gap: 10px; }
+        .header-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .main-container { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #eee; }
+        .sidebar-header h2 { font-size: 1.2em; color: #333; margin-bottom: 10px; }
+        .new-chat-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: 600; }
+        .new-chat-btn:hover { background: #5568d3; }
+        
+        .chat-history { flex: 1; overflow-y: auto; padding: 10px; }
+        .history-item { padding: 12px; border-radius: 5px; cursor: pointer; margin-bottom: 5px; transition: background 0.2s; }
+        .history-item:hover { background: #f0f0f0; }
+        .history-item.active { background: #e8f4fd; border-left: 3px solid #667eea; }
+        .history-title { font-weight: 600; color: #333; margin-bottom: 4px; }
+        .history-time { font-size: 0.8em; color: #666; }
+        
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: white; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .message { margin-bottom: 20px; display: flex; }
+        .message.user { justify-content: flex-end; }
+        .message.assistant { justify-content: flex-start; }
+        
+        .message-content { max-width: 70%; padding: 15px 20px; border-radius: 10px; position: relative; }
+        .message.user .message-content { background: #667eea; color: white; }
+        .message.assistant .message-content { background: #f0f0f0; color: #333; }
+        
+        .message-sources { margin-top: 10px; font-size: 0.9em; }
+        .source-item { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 5px; margin-bottom: 5px; }
+        .message.assistant .source-item { background: #e8f4fd; }
+        
+        .message-time { font-size: 0.8em; opacity: 0.7; margin-top: 5px; }
+        
+        .input-area { padding: 20px; border-top: 1px solid #eee; background: white; }
+        .input-container { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 25px; font-size: 14px; resize: none; }
+        .chat-input:focus { outline: none; border-color: #667eea; }
+        .send-btn { background: #667eea; color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 600; }
+        .send-btn:hover { background: #5568d3; }
+        .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .settings-panel { padding: 15px; border-top: 1px solid #eee; }
+        .settings-title { font-weight: 600; margin-bottom: 10px; color: #333; }
+        .setting-item { margin-bottom: 10px; }
+        .setting-label { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+        .setting-select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+        
+        .typing-indicator { display: none; padding: 10px 20px; color: #666; font-style: italic; }
+        .typing-indicator.active { display: block; }
+        
+        .feedback-actions { margin-top: 10px; display: flex; gap: 10px; }
+        .feedback-btn { background: none; border: 1px solid #ddd; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8em; }
+        .feedback-btn:hover { background: #f0f0f0; }
+        .feedback-btn.positive { color: #28a745; border-color: #28a745; }
+        .feedback-btn.negative { color: #dc3545; border-color: #dc3545; }
+        
+        .relevance-score { display: inline-block; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 10px; }
+        .highlight { background: rgba(255,255,0,0.3); padding: 2px 4px; border-radius: 3px; }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .message-content { max-width: 85%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💬 RAG知识库 - 智能对话</h1>
+        <div class="header-actions">
+            <button class="header-btn" onclick="clearHistory()">🗑️ 清空历史</button>
+            <button class="header-btn" onclick="showSystemStatus()">📊 系统状态</button>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>对话历史</h2>
+                <button class="new-chat-btn" onclick="startNewChat()">+ 新对话</button>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <!-- 对话历史将在这里显示 -->
+            </div>
+            <div class="settings-panel">
+                <div class="settings-title">⚙️ 搜索设置</div>
+                <div class="setting-item">
+                    <div class="setting-label">搜索模式</div>
+                    <select class="setting-select" id="searchMode">
+                        <option value="hybrid">混合检索</option>
+                        <option value="naive">简单检索</option>
+                        <option value="local">本地检索</option>
+                        <option value="global">全局检索</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">结果数量</div>
+                    <select class="setting-select" id="resultCount">
+                        <option value="5">5条结果</option>
+                        <option value="10" selected>10条结果</option>
+                        <option value="15">15条结果</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-area">
+            <div class="chat-messages" id="chatMessages">
+                <!-- 消息将在这里显示 -->
+                <div class="message assistant">
+                    <div class="message-content">
+                        👋 你好！我是RAG知识库助手。我可以帮你搜索和查询文档中的信息。有什么我可以帮助你的吗？
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                🤔 正在思考...
+            </div>
+            
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea class="chat-input" id="chatInput" placeholder="输入你的问题..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let currentChatId = null;
+        let chatHistory = [];
+        let conversationContext = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChatHistory();
+            startNewChat();
+            
+            // 自动调整输入框高度
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        });
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function startNewChat() {
+            currentChatId = Date.now().toString();
+            conversationContext = [];
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message assistant">
+                    <div class="message-content">
+                        👋 你好！我是RAG知识库助手。我可以帮你搜索和查询文档中的信息。有什么我可以帮助你的吗？
+                    </div>
+                </div>
+            `;
+            updateChatHistoryUI();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // 显示正在输入
+            document.getElementById('typingIndicator').classList.add('active');
+            document.getElementById('sendBtn').disabled = true;
+            
+            try {
+                const searchMode = document.getElementById('searchMode').value;
+                const resultCount = parseInt(document.getElementById('resultCount').value);
+                
+                // 添加到对话上下文
+                conversationContext.push({ role: 'user', content: message });
+                
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: conversationContext,
+                        mode: searchMode,
+                        user_roles: {
+                            dept: [],
+                            level: ['Internal']
+                        }
+                    })
+                });
+
+                const result = await response.json();
+
+                // 隐藏正在输入
+                document.getElementById('typingIndicator').classList.remove('active');
+                document.getElementById('sendBtn').disabled = false;
+
+                if (response.ok) {
+                    // 添加助手回复
+                    addMessage('assistant', result.answer, result.sources);
+                    
+                    // 添加到对话上下文
+                    conversationContext.push({ role: 'assistant', content: result.answer });
+                    
+                    // 更新对话历史
+                    updateChatHistory(message, result.answer);
+                } else {
+                    addMessage('assistant', '❌ 抱歉，搜索失败: ' + (result.detail || '未知错误'));
+                }
+            } catch (error) {
+                document.getElementById('typingIndicator').classList.remove('active');
+                document.getElementById('sendBtn').disabled = false;
+                addMessage('assistant', '❌ 网络错误: ' + error.message);
+            }
+        }
+
+        function addMessage(role, content, sources = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            let sourcesHtml = '';
+            if (sources && sources.length > 0) {
+                sourcesHtml = `
+                    <div class="message-sources">
+                        <strong>📚 来源 (${sources.length}):</strong>
+                        ${sources.map((source, index) => `
+                            <div class="source-item">
+                                <strong>${index + 1}.</strong> ${source.filename || source.doc_id || '未知文档'}
+                                ${source.score ? `<span class="relevance-score">相关性: ${(source.score * 100).toFixed(1)}%</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // 添加反馈按钮
+            const feedbackHtml = role === 'assistant' ? `
+                <div class="feedback-actions">
+                    <button class="feedback-btn positive" onclick="sendFeedback('positive')">👍 有用</button>
+                    <button class="feedback-btn negative" onclick="sendFeedback('negative')">👎 无用</button>
+                </div>
+            ` : '';
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${highlightContent(content)}
+                    ${sourcesHtml}
+                    ${feedbackHtml}
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function highlightContent(content) {
+            // 简单的关键词高亮
+            const keywords = ['重要', '关键', '主要', '核心', '注意', '警告'];
+            let highlighted = content;
+            keywords.forEach(keyword => {
+                const regex = new RegExp(keyword, 'gi');
+                highlighted = highlighted.replace(regex, `<span class="highlight">${keyword}</span>`);
+            });
+            return highlighted;
+        }
+
+        function updateChatHistory(userMessage, assistantMessage) {
+            const existingChat = chatHistory.find(chat => chat.id === currentChatId);
+            if (existingChat) {
+                existingChat.title = userMessage.substring(0, 30) + (userMessage.length > 30 ? '...' : '');
+                existingChat.lastMessage = assistantMessage.substring(0, 50) + '...';
+                existingChat.updatedAt = new Date().toISOString();
+            } else {
+                chatHistory.unshift({
+                    id: currentChatId,
+                    title: userMessage.substring(0, 30) + (userMessage.length > 30 ? '...' : ''),
+                    lastMessage: assistantMessage.substring(0, 50) + '...',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('ragChatHistory', JSON.stringify(chatHistory));
+            updateChatHistoryUI();
+        }
+
+        function updateChatHistoryUI() {
+            const historyContainer = document.getElementById('chatHistory');
+            historyContainer.innerHTML = chatHistory.map(chat => `
+                <div class="history-item ${chat.id === currentChatId ? 'active' : ''}" onclick="loadChat('${chat.id}')">
+                    <div class="history-title">${chat.title}</div>
+                    <div class="history-time">${formatTime(chat.updatedAt)}</div>
+                </div>
+            `).join('');
+        }
+
+        function loadChat(chatId) {
+            currentChatId = chatId;
+            const chat = chatHistory.find(c => c.id === chatId);
+            if (chat) {
+                // 这里应该加载完整的对话历史
+                // 目前简化处理，只显示欢迎消息
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message assistant">
+                        <div class="message-content">
+                            📋 加载对话: ${chat.title}
+                        </div>
+                    </div>
+                `;
+                conversationContext = []; // 重置上下文
+            }
+            updateChatHistoryUI();
+        }
+
+        function loadChatHistory() {
+            const saved = localStorage.getItem('ragChatHistory');
+            if (saved) {
+                chatHistory = JSON.parse(saved);
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('确定要清空所有对话历史吗？')) {
+                chatHistory = [];
+                localStorage.removeItem('ragChatHistory');
+                startNewChat();
+            }
+        }
+
+        function sendFeedback(type) {
+            // 发送用户反馈到后端
+            const lastAssistantMessage = document.querySelector('.message.assistant:last-child');
+            if (!lastAssistantMessage) return;
+            
+            const feedbackData = {
+                user_id: 'default',
+                query: conversationContext[conversationContext.length - 2]?.content || '',
+                answer: lastAssistantMessage.querySelector('.message-content').textContent,
+                rating: type,
+                comment: '',
+                timestamp: new Date().toISOString(),
+                sources: [],
+                search_mode: document.getElementById('searchMode').value
+            };
+            
+            fetch(`${API_BASE}/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(feedbackData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 显示反馈成功提示
+                    const feedbackBtns = lastAssistantMessage.querySelector('.feedback-actions');
+                    if (feedbackBtns) {
+                        feedbackBtns.innerHTML = `<span style="color: #28a745; font-size: 0.8em;">✓ 感谢您的反馈！</span>`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Failed to submit feedback:', error);
+            });
+            
+            alert(`感谢您的反馈！${type === 'positive' ? '👍' : '👎'}`);
+        }
+
+        function showSystemStatus() {
+            // 显示系统状态
+            window.open('http://localhost:8000/health', '_blank');
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            return date.toLocaleDateString();
+        }
+    </script>
+</body>
+</html>
