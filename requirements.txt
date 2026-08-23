@@ -12,11 +12,12 @@ python-docx
 beautifulsoup4
 ollama
 httpx
-numpy
+numpy>=2.0.0,<2.8.0
 pytest>=8.0
 rank-bm25
 networkx
 psutil
+lightrag-hku>=1.5.6
 
 # Optional dependencies for reranking
 # Install with: pip install torch transformers

@@ -2,6 +2,7 @@
 
 import json
 import re
+import asyncio
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
@@ -61,7 +62,17 @@ async def chat_completions(body: dict):
         # Default to internal access if no roles specified
         user_roles = {'level': ['Internal']}
     
-    answer = rag.query(question, mode=mode, user_roles=user_roles)
+    try:
+        # Use async query to avoid event loop issues
+        answer = await rag.aquery(question, mode=mode, user_roles=user_roles)
+    except Exception as e:
+        # Fallback to sync query if async fails
+        try:
+            answer = rag.query(question, mode=mode, user_roles=user_roles)
+        except Exception as e2:
+            # Return a simple error response if both fail
+            return {'answer': f'Error: {str(e2)}', 'sources': []}
+    
     sources = extract_sources(answer)
     
     return {'answer': answer, 'sources': sources}

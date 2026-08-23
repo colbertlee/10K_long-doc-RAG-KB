@@ -7,16 +7,28 @@ import numpy as np
 from pathlib import Path
 from functools import partial
 try:
-    from lightrag import LightRAG, QueryParam
+    from lightrag.lightrag import LightRAG, QueryParam
     from lightrag.utils import EmbeddingFunc, wrap_embedding_func_with_attrs
     from lightrag.llm.ollama import ollama_embed
-except ImportError:
+    LightRAG_available = True
+except ImportError as e:
+    print(f"Warning: Could not import LightRAG: {e}")
     LightRAG = None
     QueryParam = None
     EmbeddingFunc = None
     wrap_embedding_func_with_attrs = None
     ollama_embed = None
+    LightRAG_available = False
 from rag_kb.config import settings
+
+# Check if LightRAG is available
+if not LightRAG_available:
+    print("LightRAG is not available. Some features will be disabled.")
+    # Create a dummy decorator for when LightRAG is not available
+    def wrap_embedding_func_with_attrs(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
 
 NL = chr(10)
 
@@ -46,16 +58,25 @@ async def llm_model_func(
     return resp['message']['content']
 
 
-@wrap_embedding_func_with_attrs(
-    embedding_dim=1024,
-    max_token_size=8192,
-)
-async def embedding_func(texts: list) -> np.ndarray:
-    """Embedding function for LightRAG using Ollama."""
-    import ollama
-    client = ollama.Client(host=settings.embedding_base_url)
-    resp = client.embed(model=settings.embedding_model, input=texts)
-    return np.array(resp['embeddings'], dtype=np.float32)
+# Define embedding function with conditional decorator
+if LightRAG_available:
+    @wrap_embedding_func_with_attrs(
+        embedding_dim=1024,
+        max_token_size=8192,
+    )
+    async def embedding_func(texts: list) -> np.ndarray:
+        """Embedding function for LightRAG using Ollama."""
+        import ollama
+        client = ollama.Client(host=settings.embedding_base_url)
+        resp = client.embed(model=settings.embedding_model, input=texts)
+        return np.array(resp['embeddings'], dtype=np.float32)
+else:
+    async def embedding_func(texts: list) -> np.ndarray:
+        """Embedding function for LightRAG using Ollama (without decorator)."""
+        import ollama
+        client = ollama.Client(host=settings.embedding_base_url)
+        resp = client.embed(model=settings.embedding_model, input=texts)
+        return np.array(resp['embeddings'], dtype=np.float32)
 
 
 class LightRAGAdapter:
@@ -90,7 +111,7 @@ class LightRAGAdapter:
                     embedding_func=embedding_func,
                 )
             except Exception as e2:
-                raise ImportError(f"Failed to initialize LightRAG: {e}, {e2}")
+                raise RuntimeError(f"Failed to initialize LightRAG: {e}, fallback also failed: {e2}")
 
     def insert_chunks(self, chunks):
         """Insert chunks into LightRAG index.
@@ -130,6 +151,29 @@ class LightRAGAdapter:
             question = apply_pre_filter_query(question, user_roles)
         
         return self.rag.query(
+            question,
+            param=QueryParam(mode=mode, only_need_context=False),
+        )
+
+    async def aquery(self, question, mode=None, user_roles=None):
+        """Async query LightRAG with a question and optional ACL filtering.
+        
+        Args:
+            question: Query string
+            mode: Query mode (naive/local/global/hybrid)
+            user_roles: Optional user roles for ACL filtering
+            
+        Returns:
+            Query response text
+        """
+        mode = mode or settings.lightrag_query_mode
+        
+        # Apply ACL pre-filtering if user roles are provided
+        if user_roles:
+            from rag_kb.security.acl import apply_pre_filter_query
+            question = apply_pre_filter_query(question, user_roles)
+        
+        return await self.rag.aquery(
             question,
             param=QueryParam(mode=mode, only_need_context=False),
         )

@@ -5,7 +5,7 @@ import asyncio
 import requests
 from typing import AsyncIterator
 from pathlib import Path
-from fastapi import FastAPI, File, Query, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -32,6 +32,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Custom search endpoint (before router includes to avoid conflicts)
+@app.post('/api/v1/search')
+async def search(body: dict):
+    """Search the RAG knowledge base.
+    
+    Args:
+        body: Request body with q, dept, level, top_k parameters
+        
+    Returns:
+        Search results with answer and sources
+    """
+    try:
+        q = body.get('q', '')
+        dept = body.get('dept', '')
+        level = body.get('level', 'Internal')
+        top_k = body.get('top_k', 8)
+        
+        if not q:
+            return {'error': 'Query parameter "q" is required', 'status': 'failed'}
+        
+        user_acl = {'dept': [dept] if dept else [], 'level': [level] if level else ['Internal']}
+        rag = LightRAGAdapter()
+        
+        # Use async query to avoid event loop issues
+        answer = await rag.aquery(q, mode='hybrid', user_roles=user_acl)
+        
+        if answer is None:
+            return {'error': 'No results found', 'status': 'failed', 'results': []}
+        
+        # Parse the answer to extract results
+        # LightRAG returns a string with the answer and sources
+        results = []
+        try:
+            # Try to extract sources from the answer
+            import re
+            source_pattern = r'\[([^\]]+)\]'
+            sources = re.findall(source_pattern, answer)
+            for source in sources:
+                results.append({'source': source, 'content': answer})
+        except:
+            results.append({'source': 'unknown', 'content': answer})
+        
+        return {
+            'status': 'success',
+            'answer': answer,
+            'results': results[:top_k]
+        }
+    except Exception as e:
+        return {'error': str(e), 'status': 'failed'}
+
 # Include routers
 app.include_router(docs_ui_router, prefix="/docs")
 app.include_router(api_router, prefix="/api/v1")
@@ -40,6 +90,81 @@ app.include_router(api_router, prefix="/api/v1")
 static_dir = Path(__file__).parent.parent.parent.parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get('/health')
+def health():
+    """Health check endpoint with detailed status."""
+    try:
+        # Check if data directory exists
+        data_dir_exists = settings.data_dir.exists()
+        
+        # Check if Ollama is accessible (simple check)
+        ollama_status = "unknown"
+        try:
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('localhost', 11434))
+            sock.close()
+            ollama_status = "running" if result == 0 else "not_running"
+        except:
+            ollama_status = "not_running"
+        
+        # Get system metrics
+        from rag_kb.utils.logging import get_logger
+        current_logger = get_logger()
+        system_metrics = current_logger.get_system_metrics()
+        
+        return {
+            'status': 'ok',
+            'service': 'rag-kb',
+            'version': '0.3.0',
+            'data_dir_exists': data_dir_exists,
+            'ollama_status': ollama_status,
+            'system_metrics': system_metrics,
+            'endpoints': {
+                'api_docs': '/docs',
+                'docs_ui': '/docs/docs-ui',
+                'current_user': '/api/v1/current-user',
+                'openwebui_integration': '/openwebui-integration',
+                'rag_kb_integration': '/rag-kb-integration',
+                'metrics': '/metrics'
+            }
+        }
+    except Exception as e:
+        from rag_kb.utils.logging import get_logger
+        current_logger = get_logger()
+        current_logger.error(f"Health check failed: {e}")
+        return {
+            'status': 'error',
+            'error': str(e)
+        }
+
+
+@app.get('/metrics')
+def metrics():
+    """Get performance metrics and statistics."""
+    try:
+        # Get logger instance if available
+        from rag_kb.utils.logging import get_logger
+        current_logger = get_logger()
+        
+        performance_summary = current_logger.get_performance_summary()
+        system_metrics = current_logger.get_system_metrics()
+        
+        return {
+            'performance': performance_summary,
+            'system': system_metrics,
+            'timestamp': system_metrics['timestamp']
+        }
+    except Exception as e:
+        # Return basic metrics if logger not fully initialized
+        return {
+            'performance': {'message': 'No performance data available'},
+            'system': {'message': 'System metrics not available'},
+            'error': str(e)
+        }
 
 
 @app.get('/openwebui-integration')
@@ -80,71 +205,6 @@ async def rag_kb_integration():
         """)
 
 
-@app.get('/health')
-def health():
-    """Health check endpoint with detailed status."""
-    try:
-        # Check if data directory exists
-        data_dir_exists = settings.data_dir.exists()
-        
-        # Check if Ollama is accessible (simple check)
-        ollama_status = "unknown"
-        try:
-            import socket
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex(('localhost', 11434))
-            sock.close()
-            ollama_status = "running" if result == 0 else "not_running"
-        except:
-            ollama_status = "not_running"
-        
-        # Get system metrics
-        system_metrics = logger.get_system_metrics()
-        
-        return {
-            'status': 'ok',
-            'service': 'rag-kb',
-            'version': '0.3.0',
-            'data_dir_exists': data_dir_exists,
-            'ollama_status': ollama_status,
-            'system_metrics': system_metrics,
-            'endpoints': {
-                'api_docs': '/docs',
-                'docs_ui': '/docs/docs-ui',
-                'current_user': '/api/v1/current-user',
-                'openwebui_integration': '/openwebui-integration',
-                'rag_kb_integration': '/rag-kb-integration',
-                'metrics': '/metrics'
-            }
-        }
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return {
-            'status': 'error',
-            'error': str(e)
-        }
-
-
-@app.get('/metrics')
-def metrics():
-    """Get performance metrics and statistics."""
-    try:
-        performance_summary = logger.get_performance_summary()
-        system_metrics = logger.get_system_metrics()
-        
-        return {
-            'performance': performance_summary,
-            'system': system_metrics,
-            'timestamp': system_metrics['timestamp']
-        }
-    except Exception as e:
-        logger.error(f"Metrics collection failed: {e}")
-        return {
-            'error': str(e)
-        }
-
-
 @app.post('/api/v1/ingest')
 async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
     """Ingest a document into the RAG knowledge base.
@@ -157,41 +217,74 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
     Returns:
         Document metadata
     """
-    with PerformanceMonitor(logger, "document_ingestion", 
-                           {"filename": file.filename, "dept": dept, "level": level}):
-        upload_path = settings.data_dir / 'uploads' / file.filename
-        upload_path.parent.mkdir(parents=True, exist_ok=True)
-        upload_path.write_bytes(await file.read())
+    try:
+        # Get logger instance
+        from rag_kb.utils.logging import get_logger
+        current_logger = get_logger()
         
-        pipeline = IngestPipeline()
-        doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
-        
-        logger.info(f"Successfully ingested document: {doc.doc_id}")
-        return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+        with PerformanceMonitor(current_logger, "document_ingestion", 
+                               {"filename": file.filename, "dept": dept, "level": level}):
+            upload_path = settings.data_dir / 'uploads' / file.filename
+            upload_path.parent.mkdir(parents=True, exist_ok=True)
+            upload_path.write_bytes(await file.read())
+            
+            pipeline = IngestPipeline()
+            doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+            
+            current_logger.info(f"Successfully ingested document: {doc.doc_id}")
+            return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+    except Exception as e:
+        return {'error': str(e), 'status': 'failed'}
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8):
+async def search(body: dict):
     """Search the RAG knowledge base.
     
     Args:
-        q: Search query
-        dept: Department filter
-        level: Access level filter
-        top_k: Number of results to return
+        body: Request body with q, dept, level, top_k parameters
         
     Returns:
         Search results with answer and sources
     """
-    user_acl = {'dept': [dept] if dept else [], 'level': [level] if level else ['Internal']}
-    rag = LightRAGAdapter()
-    answer = rag.query(q, mode='hybrid', user_roles=user_acl)
-    
-    # Extract sources from the answer
-    import re
-    sources = re.findall(r'\[DATA:([^\]]+)\]', answer)
-    
-    return {'answer': answer, 'sources': sources, 'acl_filter': user_acl}
+    try:
+        q = body.get('q', '')
+        dept = body.get('dept', '')
+        level = body.get('level', 'Internal')
+        top_k = body.get('top_k', 8)
+        
+        if not q:
+            return {'error': 'Query parameter "q" is required', 'status': 'failed'}
+        
+        user_acl = {'dept': [dept] if dept else [], 'level': [level] if level else ['Internal']}
+        rag = LightRAGAdapter()
+        
+        # Use async query to avoid event loop issues
+        answer = await rag.aquery(q, mode='hybrid', user_roles=user_acl)
+        
+        # Handle None response (no data available)
+        if answer is None:
+            return {
+                'answer': 'No relevant information found in the knowledge base.',
+                'sources': [],
+                'acl_filter': user_acl,
+                'results': [],
+                'status': 'success'
+            }
+        
+        # Extract sources from the answer
+        import re
+        sources = re.findall(r'\[DATA:([^\]]+)\]', answer)
+        
+        return {
+            'answer': answer, 
+            'sources': sources, 
+            'acl_filter': user_acl, 
+            'results': sources[:top_k],
+            'status': 'success'
+        }
+    except Exception as e:
+        return {'error': str(e), 'status': 'failed'}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
