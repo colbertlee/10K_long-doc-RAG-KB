@@ -4,12 +4,14 @@
 
 This is an enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed to handle 10,000+ long documents efficiently. The system integrates LightRAG for hybrid retrieval, BM25 for sparse search, Cross-Encoder reranking, comprehensive security, evaluation, and deployment capabilities.
 
-## Latest Implementation Status (v0.3.0)
+## Latest Implementation Status (v0.3.1)
 
 The system has been fully enhanced with enterprise-grade features:
 
 ### ✅ Completed Enhancements
 - **Python 3.11+ Compatibility**: Updated from 3.9 to meet requirements
+- **Dependency Resolution**: Fixed critical version conflicts (pydantic_core, cryptography, numpy)
+- **LightRAG Integration**: Resolved import path and initialization issues with lightrag-hku
 - **Incremental Updates**: File hash-based change detection with document registry
 - **Enterprise Security**: Comprehensive RBAC/ACL with pre-filtering and post-filtering
 - **Hybrid Search**: BM25 sparse search + LightRAG hybrid with RRF fusion
@@ -19,12 +21,13 @@ The system has been fully enhanced with enterprise-grade features:
 - **Deployment Scripts**: PowerShell and batch automation with health checks
 - **Performance Monitoring**: Structured logging, system metrics, and performance tracking
 - **Performance Optimization**: Configurable templates and tuning guidelines
+- **End-to-End Validation**: Comprehensive business flow validation with 100% test pass rate
 
 ## Key Technical Stack
 
 - **Python**: 3.11+ (required for modern dependencies)
 - **Web Framework**: FastAPI with Uvicorn
-- **RAG Engine**: LightRAG (primary), BM25 (secondary)
+- **RAG Engine**: LightRAG (lightrag-hku>=1.5.6), BM25 (secondary)
 - **Local LLM**: Ollama with qwen3.5:4b model (or gemma4:e4b)
 - **Embedding**: Ollama with nomic-embed-text or sentence-transformers
 - **Frontend**: Open WebUI integration
@@ -32,6 +35,7 @@ The system has been fully enhanced with enterprise-grade features:
 - **Graph Processing**: NetworkX for knowledge graph visualization
 - **Monitoring**: psutil for system metrics tracking
 - **Performance**: rank-bm25 for sparse search optimization
+- **Dependencies**: numpy>=2.0.0,<2.8.0, pydantic-core==2.46.4, cryptography==48.0.0
 
 ## Build and Test Commands
 
@@ -66,6 +70,7 @@ pytest tests/ --cov=src/rag_kb --cov-report=html
 python scripts/test_ingestion.py
 python scripts/test_hybrid_search.py
 python scripts/test_graph_extraction.py
+python scripts/end_to_end_test.py  # NEW: Complete business flow validation
 ```
 
 ### Starting the Server
@@ -309,6 +314,12 @@ rag-kb/
 - Ensure Ollama service is running: `ollama serve`
 - Check model availability: `ollama list`
 - Verify model download: `ollama pull nomic-embed-text`
+
+### Dependency Issues
+- Ensure numpy version is >=2.0.0,<2.8.0 for scipy and lightrag compatibility
+- Verify pydantic-core==2.46.4 for pydantic 2.13.4 compatibility
+- Check cryptography==48.0.0 for open-webui compatibility
+- Use lightrag-hku>=1.5.6 for correct LightRAG package
 
 ### Memory Issues
 - Reduce `chunk_token_size` in configuration

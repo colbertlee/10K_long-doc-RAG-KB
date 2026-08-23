@@ -1,5 +1,63 @@
 # 故障排除指南
 
+## 依赖版本问题
+
+### 问题: 依赖版本冲突导致启动失败
+
+**错误信息**:
+```
+ModuleNotFoundError: No module named 'pydantic_core._pydantic_core'
+AttributeError: module 'numpy' has no attribute 'long'
+```
+
+**原因**: Python依赖包版本不兼容，特别是pydantic_core、cryptography和numpy。
+
+**解决方案**:
+
+1. **重新安装依赖**:
+   ```powershell
+   # 卸载现有依赖
+   pip uninstall pydantic-core cryptography numpy -y
+   
+   # 安装兼容版本
+   pip install pydantic-core==2.46.4
+   pip install cryptography==48.0.0
+   pip install "numpy>=2.0.0,<2.8.0"
+   pip install lightrag-hku>=1.5.6
+   ```
+
+2. **使用项目配置重新安装**:
+   ```powershell
+   pip install -e .[all]
+   ```
+
+3. **验证依赖版本**:
+   ```powershell
+   pip list | findstr -i "pydantic numpy cryptography lightrag"
+   ```
+
+### 问题: LightRAG 导入失败
+
+**错误信息**:
+```
+ImportError: cannot import name 'LightRAG' from 'lightrag'
+```
+
+**原因**: LightRAG包导入路径不正确或包版本不兼容。
+
+**解决方案**:
+
+1. **确认正确的包**:
+   ```powershell
+   pip uninstall lightrag -y
+   pip install lightrag-hku>=1.5.6
+   ```
+
+2. **验证导入**:
+   ```powershell
+   python -c "from lightrag.lightrag import LightRAG; print('LightRAG imported successfully')"
+   ```
+
 ## Open WebUI 启动问题
 
 ### 问题: HuggingFace 模型下载失败
