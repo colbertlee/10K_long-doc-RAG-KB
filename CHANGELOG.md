@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-08-24
+
+### Added
+- **Static File Serving**: Added StaticFiles mounting for serving static content
+- **Direct Static Links**: Added direct links to static files in fallback interfaces
+- **Improved Fallback**: Enhanced error messages with alternative static file access
+
+### Fixed
+- **Static File Access**: Fixed static file serving to properly serve HTML interfaces
+- **Path Resolution**: Improved static file path resolution and error handling
+
 ## [0.4.5] - 2026-08-24
 
 ### Added

@@ -5,6 +5,7 @@ import asyncio
 from typing import AsyncIterator
 from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from rag_kb.config import settings
 
@@ -19,6 +20,10 @@ except Exception as e:
 
 # Static files directory
 static_dir = Path(__file__).parent.parent / "static"
+
+# Mount static files directory
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.get('/')
@@ -155,6 +160,7 @@ async def chat_ui():
         <h1>RAG KB Chat Interface</h1>
         <p>Chat interface not found. Please ensure static files are properly configured.</p>
         <p>Available endpoints: <a href="/docs">API Documentation</a></p>
+        <p>Or use: <a href="/static/simple_ui.html">Simple UI</a></p>
         </body>
         </html>
         """)
@@ -174,6 +180,7 @@ async def graph_ui():
         <h1>Knowledge Graph Visualization</h1>
         <p>Graph visualization interface not found. Please ensure static files are properly configured.</p>
         <p>Available endpoints: <a href="/docs">API Documentation</a></p>
+        <p>Or use: <a href="/static/graph_ui.html">Direct Graph UI</a></p>
         </body>
         </html>
         """)

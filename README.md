@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.5 (Stable)  
+**Current Version**: v0.4.6 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.5 adds missing frontend routes and fixes 404 errors for web interfaces, ensuring complete web UI functionality.
+> **Version Note**: v0.4.6 adds static file serving and fixes static file access, ensuring all HTML interfaces load properly.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.6 (2026-08-24) - Static File Serving Fix
+- **Added**: StaticFiles mounting for serving static content
+- **Added**: Direct links to static files in fallback interfaces
+- **Fixed**: Static file serving to properly serve HTML interfaces
+- **Improved**: Path resolution and error handling for static files
 
 ### v0.4.5 (2026-08-24) - Frontend Routes Fix
 - **Added**: Missing frontend routes for chat-ui, graph-ui, and knowledge-manager
