@@ -612,24 +612,370 @@ async def evaluate_rag(test_case: dict):
         Evaluation results with metrics
     """
     try:
-        from rag_kb.evaluation import RAGASEvaluator
+        from rag_kb.evaluation.ragas_eval import RAGASEvaluator
         
         evaluator = RAGASEvaluator()
-        result = evaluator.evaluate_single(
+        
+        # Create sample search results for evaluation
+        from rag_kb.models import SearchResult
+        search_results = [
+            SearchResult(
+                chunk_id=f"chunk_{i}",
+                doc_id=f"doc_{i}",
+                text=context,
+                score=0.9 - i * 0.1,
+                rank=i + 1
+            )
+            for i, context in enumerate(test_case.get('retrieved_contexts', []))
+        ]
+        
+        ground_truth = test_case.get('ground_truth', '').split(',') if test_case.get('ground_truth') else []
+        
+        evaluation = evaluator.comprehensive_evaluation(
             query=test_case.get('query', ''),
-            retrieved_contexts=test_case.get('retrieved_contexts', []),
-            generated_answer=test_case.get('generated_answer', ''),
-            ground_truth=test_case.get('ground_truth', '')
+            retrieved_results=search_results,
+            contexts=test_case.get('retrieved_contexts', []),
+            answer=test_case.get('generated_answer', ''),
+            ground_truth=ground_truth
         )
         
         return {
-            'query': result.query,
-            'metrics': result.metrics,
-            'latency': result.latency,
+            'query': evaluation['query'],
+            'metrics': {
+                'retrieval_metrics': evaluation['retrieval_metrics'],
+                'context_metrics': evaluation['context_metrics'],
+                'answer_metrics': evaluation['answer_metrics'],
+                'faithfulness_metrics': evaluation['faithfulness_metrics']
+            },
+            'overall_score': evaluation['overall_score'],
             'average_metrics': evaluator.get_average_metrics()
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Evaluation failed'}
+
+
+@app.get('/api/v1/maintenance/statistics')
+async def get_maintenance_statistics():
+    """Get knowledge base maintenance statistics.
+    
+    Returns:
+        Statistics about document counts, storage, and changes
+    """
+    try:
+        from rag_kb.maintenance import IncrementalUpdater
+        
+        updater = IncrementalUpdater()
+        stats = updater.get_statistics()
+        
+        # Get recent changes
+        recent_changes = updater.get_change_log(limit=10)
+        
+        return {
+            'success': True,
+            'statistics': stats,
+            'recent_changes': recent_changes
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get statistics'}
+
+
+@app.get('/api/v1/maintenance/performance')
+async def get_performance_metrics():
+    """Get performance metrics and monitoring data.
+    
+    Returns:
+        Performance metrics and quality trends
+    """
+    try:
+        from rag_kb.maintenance import PerformanceMonitor, QualityMetrics
+        
+        perf_monitor = PerformanceMonitor()
+        quality_metrics = QualityMetrics()
+        
+        performance_summary = perf_monitor.get_performance_summary()
+        quality_score = quality_metrics.get_overall_quality_score()
+        
+        # Get quality trends
+        quality_trends = {}
+        for metric in ['precision', 'recall', 'relevance', 'faithfulness']:
+            quality_trends[metric] = quality_metrics.get_quality_trends(metric, days=7)
+        
+        return {
+            'success': True,
+            'performance': performance_summary,
+            'quality': {
+                'overall_score': quality_score,
+                'trends': quality_trends
+            },
+            'alerts': perf_monitor.get_alerts(hours=24)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get performance metrics'}
+
+
+@app.post('/api/v1/maintenance/record-metric')
+async def record_performance_metric(metric_data: dict):
+    """Record a performance metric.
+    
+    Args:
+        metric_data: Metric data with name, value, and metadata
+        
+    Returns:
+        Success status
+    """
+    try:
+        from rag_kb.maintenance import PerformanceMonitor
+        
+        perf_monitor = PerformanceMonitor()
+        perf_monitor.record_metric(
+            metric_name=metric_data.get('metric_name', ''),
+            value=metric_data.get('value', 0.0),
+            metadata=metric_data.get('metadata', {})
+        )
+        
+        return {'success': True, 'message': 'Metric recorded'}
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to record metric'}
+
+
+@app.post('/api/v1/maintenance/record-quality')
+async def record_quality_metric(quality_data: dict):
+    """Record quality metrics for a query.
+    
+    Args:
+        quality_data: Quality data with query and metrics
+        
+    Returns:
+        Success status
+    """
+    try:
+        from rag_kb.maintenance import QualityMetrics
+        
+        quality_monitor = QualityMetrics()
+        quality_monitor.record_quality(
+            query=quality_data.get('query', ''),
+            metrics=quality_data.get('metrics', {}),
+            context=quality_data.get('context', {})
+        )
+        
+        return {'success': True, 'message': 'Quality metrics recorded'}
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to record quality metrics'}
+
+
+@app.post('/api/v1/maintenance/sync')
+async def sync_documents(file_paths: List[str] = None):
+    """Synchronize documents and detect changes.
+    
+    Args:
+        file_paths: List of file paths to sync
+        
+    Returns:
+        Sync results with change information
+    """
+    try:
+        from rag_kb.maintenance import IncrementalUpdater
+        from pathlib import Path
+        
+        updater = IncrementalUpdater()
+        
+        if file_paths:
+            paths = [Path(fp) for fp in file_paths]
+        else:
+            # Default to uploads directory
+            upload_dir = settings.data_dir / 'uploads'
+            paths = list(upload_dir.glob('*')) if upload_dir.exists() else []
+        
+        changes = updater.detect_changes(paths)
+        
+        # Update hashes and log changes
+        current_hashes = {}
+        for file_path in paths:
+            if file_path.exists():
+                current_hashes[str(file_path)] = updater.calculate_file_hash(file_path)
+        
+        updater.save_file_hashes(current_hashes)
+        
+        # Log changes
+        for new_file in changes['new']:
+            updater.log_change('new', new_file, {'timestamp': datetime.now().isoformat()})
+        
+        for modified_file in changes['modified']:
+            updater.log_change('modified', modified_file, {'timestamp': datetime.now().isoformat()})
+        
+        # Cleanup deleted documents
+        if changes['deleted']:
+            updater.cleanup_deleted_documents(changes['deleted'])
+            for deleted_file in changes['deleted']:
+                updater.log_change('deleted', deleted_file, {'timestamp': datetime.now().isoformat()})
+        
+        return {
+            'success': True,
+            'changes': changes,
+            'total_files': len(paths),
+            'new_files': len(changes['new']),
+            'modified_files': len(changes['modified']),
+            'deleted_files': len(changes['deleted'])
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Sync failed'}
+
+
+@app.post('/api/v1/maintenance/cleanup')
+async def cleanup_old_documents(days: int = 30):
+    """Clean up documents older than specified days.
+    
+    Args:
+        days: Number of days threshold
+        
+    Returns:
+        Cleanup results
+    """
+    try:
+        from rag_kb.maintenance import IncrementalUpdater
+        from datetime import datetime, timedelta
+        import json
+        
+        updater = IncrementalUpdater()
+        
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        if not updater.registry_file.exists():
+            return {'success': True, 'cleaned': 0, 'message': 'No registry file found'}
+        
+        with open(updater.registry_file, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        
+        cleaned_count = 0
+        updated_registry = {}
+        
+        for doc_id, doc_data in registry.items():
+            doc_timestamp = doc_data.get('timestamp', '')
+            if doc_timestamp:
+                try:
+                    doc_date = datetime.fromisoformat(doc_timestamp)
+                    if doc_date < cutoff_date:
+                        cleaned_count += 1
+                        updater.log_change('cleanup', doc_data.get('source', doc_id), {
+                            'reason': f'Older than {days} days',
+                            'timestamp': datetime.now().isoformat()
+                        })
+                        continue
+                except:
+                    pass
+            
+            updated_registry[doc_id] = doc_data
+        
+        with open(updater.registry_file, 'w', encoding='utf-8') as f:
+            json.dump(updated_registry, f, indent=2, ensure_ascii=False)
+        
+        return {
+            'success': True,
+            'cleaned': cleaned_count,
+            'message': f'Cleaned {cleaned_count} documents older than {days} days'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Cleanup failed'}
+
+
+@app.get('/api/v1/maintenance/strategies')
+async def get_strategies():
+    """Get current strategy configurations.
+    
+    Returns:
+        Current strategies for chunking, retrieval, and reranking
+    """
+    try:
+        from rag_kb.maintenance import StrategyManager
+        
+        strategy_manager = StrategyManager()
+        current_strategies = strategy_manager.current_strategies
+        
+        return {
+            'success': True,
+            'strategies': current_strategies
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get strategies'}
+
+
+@app.post('/api/v1/maintenance/strategies/update')
+async def update_strategy(strategy_data: dict):
+    """Update a specific strategy configuration.
+    
+    Args:
+        strategy_data: Strategy update data
+        
+    Returns:
+        Update results
+    """
+    try:
+        from rag_kb.maintenance import StrategyManager
+        
+        strategy_manager = StrategyManager()
+        strategy_manager.update_strategy(
+            strategy_type=strategy_data.get('strategy_type', ''),
+            strategy_name=strategy_data.get('strategy_name', ''),
+            config=strategy_data.get('config', {})
+        )
+        
+        return {
+            'success': True,
+            'message': 'Strategy updated successfully'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to update strategy'}
+
+
+@app.post('/api/v1/maintenance/strategies/optimize')
+async def optimize_strategy(optimization_data: dict):
+    """Automatically optimize a strategy based on target metrics.
+    
+    Args:
+        optimization_data: Optimization parameters
+        
+    Returns:
+        Optimization results
+    """
+    try:
+        from rag_kb.maintenance import StrategyManager
+        
+        strategy_manager = StrategyManager()
+        results = strategy_manager.auto_optimize_strategy(
+            strategy_type=optimization_data.get('strategy_type', ''),
+            target_metrics=optimization_data.get('target_metrics', {})
+        )
+        
+        return {
+            'success': True,
+            'results': results
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to optimize strategy'}
+
+
+@app.get('/api/v1/maintenance/strategies/compare')
+async def compare_strategies(strategy_type: str = 'retrieval'):
+    """Compare performance of different strategies.
+    
+    Args:
+        strategy_type: Type of strategy to compare
+        
+    Returns:
+        Comparison results
+    """
+    try:
+        from rag_kb.maintenance import StrategyManager
+        
+        strategy_manager = StrategyManager()
+        comparison = strategy_manager.get_strategy_comparison(strategy_type)
+        
+        return {
+            'success': True,
+            'comparison': comparison
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to compare strategies'}
 
 
 @app.post('/api/v1/chat/completions')

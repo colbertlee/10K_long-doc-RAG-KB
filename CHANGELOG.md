@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.13] - 2026-08-24
+
+### Added
+- **Incremental Update Mechanism**: File hash-based change detection with smart document synchronization
+- **Performance Monitoring System**: Comprehensive metrics tracking with threshold-based alerting
+- **Quality Metrics Tracking**: RAG quality metrics (precision, recall, relevance, faithfulness) with trend analysis
+- **Document Cleanup**: Automated cleanup of old documents based on age thresholds
+- **Strategy Management**: Closed-loop iteration system for chunking, retrieval, and reranking strategies
+- **Performance APIs**: New endpoints for maintenance statistics, performance metrics, and quality tracking
+- **Strategy Optimization**: Automatic strategy adjustment based on performance targets
+- **Change Logging**: Comprehensive change log for tracking document modifications
+
+### Enhanced
+- **Knowledge Base Maintenance**: Complete operational capabilities for long-term maintenance
+- **Performance Analysis**: Trend analysis and performance degradation detection
+- **Strategy Comparison**: Compare different strategy configurations and their performance
+- **Closed-Loop Iteration**: Automatic optimization based on quality metrics and targets
+
+### Technical
+- **New Maintenance Module**: Added comprehensive maintenance capabilities (incremental, monitoring, strategy)
+- **Performance Thresholds**: Configurable thresholds for automatic alerting
+- **Quality Trends**: Track quality metrics over time with trend analysis
+- **Strategy Auto-Optimization**: Intelligent strategy adjustment based on performance data
+
 ## [0.5.12] - 2026-08-24
 
 ### Added
