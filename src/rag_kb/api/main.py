@@ -2190,6 +2190,288 @@ async def get_working_directories():
         return {'error': str(e), 'message': 'Failed to get directories', 'directories': [], 'count': 0}
 
 
+@app.post('/api/v1/rlhf/training-example')
+async def add_rlhf_training_example(request: dict):
+    """Add a training example from user feedback.
+    
+    Args:
+        request: Training example data
+        
+    Returns:
+        Addition result
+    """
+    try:
+        from rag_kb.rlhf import rlhf_manager, FeedbackLabel
+        
+        label = FeedbackLabel(request.get('label', 'neutral'))
+        
+        result = rlhf_manager.add_training_example(
+            query=request.get('query', ''),
+            response=request.get('response', ''),
+            label=label,
+            feedback_reason=request.get('feedback_reason'),
+            user_id=request.get('user_id', 'anonymous')
+        )
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to add training example'}
+
+
+@app.get('/api/v1/rlhf/statistics')
+async def get_rlhf_statistics():
+    """Get RLHF dataset statistics.
+    
+    Returns:
+        Dataset statistics
+    """
+    try:
+        from rag_kb.rlhf import rlhf_manager
+        
+        stats = rlhf_manager.get_dataset_statistics()
+        
+        return {
+            'success': True,
+            'statistics': stats
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get RLHF statistics'}
+
+
+@app.get('/api/v1/rlhf/reward')
+async def calculate_response_reward(query: str, response: str):
+    """Calculate reward score for a response.
+    
+    Args:
+        query: User query
+        response: Model response
+        
+    Returns:
+        Reward score
+    """
+    try:
+        from rag_kb.rlhf import rlhf_manager
+        
+        reward = rlhf_manager.calculate_response_reward(query, response)
+        
+        return {
+            'success': True,
+            'reward_score': reward
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to calculate reward'}
+
+
+@app.get('/api/v1/rlhf/training-batch')
+async def get_rlhf_training_batch(batch_size: int = 10):
+    """Get a batch of training examples.
+    
+    Args:
+        batch_size: Number of examples
+        
+    Returns:
+        Training batch
+    """
+    try:
+        from rag_kb.rlhf import rlhf_manager
+        
+        batch = rlhf_manager.get_training_batch(batch_size)
+        
+        return {
+            'success': True,
+            'batch': batch,
+            'batch_size': len(batch)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get training batch', 'batch': [], 'batch_size': 0}
+
+
+@app.get('/api/v1/graph/neighborhood')
+async def get_graph_neighborhood(node_id: str, degree: int = 2):
+    """Get neighborhood of a graph node.
+    
+    Args:
+        node_id: Node ID
+        degree: Neighborhood degree
+        
+    Returns:
+        Neighborhood analysis
+    """
+    try:
+        from rag_kb.graph_analysis import graph_analyzer
+        
+        neighborhood = graph_analyzer.get_neighborhood(node_id, degree)
+        
+        return {
+            'success': True,
+            'neighborhood': neighborhood
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get neighborhood'}
+
+
+@app.get('/api/v1/graph/entity-relationships')
+async def analyze_entity_relationships(entity_id: str, max_degree: int = 3):
+    """Analyze relationships for an entity.
+    
+    Args:
+        entity_id: Entity ID
+        max_degree: Maximum degree
+        
+    Returns:
+        Relationship analysis
+    """
+    try:
+        from rag_kb.graph_analysis import graph_analyzer
+        
+        relationships = graph_analyzer.analyze_entity_relationships(entity_id, max_degree)
+        
+        return {
+            'success': True,
+            'relationships': relationships
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to analyze relationships'}
+
+
+@app.get('/api/v1/graph/paths')
+async def find_graph_paths(entity1: str, entity2: str, max_paths: int = 5):
+    """Find paths between two entities.
+    
+    Args:
+        entity1: First entity ID
+        entity2: Second entity ID
+        max_paths: Maximum number of paths
+        
+    Returns:
+        Paths between entities
+    """
+    try:
+        from rag_kb.graph_analysis import graph_analyzer
+        
+        paths = graph_analyzer.find_paths_between_entities(entity1, entity2, max_paths)
+        
+        return {
+            'success': True,
+            'paths': paths,
+            'path_count': len(paths)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to find paths', 'paths': [], 'path_count': 0}
+
+
+@app.get('/api/v1/graph/centrality')
+async def get_graph_centrality():
+    """Get centrality measures for all nodes.
+    
+    Returns:
+        Centrality measures
+    """
+    try:
+        from rag_kb.graph_analysis import graph_analyzer
+        
+        centrality = graph_analyzer.get_centrality_measures()
+        
+        return {
+            'success': True,
+            'centrality': centrality
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get centrality measures'}
+
+
+@app.get('/api/v1/graph/communities')
+async def detect_graph_communities():
+    """Detect communities in the graph.
+    
+    Returns:
+        Community detection results
+    """
+    try:
+        from rag_kb.graph_analysis import graph_analyzer
+        
+        communities = graph_analyzer.detect_communities()
+        
+        return {
+            'success': True,
+            'communities': communities
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to detect communities'}
+
+
+@app.post('/api/v1/multimodal/process')
+async def process_multimodal_file(request: dict):
+    """Process a multimodal file (image or table).
+    
+    Args:
+        request: File processing request
+        
+    Returns:
+        Processing result
+    """
+    try:
+        from rag_kb.multimodal import multimodal_manager
+        
+        result = multimodal_manager.process_multimodal_file(
+            file_path=request.get('file_path', ''),
+            doc_id=request.get('doc_id')
+        )
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to process multimodal file'}
+
+
+@app.get('/api/v1/multimodal/search')
+async def search_multimodal_content(query: str, modality_type: str = None):
+    """Search multimodal content by description.
+    
+    Args:
+        query: Search query
+        modality_type: Filter by modality type
+        
+    Returns:
+        Matching content
+    """
+    try:
+        from rag_kb.multimodal import multimodal_manager
+        
+        results = multimodal_manager.search_multimodal_content(query, modality_type)
+        
+        return {
+            'success': True,
+            'results': results,
+            'count': len(results)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to search multimodal content', 'results': [], 'count': 0}
+
+
+@app.get('/api/v1/multimodal/content')
+async def get_multimodal_content_by_type(modality_type: str):
+    """Get all content of a specific type.
+    
+    Args:
+        modality_type: Modality type
+        
+    Returns:
+        Content items
+    """
+    try:
+        from rag_kb.multimodal import multimodal_manager
+        
+        content = multimodal_manager.get_content_by_type(modality_type)
+        
+        return {
+            'success': True,
+            'content': content,
+            'count': len(content)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get multimodal content', 'content': [], 'count': 0}
+
+
 @app.post('/api/v1/routing/strategy')
 async def set_routing_strategy(strategy: str):
     """Change routing strategy.

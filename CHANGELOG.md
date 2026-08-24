@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.22] - 2026-08-24
+
+### Added
+- **Basic RLHF System**: Complete reinforcement learning from human feedback system
+- **Reward Model**: Simple reward model for response quality scoring
+- **Training Dataset**: User feedback-based training dataset construction
+- **Feedback Labels**: Positive, negative, and neutral feedback classification
+- **Advanced Graph Analysis**: 2-3 degree node neighborhood analysis
+- **Entity Relationship Analysis**: Deep analysis of entity relationships with connection strength
+- **Graph Path Mining**: Shortest path finding between entities
+- **Centrality Measures**: Degree centrality and PageRank calculations
+- **Community Detection**: Basic community detection in knowledge graph
+- **Basic Multimodal Support**: Image and table processing capabilities
+- **Image Processing**: Basic image information extraction and description generation
+- **Table Processing**: CSV and Excel table data extraction
+- **Multimodal Search**: Search multimodal content by description
+- **RLHF Training API**: API for adding training examples and calculating rewards
+- **Graph Analysis API**: API for neighborhood, relationships, paths, centrality, and communities
+- **Multimodal API**: API for processing and searching multimodal content
+
+### Enhanced
+- **Model Improvement**: RLHF system enables continuous model improvement from user feedback
+- **Graph Insights**: Advanced graph analysis provides deeper knowledge graph understanding
+- **Multimodal Support**: Basic support for images and tables expands content types
+- **Quality Scoring**: Reward model provides objective response quality assessment
+- **Relationship Mining**: Deep entity relationship analysis improves graph understanding
+- **System Intelligence**: Advanced analytics provide deeper system insights
+
+### Technical
+- **New RLHF Module**: Complete RLHF system with reward model and dataset management
+- **New Graph Analysis Module**: Advanced graph analysis with multiple algorithms
+- **New Multimodal Module**: Basic multimodal processing for images and tables
+- **Reward Scoring**: Multi-factor reward calculation for response quality
+- **Graph Algorithms**: BFS path finding, centrality measures, community detection
+- **Content Processing**: Image and table data extraction with fallback mechanisms
+- **Dataset Management**: Persistent storage for RLHF training examples
+- **Index Management**: Multimodal content index for efficient retrieval
+
 ## [0.5.21] - 2026-08-24
 
 ### Added
