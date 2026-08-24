@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.8 (Stable)  
+**Current Version**: v0.4.9 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.8 fixes the virtual environment Python detection in manage.ps1, ensuring the correct Python environment is used for startup.
+> **Version Note**: v0.4.9 adds a direct source startup script to bypass package version synchronization issues and provides alternative startup method.
 
 ## Features
 
@@ -240,6 +240,11 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.9 (2026-08-24) - Direct Source Startup Script
+- **Added**: start_direct.bat for direct source code execution
+- **Added**: Alternative startup method to bypass package version synchronization issues
+- **Changed**: Updated troubleshooting guidance for package version conflicts
 
 ### v0.4.8 (2026-08-24) - Virtual Environment Python Fix
 - **Fixed**: manage.ps1 to use virtual environment Python instead of system Python
