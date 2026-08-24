@@ -34,6 +34,12 @@ class EmbeddingFunc:
                 return np.zeros((len(texts), self.embedding_dim), dtype=np.float32)
             else:
                 return np.zeros((1, self.embedding_dim), dtype=np.float32)
+    
+    def replace(self, **kwargs):
+        """Implement replace method for dataclass compatibility."""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
 
 
 # Create global embedding function instance

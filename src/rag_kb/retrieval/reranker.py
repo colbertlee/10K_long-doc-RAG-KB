@@ -2,9 +2,16 @@
 
 from typing import List, Dict, Optional, Tuple
 from rag_kb.models import SearchResult
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import numpy as np
+
+# Optional imports for cross-encoder reranking
+try:
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
+    print("Warning: transformers not installed. Cross-encoder reranking will be disabled.")
 
 
 class CrossEncoderReranker:
@@ -19,6 +26,12 @@ class CrossEncoderReranker:
             device: Device to run model on ('cpu' or 'cuda')
             batch_size: Batch size for inference
         """
+        if not TRANSFORMERS_AVAILABLE:
+            print("Warning: transformers not available. Cross-encoder reranking disabled.")
+            self.model = None
+            self.tokenizer = None
+            return
+            
         self.model_name = model_name
         self.device = device
         self.batch_size = batch_size
@@ -28,6 +41,9 @@ class CrossEncoderReranker:
     
     def _load_model(self):
         """Load the cross-encoder model and tokenizer."""
+        if not TRANSFORMERS_AVAILABLE:
+            return
+            
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.model = AutoModelForSequenceClassification.from_pretrained(self.model_name)
@@ -84,7 +100,7 @@ class CrossEncoderReranker:
         Returns:
             Array of relevance scores
         """
-        if not self.model or not self.tokenizer:
+        if not TRANSFORMERS_AVAILABLE or not self.model or not self.tokenizer:
             return np.zeros(len(pairs))
         
         scores = []

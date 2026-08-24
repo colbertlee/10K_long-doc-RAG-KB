@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.26] - 2026-08-24
+
+### Fixed
+- **Reranker Import**: Added optional import handling for transformers library to prevent import errors
+- **Search Functionality**: Simplified search to use document registry with graceful degradation
+- **Main.py Cleanup**: Removed duplicate and orphaned code from search endpoint
+- **Error Handling**: Enhanced error handling with better debugging information
+
+### Changed
+- **LightRAG Status**: Temporarily disabled advanced LightRAG features due to embedding compatibility
+- **Search Mode**: Using basic text search as reliable fallback
+- **Dependency Handling**: Made transformers and torch optional dependencies
+
+### Technical
+- **Reranker.py**: Added TRANSFORMERS_AVAILABLE flag for optional imports
+- **Routes.py**: Simplified to document registry search only
+- **Main.py**: Cleaned up duplicate search endpoint code
+- **Embedding Functions**: Multiple attempts at compatibility fixes (dataclass, replace method, etc.)
+
+### Known Issues
+- **LightRAG Semantic Search**: Temporarily disabled due to embedding function interface incompatibility with lightrag-hku v1.5.6
+- **Torch Installation**: SSL certificate issues preventing torch installation from PyTorch servers
+- **Advanced Dependencies**: Some features require heavy dependencies that have installation issues
+
 ## [0.5.25] - 2026-08-24
 
 ### Fixed

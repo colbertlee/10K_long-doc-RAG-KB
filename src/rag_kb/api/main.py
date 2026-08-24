@@ -116,10 +116,10 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 metadata=doc.metadata
             ))
         
-        # Step 3: LightRAG indexing and knowledge graph generation (disabled for now due to compatibility issues)
+        # Step 3: LightRAG indexing and knowledge graph generation (temporarily disabled)
         graph_generated = False
-        indexing_error = "LightRAG indexing temporarily disabled due to embedding function compatibility issues. Document is available for basic search."
-        print("LightRAG indexing skipped - using basic document storage")
+        indexing_error = "LightRAG indexing temporarily disabled due to embedding function compatibility issues. Advanced features will be restored in future update."
+        print("LightRAG indexing skipped - document available for basic search")
         
         # Save document to registry
         registry_file = settings.data_dir / 'document_registry.json'
@@ -670,194 +670,56 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
         Search results with answer and sources
     """
     try:
-        from rag_kb.lightrag.adapter import LightRAGAdapter
-        from rag_kb.retrieval import BM25Search, HybridSearch
-        from rag_kb.multi_kb import multi_kb_manager
-        from rag_kb.intent import intent_classifier
+        # Use document registry search (LightRAG temporarily disabled due to compatibility issues)
+        import json
+        from pathlib import Path
+        registry_file = settings.data_dir / 'document_registry.json'
         
-        # Automatic intent classification if enabled
-        if auto_classify:
-            classification = intent_classifier.classify(q)
-            if classification.confidence > 0.6:
-                # Use classified mode if confidence is high enough
-                if classification.recommended_mode == 'bm25':
-                    mode = 'bm25'
-                elif classification.recommended_mode in ['local', 'global', 'naive']:
-                    query_mode = classification.recommended_mode
-        
-        # Multi-knowledge base routing
-        if category != 'all':
-            # Use product-specific knowledge base
-            kb_result = multi_kb_manager.search_product_kb(
-                product_id=category,
-                query=q,
-                query_mode=query_mode,
-                top_k=top_k
-            )
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
             
-            if kb_result.get('error'):
-                # Fallback to global KB if product KB fails
-                print(f"Product KB search failed: {kb_result.get('error')}, falling back to global KB")
-                rag = LightRAGAdapter()
-                answer = rag.query(q, mode=query_mode)
-                return {
-                    'answer': answer,
-                    'sources': [],
-                    'mode': 'lightrag',
-                    'query_mode': query_mode,
-                    'category': category,
-                    'kb_type': 'fallback',
-                    'intent_classification': classification.to_dict() if auto_classify else None
-                }
-            else:
-                kb_result['intent_classification'] = classification.to_dict() if auto_classify else None
-                return kb_result
-        
-        # Standard search logic for global KB
-        user_acl = {'dept': [dept], 'level': [level]}
-        bm25_index_path = settings.data_dir / 'bm25_index.json'
-        
-        if mode == 'bm25':
-            # BM25-only search
-            bm25 = BM25Search()
-            # Load BM25 index if available
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
+            # Simple text search
+            results = []
+            for doc_id, doc_data in registry.items():
+                content = doc_data.get('content', '')
+                title = doc_data.get('title', '')
+                if q.lower() in content.lower() or q.lower() in title.lower():
+                    results.append({
+                        'text': content[:500] + '...' if len(content) > 500 else content,
+                        'metadata': {'title': title, 'doc_id': doc_id}
+                    })
             
-            results = bm25.search(q, top_k=top_k)
-            answer = f"Found {len(results)} relevant documents using BM25 search."
-            return {'answer': answer, 'sources': results, 'mode': 'bm25', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
-            
-        elif mode == 'hybrid':
-            # Hybrid search (BM25 + LightRAG)
-            rag = LightRAGAdapter()
-            bm25 = BM25Search()
-            
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
-            
-            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
-            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
-            
-            # Generate answer using LightRAG with specified query mode
-            try:
-                lightrag_answer = rag.query(q, mode=query_mode)
-                if not lightrag_answer or lightrag_answer == "":
-                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
-            except Exception as e:
-                lightrag_answer = f"LightRAG查询失败: {str(e)}"
-            
-            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
-            
-        else:  # lightrag mode (default)
-            rag = LightRAGAdapter()
-            try:
-                answer = rag.query(q, mode=query_mode)
-                if not answer or answer == "":
-                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
-                    return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'status': 'no_documents', 'intent_classification': classification.to_dict() if auto_classify else None}
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
-            except Exception as e:
-                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'error': str(e), 'intent_classification': classification.to_dict() if auto_classify else None}
-            
+            return {
+                'answer': f"Found {len(results)} documents matching '{q}'. Note: Advanced LightRAG semantic search temporarily disabled due to embedding compatibility. Using basic text search.",
+                'sources': results[:top_k],
+                'mode': 'basic',
+                'query_mode': query_mode,
+                'category': category,
+                'intent_classification': None
+            }
+        else:
+            return {
+                'error': 'No documents found in knowledge base',
+                'answer': '知识库中未找到相关信息。请先上传文档。',
+                'sources': [],
+                'mode': 'basic',
+                'query_mode': query_mode,
+                'category': category,
+                'intent_classification': None
+            }
     except Exception as e:
-        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode, 'category': category}
-    """Search the RAG knowledge base with multi-knowledge base support.
-
-    Args:
-        q: Search query
-        dept: Department filter
-        level: Access level filter
-        top_k: Number of results to return
-        mode: Search mode ('lightrag', 'bm25', 'hybrid')
-        query_mode: LightRAG query mode ('naive', 'local', 'global', 'hybrid')
-        category: Product category for multi-knowledge base routing
-
-    Returns:
-        Search results with answer and sources
-    """
-    try:
-        from rag_kb.lightrag.adapter import LightRAGAdapter
-        from rag_kb.retrieval import BM25Search, HybridSearch
-        from rag_kb.multi_kb import multi_kb_manager
-        
-        # Multi-knowledge base routing
-        if category != 'all':
-            # Use product-specific knowledge base
-            kb_result = multi_kb_manager.search_product_kb(
-                product_id=category,
-                query=q,
-                query_mode=query_mode,
-                top_k=top_k
-            )
-            
-            if kb_result.get('error'):
-                # Fallback to global KB if product KB fails
-                print(f"Product KB search failed: {kb_result.get('error')}, falling back to global KB")
-                rag = LightRAGAdapter()
-                answer = rag.query(q, mode=query_mode)
-                return {
-                    'answer': answer,
-                    'sources': [],
-                    'mode': 'lightrag',
-                    'query_mode': query_mode,
-                    'category': category,
-                    'kb_type': 'fallback'
-                }
-            else:
-                return kb_result
-        
-        # Standard search logic for global KB
-        user_acl = {'dept': [dept], 'level': [level]}
-        bm25_index_path = settings.data_dir / 'bm25_index.json'
-        
-        if mode == 'bm25':
-            # BM25-only search
-            bm25 = BM25Search()
-            # Load BM25 index if available
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
-            
-            results = bm25.search(q, top_k=top_k)
-            answer = f"Found {len(results)} relevant documents using BM25 search."
-            return {'answer': answer, 'sources': results, 'mode': 'bm25', 'query_mode': query_mode, 'category': category}
-            
-        elif mode == 'hybrid':
-            # Hybrid search (BM25 + LightRAG)
-            rag = LightRAGAdapter()
-            bm25 = BM25Search()
-            
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
-            
-            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
-            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
-            
-            # Generate answer using LightRAG with specified query mode
-            try:
-                lightrag_answer = rag.query(q, mode=query_mode)
-                if not lightrag_answer or lightrag_answer == "":
-                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
-            except Exception as e:
-                lightrag_answer = f"LightRAG查询失败: {str(e)}"
-            
-            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode, 'category': category}
-            
-        else:  # lightrag mode (default)
-            rag = LightRAGAdapter()
-            try:
-                answer = rag.query(q, mode=query_mode)
-                if not answer or answer == "":
-                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
-                    return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'status': 'no_documents'}
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category}
-            except Exception as e:
-                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'error': str(e)}
-            
-    except Exception as e:
-        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode, 'category': category}
+        import traceback
+        traceback.print_exc()
+        return {
+            'error': str(e),
+            'answer': f'搜索失败: {str(e)}',
+            'sources': [],
+            'mode': 'basic',
+            'query_mode': query_mode,
+            'category': category,
+            'intent_classification': None
+        }
     """Search the RAG knowledge base with multiple modes.
     
     Args:

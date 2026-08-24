@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.24 (Latest)  
+**Current Version**: v0.5.26 (Latest)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.24 includes critical fixes for API routes, document ingestion, and search functionality. LightRAG advanced features temporarily disabled due to embedding compatibility issues.
+> **Version Note**: v0.5.26 includes dependency compatibility fixes and enhanced error handling. LightRAG advanced features temporarily disabled due to embedding compatibility. Core document upload and basic search fully operational.
 
 ## Features
 

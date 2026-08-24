@@ -41,7 +41,7 @@ async def search_endpoint(q: str, mode: str = "hybrid", top_k: int = 8):
         Search results with answer and sources
     """
     try:
-        # Simple document search from registry
+        # Use document registry search (LightRAG temporarily disabled due to compatibility issues)
         import json
         from pathlib import Path
         registry_file = Path("C:/Users/liz8/OneDrive - Dell Technologies/Documents/BaiduSyncdisk/Works/Vibe_Coding/10K_long-doc-RAG-KB/data/document_registry.json")
@@ -57,12 +57,12 @@ async def search_endpoint(q: str, mode: str = "hybrid", top_k: int = 8):
                 title = doc_data.get('title', '')
                 if q.lower() in content.lower() or q.lower() in title.lower():
                     results.append({
-                        'content': content[:500] + '...' if len(content) > 500 else content,
+                        'text': content[:500] + '...' if len(content) > 500 else content,
                         'metadata': {'title': title, 'doc_id': doc_id}
                     })
             
             return {
-                "answer": f"Found {len(results)} documents matching '{q}'. Note: Advanced search features are temporarily disabled due to dependency compatibility issues.",
+                "answer": f"Found {len(results)} documents matching '{q}'. Note: Advanced LightRAG semantic search temporarily disabled due to embedding compatibility. Using basic text search.",
                 "sources": results[:top_k],
                 "mode": "basic",
                 "source_count": len(results[:top_k])
@@ -70,17 +70,150 @@ async def search_endpoint(q: str, mode: str = "hybrid", top_k: int = 8):
         else:
             return {
                 "error": "No documents found in knowledge base",
-                "answer": "知识库中未找到任何文档。请先上传文档。",
+                "answer": "知识库中未找到相关信息。请先上传文档。",
                 "sources": [],
                 "mode": "basic",
                 "source_count": 0
             }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {
             "error": str(e),
             "answer": f"搜索失败: {str(e)}",
             "sources": [],
             "mode": "basic",
+            "source_count": 0
+        }
+            # LightRAG-only search
+            try:
+                answer = rag.query(q, mode="hybrid")
+                if not answer or answer.strip() == "":
+                    answer = "LightRAG returned empty response. The knowledge base may be empty or not properly indexed."
+                sources = extract_sources(answer)
+                return {
+                    "answer": answer,
+                    "sources": sources,
+                    "mode": mode,
+                    "source_count": len(sources)
+                }
+            except Exception as lightrag_error:
+                return {
+                    "error": f"LightRAG query failed: {str(lightrag_error)}",
+                    "answer": f"LightRAG查询失败: {str(lightrag_error)}。知识库可能为空或未正确索引。",
+                    "sources": [],
+                    "mode": mode,
+                    "source_count": 0
+                }
+        elif mode == "bm25":
+            # BM25-only search using document registry
+            import json
+            from pathlib import Path
+            try:
+                registry_file = Path("C:/Users/liz8/OneDrive - Dell Technologies/Documents/BaiduSyncdisk/Works/Vibe_Coding/10K_long-doc-RAG-KB/data/document_registry.json")
+                
+                if registry_file.exists():
+                    with open(registry_file, 'r', encoding='utf-8') as f:
+                        registry = json.load(f)
+                    
+                    # Simple text search
+                    results = []
+                    for doc_id, doc_data in registry.items():
+                        content = doc_data.get('content', '')
+                        title = doc_data.get('title', '')
+                        if q.lower() in content.lower() or q.lower() in title.lower():
+                            results.append({
+                                'text': content[:500] + '...' if len(content) > 500 else content,
+                                'metadata': {'title': title, 'doc_id': doc_id}
+                            })
+                    
+                    return {
+                        "answer": f"Found {len(results)} relevant documents using BM25 search.",
+                        "sources": results[:top_k],
+                        "mode": mode,
+                        "source_count": len(results[:top_k])
+                    }
+                else:
+                    return {
+                        "error": "No documents found in knowledge base",
+                        "answer": "知识库中未找到任何文档。请先上传文档。",
+                        "sources": [],
+                        "mode": mode,
+                        "source_count": 0
+                    }
+            except Exception as bm25_error:
+                return {
+                    "error": f"BM25 search failed: {str(bm25_error)}",
+                    "answer": f"BM25搜索失败: {str(bm25_error)}",
+                    "sources": [],
+                    "mode": mode,
+                    "source_count": 0
+                }
+        else:
+            # Hybrid search (LightRAG with document registry fallback)
+            try:
+                # Try LightRAG first
+                answer = rag.query(q, mode="hybrid")
+                if not answer or answer.strip() == "":
+                    raise Exception("LightRAG returned empty response")
+                
+                sources = extract_sources(answer)
+                return {
+                    "answer": answer,
+                    "sources": sources,
+                    "mode": mode,
+                    "source_count": len(sources)
+                }
+            except Exception as hybrid_error:
+                # Fallback to document registry search
+                import json
+                from pathlib import Path
+                try:
+                    registry_file = Path("C:/Users/liz8/OneDrive - Dell Technologies/Documents/BaiduSyncdisk/Works/Vibe_Coding/10K_long-doc-RAG-KB/data/document_registry.json")
+                    
+                    if registry_file.exists():
+                        with open(registry_file, 'r', encoding='utf-8') as f:
+                            registry = json.load(f)
+                        
+                        # Simple text search
+                        results = []
+                        for doc_id, doc_data in registry.items():
+                            content = doc_data.get('content', '')
+                            title = doc_data.get('title', '')
+                            if q.lower() in content.lower() or q.lower() in title.lower():
+                                results.append({
+                                    'text': content[:500] + '...' if len(content) > 500 else content,
+                                    'metadata': {'title': title, 'doc_id': doc_id}
+                                })
+                        
+                        return {
+                            "answer": f"LightRAG unavailable, using document search. Found {len(results)} documents matching '{q}'.",
+                            "sources": results[:top_k],
+                            "mode": "hybrid_fallback",
+                            "source_count": len(results[:top_k])
+                        }
+                    else:
+                        return {
+                            "error": "No documents found in knowledge base",
+                            "answer": "知识库中未找到任何文档。请先上传文档。",
+                            "sources": [],
+                            "mode": "hybrid_fallback",
+                            "source_count": 0
+                        }
+                except Exception as fallback_error:
+                    return {
+                        "error": f"Hybrid search failed: {str(hybrid_error)}",
+                        "answer": f"混合搜索失败: {str(hybrid_error)}",
+                        "sources": [],
+                        "mode": mode,
+                        "source_count": 0
+                    }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "answer": f"搜索失败: {str(e)}",
+            "sources": [],
+            "mode": mode,
             "source_count": 0
         }
 
