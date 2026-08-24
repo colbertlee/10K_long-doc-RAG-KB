@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>增强搜索 - 混合检索 + 多形态交互</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -11,7 +12,14 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
         .header h1 { font-size: 2em; margin-bottom: 10px; }
         
-        .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        .graph-panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .graph-panel h3 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .mini-graph { width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
+        .entity-list { max-height: 200px; overflow-y: auto; }
+        .entity-item { padding: 8px; margin-bottom: 5px; background: #f0f9ff; border-radius: 4px; cursor: pointer; }
+        .entity-item:hover { background: #e0f2fe; }
+        
+        .main-layout { display: grid; grid-template-columns: 280px 1fr 350px; gap: 20px; }
         
         .sidebar { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .sidebar h3 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
@@ -127,6 +135,17 @@
                     <div class="loading">输入查询开始搜索...</div>
                 </div>
             </div>
+
+            <!-- 图谱面板 -->
+            <div class="graph-panel">
+                <h3>🕸️ 实体联动</h3>
+                <div id="mini-graph" class="mini-graph"></div>
+                <h4>提取的实体</h4>
+                <div id="entity-list" class="entity-list">
+                    <div class="loading">搜索后显示实体...</div>
+                </div>
+                <button onclick="openFullGraph()" style="width: 100%; margin-top: 15px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">打开完整图谱</button>
+            </div>
         </div>
 
         <!-- 智能对话区域 -->
@@ -153,6 +172,7 @@
         const API_BASE = 'http://localhost:8000/api/v1';
         let currentSearchMode = 'hybrid';
         let currentFilters = {};
+        let miniCy = null;
 
         function setSearchMode(mode) {
             currentSearchMode = mode;
@@ -168,6 +188,170 @@
                 level: document.getElementById('level-filter').value
             };
             performSearch();
+        }
+
+        async function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            const resultsDiv = document.getElementById('search-results');
+            const entityListDiv = document.getElementById('entity-list');
+            
+            if (!searchInput.value.trim()) {
+                alert('请输入搜索内容');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading">搜索中...</div>';
+            entityListDiv.innerHTML = '<div class="loading">提取实体中...</div>';
+
+            try {
+                let mode = 'hybrid';
+                if (currentSearchMode === 'semantic') mode = 'lightrag';
+                if (currentSearchMode === 'keyword') mode = 'bm25';
+
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="result-item"><h4>搜索失败</h4><p>${data.error}</p></div>`;
+                    entityListDiv.innerHTML = '<div class="loading">无实体</div>';
+                } else {
+                    const sources = data.sources || [];
+                    let html = `<div class="result-item"><h4>搜索结果 (${data.mode}模式)</h4><p><strong>答案：</strong>${data.answer}</p>`;
+                    
+                    // Extract and highlight entities
+                    const entities = extractEntitiesFromText(data.answer);
+                    let highlightedAnswer = data.answer;
+                    entities.forEach(entity => {
+                        const regex = new RegExp(`(${entity})`, 'gi');
+                        highlightedAnswer = highlightedAnswer.replace(regex, '<span class="highlighted-entity" onclick="highlightEntityGraph(\'$1\')">$1</span>');
+                    });
+                    
+                    html = `<div class="result-item"><h4>搜索结果 (${data.mode}模式)</h4><p><strong>答案：</strong>${highlightedAnswer}</p>`;
+                    
+                    if (sources.length > 0) {
+                        html += '<div class="meta"><strong>来源文档：</strong><ul>';
+                        sources.forEach((source, i) => {
+                            html += `<li><a href="#doc-${source.doc_id || source.id}">${source.title || '文档 ' + (i+1)}</a> (分数: ${(source.score || 0).toFixed(2)})</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+                    
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                    
+                    // Display entities
+                    if (entities.length > 0) {
+                        entityListDiv.innerHTML = entities.map(entity => 
+                            `<div class="entity-item" onclick="highlightEntityGraph('${entity}')">${entity}</div>`
+                        ).join('');
+                        
+                        // Load mini graph with entities
+                        loadMiniGraph(entities);
+                    } else {
+                        entityListDiv.innerHTML = '<div class="loading">未检测到实体</div>';
+                    }
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item"><h4>搜索失败</h4><p>${error.message}</p></div>`;
+                entityListDiv.innerHTML = '<div class="loading">提取失败</div>';
+            }
+        }
+
+        function extractEntitiesFromText(text) {
+            // Simple entity extraction
+            const entities = [];
+            const capitalizedWords = text.match(/\b[A-Z][a-zA-Z]+\b/g) || [];
+            const codes = text.match(/\b[A-Z0-9_]+\b/g) || [];
+            
+            entities.push(...capitalizedWords);
+            entities.push(...codes);
+            
+            // Remove duplicates and limit
+            return [...new Set(entities)].slice(0, 10);
+        }
+
+        async function highlightEntityGraph(entity) {
+            try {
+                const response = await fetch(`${API_BASE}/users/default/kbs/default/entity-subgraph?entity=${encodeURIComponent(entity)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayMiniGraph(data.nodes, data.edges);
+                }
+            } catch (error) {
+                console.error('Error loading entity subgraph:', error);
+            }
+        }
+
+        function loadMiniGraph(entities) {
+            if (entities.length > 0) {
+                highlightEntityGraph(entities[0]);
+            }
+        }
+
+        function displayMiniGraph(nodes, edges) {
+            if (!miniCy) {
+                miniCy = cytoscape({
+                    container: document.getElementById('mini-graph'),
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'background-color': '#667eea',
+                                'label': 'data(label)',
+                                'font-size': '10px',
+                                'width': '40px',
+                                'height': '40px'
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'width': 1,
+                                'line-color': '#ccc',
+                                'target-arrow-color': '#ccc',
+                                'target-arrow-shape': 'triangle'
+                            }
+                        }
+                    ],
+                    layout: {
+                        name: 'circle',
+                        animate: true
+                    }
+                });
+            }
+
+            miniCy.elements().remove();
+
+            const elements = [];
+
+            nodes.forEach(node => {
+                elements.push({
+                    data: {
+                        id: node.id,
+                        label: node.label.length > 10 ? node.label.substring(0, 10) + '...' : node.label
+                    }
+                });
+            });
+
+            edges.forEach(edge => {
+                elements.push({
+                    data: {
+                        source: edge.source,
+                        target: edge.target
+                    }
+                });
+            });
+
+            miniCy.add(elements);
+            miniCy.layout({
+                name: 'circle',
+                animate: true
+            }).run();
+        }
+
+        function openFullGraph() {
+            window.open('/interactive-graph', '_blank');
         }
 
         async function performSearch() {

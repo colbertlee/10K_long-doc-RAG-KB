@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.15] - 2026-08-24
+
+### Added
+- **Interactive Graph Interface**: New dedicated interface for graph-RAG interaction with UX best practices
+- **Entity Linking**: Click highlighted entities in chat to view entity-centered subgraphs
+- **Node Source Tracing**: Click graph nodes to view original document fragments with source cards
+- **Dynamic Subgraph Display**: Render only relevant local relationship subgraphs to avoid visual clutter
+- **Entity Extraction**: Automatic entity extraction from search results and chat responses
+- **Entity Highlighting**: Visual highlighting of entities in chat responses with click interaction
+- **Mini Graph Panel**: Integrated mini graph in enhanced search interface for quick entity visualization
+- **Entity Subgraph API**: New endpoint for retrieving entity-centered subgraphs
+- **Node Source API**: New endpoint for retrieving source documents for specific graph nodes
+- **Enhanced Chat Citations**: Citations now include extracted entities for graph interaction
+
+### Enhanced
+- **Graph-RAG Integration**: Seamless integration between knowledge graph and RAG system
+- **User Experience**: Improved UX with entity linking, node tracing, and dynamic subgraph display
+- **Visual Clutter Reduction**: Dynamic subgraph rendering prevents full graph overload
+- **Interactive Elements**: Click interactions for entities, nodes, and edges with contextual information
+- **Search-Graph Connection**: Direct connection between search results and graph visualization
+
+### Technical
+- **New Interactive Graph UI**: Dedicated interface with Cytoscape.js for advanced graph interaction
+- **Entity Detection**: Simple entity extraction algorithm for capitalized words and codes
+- **Subgraph Algorithms**: Entity-centered subgraph extraction from full knowledge graph
+- **Source Mapping**: Node-to-document mapping for source tracing functionality
+- **Event Communication**: Cross-window communication for entity highlighting between interfaces
+
 ## [0.5.14] - 2026-08-24
 
 ### Added

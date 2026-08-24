@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式知识图谱 - 实体联动与溯源</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2em; margin-bottom: 10px; }
+        
+        .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        
+        .graph-area { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .graph-container { width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px; }
+        
+        .sidebar { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .sidebar h3 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        
+        .entity-highlight { background: #f0f9ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .entity-highlight h4 { color: #667eea; margin-bottom: 10px; }
+        
+        .node-card { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .node-card h4 { color: #333; margin-bottom: 10px; }
+        .node-card p { color: #666; font-size: 0.9em; line-height: 1.5; }
+        .node-card .actions { margin-top: 10px; }
+        .node-card button { padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
+        .node-card button:hover { background: #5568d3; }
+        
+        .subgraph-info { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .subgraph-info h4 { color: #1976d2; margin-bottom: 10px; }
+        
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .controls button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .controls button:hover { background: #5568d3; }
+        
+        .loading { text-align: center; padding: 20px; color: #666; }
+        
+        .highlighted-entity {
+            background: linear-gradient(120deg, #ffd700 0%, #ffec8b 100%);
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕸️ 交互式知识图谱 - 实体联动与溯源</h1>
+            <p>点击实体查看子图 | 点击节点溯源文档 | 动态局部关系展示</p>
+        </div>
+
+        <div class="main-layout">
+            <!-- 图谱区域 -->
+            <div class="graph-area">
+                <div class="controls">
+                    <button onclick="loadFullGraph()">加载全量图谱</button>
+                    <button onclick="clearGraph()">清空图谱</button>
+                    <button onclick="resetLayout()">重置布局</button>
+                </div>
+                <div id="cy" class="graph-container"></div>
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <h3>🎯 实体联动</h3>
+                <div id="entity-highlight" class="entity-highlight">
+                    <h4>当前高亮实体</h4>
+                    <p>点击图谱中的实体或聊天中的高亮词查看子图</p>
+                </div>
+
+                <h3>📄 节点溯源</h3>
+                <div id="node-source" class="node-card">
+                    <h4>节点信息</h4>
+                    <p>点击图谱节点查看原始文档片段</p>
+                </div>
+
+                <h3>🔍 子图信息</h3>
+                <div id="subgraph-info" class="subgraph-info">
+                    <h4>动态子图</h4>
+                    <p>当前显示的局部关系子图</p>
+                    <p><strong>节点数:</strong> <span id="node-count">0</span></p>
+                    <p><strong>边数:</strong> <span id="edge-count">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let cy = null;
+        let currentQuery = '';
+
+        // Initialize Cytoscape
+        function initCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#667eea',
+                            'label': 'data(label)',
+                            'font-size': '12px',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': '#fff',
+                            'text-outline-color': '#667eea',
+                            'text-outline-width': 2px,
+                            'width': '60px',
+                            'height': '60px'
+                        }
+                    },
+                    {
+                        selector: 'node.highlighted',
+                        style: {
+                            'background-color': '#ffd700',
+                            'border-width': 3,
+                            'border-color': '#ff6b00'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#ccc',
+                            'target-arrow-color': '#ccc',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    },
+                    {
+                        selector: 'edge.highlighted',
+                        style: {
+                            'line-color': '#ffd700',
+                            'width': 3
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500,
+                    idealEdgeLength: 100,
+                    nodeOverlap: 20
+                }
+            });
+
+            // Add click event for nodes
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                const nodeId = node.id();
+                const nodeLabel = node.data('label');
+                
+                showNodeSource(nodeId, nodeLabel);
+                highlightNode(node);
+            });
+
+            // Add click event for edges
+            cy.on('tap', 'edge', function(evt) {
+                const edge = evt.target;
+                highlightEdge(edge);
+            });
+        }
+
+        async function loadFullGraph() {
+            try {
+                const response = await fetch(`${API_BASE}/users/default/kbs/default/graph`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayGraph(data.nodes, data.edges);
+                    updateSubgraphInfo(data.nodes.length, data.edges.length);
+                } else {
+                    alert('加载图谱失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('加载图谱失败: ' + error.message);
+            }
+        }
+
+        function displayGraph(nodes, edges) {
+            if (!cy) {
+                initCytoscape();
+            }
+
+            cy.elements().remove();
+
+            const elements = [];
+
+            // Add nodes
+            nodes.forEach(node => {
+                elements.push({
+                    data: {
+                        id: node.id,
+                        label: node.label,
+                        type: node.type || 'default'
+                    }
+                });
+            });
+
+            // Add edges
+            edges.forEach(edge => {
+                elements.push({
+                    data: {
+                        source: edge.source,
+                        target: edge.target,
+                        label: edge.label || ''
+                    }
+                });
+            });
+
+            cy.add(elements);
+            cy.layout({
+                name: 'cose',
+                animate: true,
+                animationDuration: 500
+            }).run();
+        }
+
+        async function showEntitySubgraph(entity) {
+            try {
+                document.getElementById('entity-highlight').innerHTML = '<div class="loading">加载实体子图...</div>';
+                
+                const response = await fetch(`${API_BASE}/users/default/kbs/default/entity-subgraph?entity=${encodeURIComponent(entity)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayGraph(data.nodes, data.edges);
+                    updateSubgraphInfo(data.node_count, data.edge_count);
+                    
+                    document.getElementById('entity-highlight').innerHTML = `
+                        <h4>当前高亮实体: ${entity}</h4>
+                        <p><strong>相关节点:</strong> ${data.node_count}</p>
+                        <p><strong>关系边:</strong> ${data.edge_count}</p>
+                    `;
+                } else {
+                    document.getElementById('entity-highlight').innerHTML = `<p>加载失败: ${data.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('entity-highlight').innerHTML = `<p>加载失败: ${error.message}</p>`;
+            }
+        }
+
+        async function showNodeSource(nodeId, nodeLabel) {
+            try {
+                document.getElementById('node-source').innerHTML = '<div class="loading">加载节点源文档...</div>';
+                
+                const response = await fetch(`${API_BASE}/users/default/kbs/default/node-source?node_id=${encodeURIComponent(nodeId)}`);
+                const data = await response.json();
+                
+                if (data.success && data.source) {
+                    const source = data.source;
+                    const contentPreview = source.content ? source.content.substring(0, 200) + '...' : '无内容';
+                    
+                    document.getElementById('node-source').innerHTML = `
+                        <h4>${source.title}</h4>
+                        <p><strong>文档ID:</strong> ${source.doc_id}</p>
+                        <p><strong>内容预览:</strong></p>
+                        <p>${contentPreview}</p>
+                        <div class="actions">
+                            <button onclick="askAboutNode('${nodeLabel}')">基于此节点继续提问</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('node-source').innerHTML = `<p>加载失败: ${data.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('node-source').innerHTML = `<p>加载失败: ${error.message}</p>`;
+            }
+        }
+
+        function askAboutNode(nodeLabel) {
+            // Redirect to chat with pre-filled question
+            const question = `请告诉我关于"${nodeLabel}"的详细信息`;
+            window.open(`/chat-ui?question=${encodeURIComponent(question)}`, '_blank');
+        }
+
+        function highlightNode(node) {
+            // Remove previous highlights
+            cy.elements().removeClass('highlighted');
+            
+            // Highlight selected node and its neighbors
+            node.addClass('highlighted');
+            node.neighborhood().addClass('highlighted');
+        }
+
+        function highlightEdge(edge) {
+            // Remove previous highlights
+            cy.elements().removeClass('highlighted');
+            
+            // Highlight selected edge and its nodes
+            edge.addClass('highlighted');
+            edge.connectedNodes().addClass('highlighted');
+        }
+
+        function updateSubgraphInfo(nodeCount, edgeCount) {
+            document.getElementById('node-count').textContent = nodeCount;
+            document.getElementById('edge-count').textContent = edgeCount;
+        }
+
+        function clearGraph() {
+            if (cy) {
+                cy.elements().remove();
+                updateSubgraphInfo(0, 0);
+            }
+        }
+
+        function resetLayout() {
+            if (cy) {
+                cy.layout({
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 500
+                }).run();
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initCytoscape();
+            loadFullGraph();
+        };
+
+        // Listen for entity highlight events from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'highlightEntity') {
+                showEntitySubgraph(event.data.entity);
+            }
+        });
+    </script>
+</body>
+</html>

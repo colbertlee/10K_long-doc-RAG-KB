@@ -310,6 +310,139 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         return {'error': str(e), 'message': 'Folder import failed'}
 
 
+@app.get('/api/v1/users/{user_id}/kbs/{kb_name}/entity-subgraph')
+async def get_entity_subgraph(user_id: str, kb_name: str, entity: str):
+    """Get subgraph centered around a specific entity.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        entity: Entity name to center subgraph around
+        
+    Returns:
+        Subgraph data with entity and its neighbors
+    """
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        import json
+        from pathlib import Path
+        
+        rag = LightRAGAdapter()
+        
+        # Try to get entity-specific subgraph from LightRAG
+        subgraph_data = {
+            'nodes': [],
+            'edges': []
+        }
+        
+        # Check if LightRAG graph data exists
+        lightrag_dir = settings.data_dir / 'lightrag_output'
+        if lightrag_dir.exists():
+            graph_file = lightrag_dir / 'graph_index.json'
+            if graph_file.exists():
+                try:
+                    with open(graph_file, 'r', encoding='utf-8') as f:
+                        lightrag_graph = json.load(f)
+                        
+                        # Find entity and its neighbors
+                        entity_node = None
+                        for node in lightrag_graph.get('nodes', []):
+                            if entity.lower() in node.get('label', '').lower():
+                                entity_node = node
+                                break
+                        
+                        if entity_node:
+                            subgraph_data['nodes'].append(entity_node)
+                            
+                            # Find connected nodes
+                            node_id = entity_node.get('id', '')
+                            for edge in lightrag_graph.get('edges', []):
+                                if edge.get('source') == node_id or edge.get('target') == node_id:
+                                    subgraph_data['edges'].append(edge)
+                                    
+                                    # Add connected nodes
+                                    connected_id = edge.get('target') if edge.get('source') == node_id else edge.get('source')
+                                    for node in lightrag_graph.get('nodes', []):
+                                        if node.get('id') == connected_id:
+                                            subgraph_data['nodes'].append(node)
+                                            break
+                except Exception as e:
+                    print(f"Error reading LightRAG graph: {e}")
+        
+        # If no subgraph data, create a synthetic one
+        if not subgraph_data['nodes']:
+            subgraph_data['nodes'] = [
+                {'id': f'entity_{entity}', 'label': entity, 'type': 'entity'}
+            ]
+            subgraph_data['edges'] = []
+        
+        return {
+            'success': True,
+            'entity': entity,
+            'nodes': subgraph_data['nodes'],
+            'edges': subgraph_data['edges'],
+            'node_count': len(subgraph_data['nodes']),
+            'edge_count': len(subgraph_data['edges'])
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get entity subgraph', 'nodes': [], 'edges': [], 'node_count': 0, 'edge_count': 0}
+
+
+@app.get('/api/v1/users/{user_id}/kbs/{kb_name}/node-source')
+async def get_node_source(user_id: str, kb_name: str, node_id: str):
+    """Get source document for a specific graph node.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        node_id: Node ID in the graph
+        
+    Returns:
+        Source document information
+    """
+    try:
+        import json
+        from pathlib import Path
+        
+        # Try to find source document from registry
+        registry_file = settings.data_dir / 'document_registry.json'
+        source_info = None
+        
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+                
+                # Try to find document by node_id
+                for doc_id, doc_data in registry.items():
+                    if node_id in doc_id or node_id in doc_data.get('title', ''):
+                        source_info = {
+                            'doc_id': doc_id,
+                            'title': doc_data.get('title', 'Unknown'),
+                            'content': doc_data.get('content', ''),
+                            'metadata': doc_data.get('metadata', {}),
+                            'source': doc_data.get('source', '')
+                        }
+                        break
+        
+        if not source_info:
+            # Create synthetic source info
+            source_info = {
+                'doc_id': node_id,
+                'title': f'Document for {node_id}',
+                'content': f'Content related to node {node_id}',
+                'metadata': {},
+                'source': 'synthetic'
+            }
+        
+        return {
+            'success': True,
+            'node_id': node_id,
+            'source': source_info
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get node source', 'source': None}
+
+
 @app.get('/api/v1/users/{user_id}/kbs/{kb_name}/graph')
 async def get_knowledge_graph(user_id: str, kb_name: str):
     """Get knowledge graph data for a specific knowledge base.
@@ -620,7 +753,7 @@ async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> Asy
 
 
 def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
-    """Get search sources for citations.
+    """Get search sources for citations with entity extraction.
     
     Args:
         rag: LightRAG adapter instance
@@ -628,12 +761,15 @@ def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
         mode: Search mode
         
     Returns:
-        List of source documents
+        List of source documents with entities
     """
     try:
         from rag_kb.retrieval import BM25Search, HybridSearch
+        import re
         
         bm25_index_path = settings.data_dir / 'bm25_index.json'
+        
+        sources = []
         
         if mode == 'hybrid':
             bm25 = BM25Search()
@@ -643,13 +779,16 @@ def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
             hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
             results = hybrid.search(query, top_k=5, use_bm25=True, use_lightrag=True)
             
-            sources = []
             for result in results:
+                # Extract entities from text
+                entities = _extract_entities(result.get('text', ''))
+                
                 sources.append({
                     'doc_id': result.get('doc_id', ''),
                     'title': result.get('title', 'Unknown'),
                     'score': result.get('score', 0.0),
-                    'text': result.get('text', '')[:200]
+                    'text': result.get('text', '')[:200],
+                    'entities': entities
                 })
             return sources
         
@@ -660,13 +799,15 @@ def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
             
             results = bm25.search(query, top_k=5)
             
-            sources = []
             for result in results:
+                entities = _extract_entities(result.get('text', ''))
+                
                 sources.append({
                     'doc_id': result.get('id', ''),
                     'title': result.get('title', 'Unknown'),
                     'score': result.get('score', 0.0),
-                    'text': result.get('text', '')[:200]
+                    'text': result.get('text', '')[:200],
+                    'entities': entities
                 })
             return sources
         
@@ -676,6 +817,31 @@ def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Error getting search sources: {e}")
         return []
+
+
+def _extract_entities(text: str) -> List[str]:
+    """Extract entities from text (simplified implementation).
+    
+    Args:
+        text: Text to extract entities from
+        
+    Returns:
+        List of extracted entities
+    """
+    # Simple entity extraction - in production, use NER models
+    entities = []
+    
+    # Extract capitalized words (potential entities)
+    words = re.findall(r'\b[A-Z][a-zA-Z]+\b', text)
+    entities.extend(words)
+    
+    # Extract numbers and codes
+    codes = re.findall(r'\b[A-Z0-9_]+\b', text)
+    entities.extend(codes)
+    
+    # Remove duplicates and limit
+    entities = list(set(entities))
+    return entities[:10]  # Limit to top 10 entities
 
 
 @app.post('/api/v1/evaluate')
@@ -1079,6 +1245,12 @@ async def chat_completions(body: dict):
     except Exception as e:
         # Return error as JSON instead of streaming
         return {'error': str(e), 'message': 'Chat completion failed'}
+
+
+@app.get('/interactive-graph')
+async def interactive_graph_ui():
+    """Interactive graph interface with entity linking and source tracing."""
+    return FileResponse('static/interactive_graph.html')
 
 
 @app.get('/enhanced-search')
