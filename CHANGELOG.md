@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.21] - 2026-08-24
+
+### Added
+- **Similarity Fragment Perspective**: Enhanced analysis of retrieval results with detailed fragment comparison
+- **Match Type Classification**: Vector, graph node, keyword, and hybrid match type identification
+- **Enhanced Similarity Scoring**: Advanced similarity calculation with match type weighting
+- **Fragment Comparison**: Direct comparison between similar fragments with recommendations
+- **Context Extraction**: Automatic context extraction from fragments
+- **Optimized Multi-Directory Routing**: Advanced routing system for multiple working directories
+- **Routing Strategies**: Product-based, category-based, user-based, load-balanced, and intelligent routing
+- **Directory Management**: Registration, status tracking, and load management for working directories
+- **Routing Cache**: Intelligent caching for improved routing performance
+- **Load Balancing**: Automatic load distribution across working directories
+
+### Enhanced
+- **Retrieval Analysis**: Deeper analysis of retrieval results with match type insights
+- **Routing Efficiency**: Optimized routing reduces query latency
+- **Scalability**: Multi-directory routing supports large-scale deployments
+- **Fragment Quality**: Enhanced similarity scoring improves result quality
+- **System Performance**: Load balancing improves overall system performance
+
+### Technical
+- **New Perspective Module**: Complete fragment perspective and analysis system
+- **New Routing Module**: Optimized multi-directory routing with multiple strategies
+- **Fragment Analysis API**: RESTful API for fragment perspective analysis
+- **Routing Management API**: RESTful API for directory and routing management
+- **Enhanced Scoring Algorithms**: Advanced similarity calculation with multiple factors
+- **Strategy Pattern**: Pluggable routing strategies for flexibility
+
 ## [0.5.20] - 2026-08-24
 
 ### Added

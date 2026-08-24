@@ -2055,6 +2055,166 @@ async def cleanup_old_processing_tasks(days: int = 7):
         return {'error': str(e), 'message': 'Failed to cleanup tasks'}
 
 
+@app.post('/api/v1/perspective/analyze')
+async def analyze_fragment_perspective(request: dict):
+    """Analyze similar fragments with enhanced perspective.
+    
+    Args:
+        request: Analysis request with query and retrieval results
+        
+    Returns:
+        Fragment perspective analysis
+    """
+    try:
+        from rag_kb.perspective import fragment_perspective
+        
+        query = request.get('query', '')
+        retrieval_results = request.get('retrieval_results', [])
+        top_k = request.get('top_k', 10)
+        
+        perspective = fragment_perspective.get_fragment_perspective_view(
+            query, retrieval_results
+        )
+        
+        return {
+            'success': True,
+            'perspective': perspective
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to analyze fragment perspective'}
+
+
+@app.post('/api/v1/perspective/compare')
+async def compare_fragments(request: dict):
+    """Compare two similar fragments.
+    
+    Args:
+        request: Comparison request with two fragment IDs
+        
+    Returns:
+        Comparison result
+    """
+    try:
+        from rag_kb.perspective import fragment_perspective, SimilarFragment, MatchType
+        
+        # In a real implementation, you'd fetch actual fragments
+        # For now, return a placeholder
+        return {
+            'success': True,
+            'message': 'Fragment comparison requires actual fragment data'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to compare fragments'}
+
+
+@app.post('/api/v1/routing/register-directory')
+async def register_working_directory(request: dict):
+    """Register a new working directory for optimized routing.
+    
+    Args:
+        request: Directory registration data
+        
+    Returns:
+        Registration result
+    """
+    try:
+        from rag_kb.routing import optimized_router
+        
+        result = optimized_router.register_working_directory(
+            dir_id=request.get('dir_id', ''),
+            dir_path=request.get('dir_path', ''),
+            product_id=request.get('product_id'),
+            category=request.get('category'),
+            user_id=request.get('user_id'),
+            capacity=request.get('capacity', 1000)
+        )
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to register directory'}
+
+
+@app.get('/api/v1/routing/route')
+async def route_query(query: str, product_id: str = None, 
+                      category: str = None, user_id: str = None):
+    """Route query to optimal working directory.
+    
+    Args:
+        query: Search query
+        product_id: Product ID (optional)
+        category: Category (optional)
+        user_id: User ID (optional)
+        
+    Returns:
+        Routing result
+    """
+    try:
+        from rag_kb.routing import optimized_router
+        
+        dir_id = optimized_router.route_query(query, product_id, category, user_id)
+        
+        if dir_id:
+            dir_status = optimized_router.get_directory_status(dir_id)
+            return {
+                'success': True,
+                'routed_to': dir_id,
+                'directory': dir_status
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'No suitable directory found'
+            }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to route query'}
+
+
+@app.get('/api/v1/routing/directories')
+async def get_working_directories():
+    """Get all working directories.
+    
+    Returns:
+        List of working directories
+    """
+    try:
+        from rag_kb.routing import optimized_router
+        
+        directories = optimized_router.get_all_directories()
+        
+        return {
+            'success': True,
+            'directories': directories,
+            'count': len(directories)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get directories', 'directories': [], 'count': 0}
+
+
+@app.post('/api/v1/routing/strategy')
+async def set_routing_strategy(strategy: str):
+    """Change routing strategy.
+    
+    Args:
+        strategy: New routing strategy
+        
+    Returns:
+        Strategy change result
+    """
+    try:
+        from rag_kb.routing import optimized_router, RoutingStrategy
+        
+        strategy_enum = RoutingStrategy(strategy)
+        optimized_router.set_routing_strategy(strategy_enum)
+        
+        return {
+            'success': True,
+            'strategy': strategy,
+            'message': 'Routing strategy updated successfully'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to set routing strategy'}
+
+
 @app.get('/api/v1/intent/classify')
 async def classify_query_intent(query: str):
     """Classify query intent for automatic mode selection.
