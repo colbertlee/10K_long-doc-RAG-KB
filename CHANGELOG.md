@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2026-08-24
+
+### Fixed
+- **Knowledge Manager UTF-8 Error**: Fixed corrupted knowledge_manager.html file encoding issue
+- **Document Visibility**: Added document list API endpoint to show uploaded and imported documents
+- **Knowledge Manager Interface**: Rebuilt knowledge manager with proper document tracking
+
+### Added
+- **Document List API**: Added /api/v1/documents endpoint to retrieve all documents
+- **Document Tracking**: Enhanced folder import to return document metadata
+- **Event Integration**: Added custom events for document upload and folder import
+- **Document Management UI**: Complete knowledge manager interface with document list
+
+### Changed
+- **Main UI Integration**: Added event dispatching for document operations
+- **Knowledge Manager**: Now properly displays uploaded and folder-imported documents
+
 ## [0.5.4] - 2026-08-24
 
 ### Added

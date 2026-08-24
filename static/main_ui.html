@@ -231,6 +231,10 @@
                             标题: ${data.title}<br>
                             页数: ${data.pages}
                         `;
+                        // 触发文档上传事件
+                        window.dispatchEvent(new CustomEvent('documentUploaded', {
+                            detail: data
+                        }));
                     }
                 } else {
                     // Handle non-JSON response
@@ -292,6 +296,11 @@
                             跳过文件: ${data.files_skipped}<br>
                             失败文件: ${data.files_failed}
                         `;
+                        // 触发文件夹导入事件
+                        const importedDocs = data.documents || [];
+                        window.dispatchEvent(new CustomEvent('folderImported', {
+                            detail: importedDocs
+                        }));
                     }
                 } else {
                     const text = await response.text();

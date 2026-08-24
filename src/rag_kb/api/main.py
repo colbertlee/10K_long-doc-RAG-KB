@@ -141,11 +141,19 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         skipped = 0
         failed = 0
         failed_files = []
+        documents = []
         
         for file_path in files:
             try:
                 doc = pipeline.run(file_path, acl=acl or {'read': [user_id], 'write': [user_id]})
                 processed += 1
+                documents.append({
+                    'doc_id': doc.doc_id,
+                    'title': doc.title,
+                    'source': str(file_path),
+                    'pages': doc.metadata.get('pages', 0),
+                    'import_type': 'folder'
+                })
             except Exception as e:
                 failed += 1
                 failed_files.append({'file': str(file_path.name), 'error': str(e)})
@@ -158,11 +166,41 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
             'files_skipped': skipped,
             'files_failed': failed,
             'failed_files': failed_files,
+            'documents': documents,
             'user_id': user_id,
             'kb_name': kb_name
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Folder import failed'}
+
+
+@app.get('/api/v1/documents')
+async def get_documents():
+    """Get list of all documents in the knowledge base.
+    
+    Returns:
+        List of documents with metadata
+    """
+    try:
+        from pathlib import Path
+        import json
+        
+        # Check for document registry
+        registry_file = settings.data_dir / 'document_registry.json'
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+                documents = list(registry.values())
+        else:
+            documents = []
+        
+        return {
+            'success': True,
+            'documents': documents,
+            'total': len(documents)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get documents', 'documents': [], 'total': 0}
 
 
 @app.post('/api/v1/search')

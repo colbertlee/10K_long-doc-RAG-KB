@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.4 (Stable)  
+**Current Version**: v0.5.5 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.4 adds local folder import functionality in the web interface and API for batch document processing.
+> **Version Note**: v0.5.5 fixes the knowledge manager encoding issue and adds document visibility features.
 
 ## Features
 
@@ -240,6 +240,14 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.5 (2026-08-24) - Knowledge Manager Fix
+- **Fixed**: Knowledge manager UTF-8 encoding error
+- **Added**: Document list API endpoint to retrieve all documents
+- **Added**: Document tracking for uploaded and imported documents
+- **Added**: Complete knowledge manager interface with document list
+- **Enhanced**: Folder import to return document metadata
+- **Improved**: Event integration for document operations
 
 ### v0.5.4 (2026-08-24) - Local Folder Import
 - **Added**: /api/v1/import-folder endpoint for batch document import
