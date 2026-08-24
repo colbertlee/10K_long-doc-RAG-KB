@@ -61,30 +61,49 @@
         <!-- 文档上传卡片 -->
         <div id="upload-card" class="card active">
             <h2>📤 文档上传</h2>
-            <div class="form-group">
-                <label>选择文件</label>
-                <input type="file" id="file-input" accept=".pdf,.txt,.docx,.md">
+            <div class="grid">
+                <div>
+                    <div class="form-group">
+                        <label>选择文件</label>
+                        <input type="file" id="file-input" accept=".pdf,.txt,.docx,.md">
+                    </div>
+                    <div class="form-group">
+                        <label>部门</label>
+                        <select id="dept-select">
+                            <option value="">选择部门</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Sales">Sales</option>
+                            <option value="HR">HR</option>
+                            <option value="Finance">Finance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>密级</label>
+                        <select id="level-select">
+                            <option value="Internal">Internal</option>
+                            <option value="Confidential">Confidential</option>
+                            <option value="Secret">Secret</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="uploadFile()">上传文档</button>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label>本地文件夹路径</label>
+                        <input type="text" id="folder-path" placeholder="C:\path\to\your\documents">
+                    </div>
+                    <div class="form-group">
+                        <label>用户ID</label>
+                        <input type="text" id="user-id" value="default">
+                    </div>
+                    <div class="form-group">
+                        <label>知识库名称</label>
+                        <input type="text" id="kb-name" value="default">
+                    </div>
+                    <button class="btn btn-secondary" onclick="importFolder()">导入文件夹</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>部门</label>
-                <select id="dept-select">
-                    <option value="">选择部门</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Sales">Sales</option>
-                    <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>密级</label>
-                <select id="level-select">
-                    <option value="Internal">Internal</option>
-                    <option value="Confidential">Confidential</option>
-                    <option value="Secret">Secret</option>
-                </select>
-            </div>
-            <button class="btn" onclick="uploadFile()">上传文档</button>
             <div id="upload-result" class="result" style="display: none;"></div>
         </div>
 
@@ -222,6 +241,66 @@
             } catch (error) {
                 resultDiv.className = 'result error';
                 resultDiv.textContent = '上传失败: ' + error.message;
+            }
+        }
+
+        async function importFolder() {
+            const folderPath = document.getElementById('folder-path').value;
+            const userId = document.getElementById('user-id').value;
+            const kbName = document.getElementById('kb-name').value;
+            const resultDiv = document.getElementById('upload-result');
+
+            if (!folderPath.trim()) {
+                alert('请输入文件夹路径');
+                return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '导入文件夹中...';
+
+            try {
+                const response = await fetch(`${API_BASE}/import-folder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        folder_path: folderPath,
+                        user_id: userId,
+                        kb_name: kbName,
+                        acl: {
+                            read: [userId],
+                            write: [userId]
+                        }
+                    })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `<strong>导入失败:</strong> ${data.error}`;
+                    } else {
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = `
+                            <strong>导入成功!</strong><br>
+                            发现文件: ${data.total_files_found}<br>
+                            处理文件: ${data.files_processed}<br>
+                            跳过文件: ${data.files_skipped}<br>
+                            失败文件: ${data.files_failed}
+                        `;
+                    }
+                } else {
+                    const text = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>服务器错误:</strong> ${text}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '导入失败: ' + error.message;
             }
         }
 

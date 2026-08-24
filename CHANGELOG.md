@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-08-24
+
+### Added
+- **Local Folder Import API**: Added /api/v1/import-folder endpoint for batch document import
+- **Web Interface Folder Import**: Added folder import functionality in main UI
+- **Batch Processing**: Support for importing multiple files from local folders
+- **Enhanced Upload Interface**: Split upload interface into file and folder sections
+
+### Changed
+- **Main UI Layout**: Enhanced upload card with grid layout for file and folder options
+- **User Experience**: Simplified folder import with web interface option
+
 ## [0.5.3] - 2026-08-24
 
 ### Fixed

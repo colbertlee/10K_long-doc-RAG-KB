@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.3 (Stable)  
+**Current Version**: v0.5.4 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.3 fixes document upload error handling and adds support for more file formats.
+> **Version Note**: v0.5.4 adds local folder import functionality in the web interface and API for batch document processing.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.4 (2026-08-24) - Local Folder Import
+- **Added**: /api/v1/import-folder endpoint for batch document import
+- **Added**: Folder import functionality in main web interface
+- **Added**: Support for batch processing multiple files from local folders
+- **Enhanced**: Upload interface with grid layout for file and folder options
 
 ### v0.5.3 (2026-08-24) - Document Upload Error Fix
 - **Fixed**: Document upload error handling with try-catch in ingest endpoint

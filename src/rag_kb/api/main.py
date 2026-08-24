@@ -103,6 +103,68 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
         return {'error': str(e), 'message': 'Document ingestion failed'}
 
 
+@app.post('/api/v1/import-folder')
+async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name: str = 'default', acl: dict = None):
+    """Import a local folder into the RAG knowledge base.
+    
+    Args:
+        folder_path: Path to the local folder
+        user_id: User ID for the knowledge base
+        kb_name: Knowledge base name
+        acl: Access control list
+        
+    Returns:
+        Import results
+    """
+    try:
+        from pathlib import Path
+        import glob
+        
+        folder = Path(folder_path)
+        if not folder.exists() or not folder.is_dir():
+            return {'error': 'Invalid folder path', 'message': f'Folder not found: {folder_path}'}
+        
+        # Find supported files
+        supported_extensions = ['.pdf', '.txt', '.md', '.docx']
+        files = []
+        for ext in supported_extensions:
+            files.extend(folder.glob(f'**/*{ext}'))
+        
+        if not files:
+            return {'error': 'No supported files found', 'message': f'No files with extensions {supported_extensions} found in folder'}
+        
+        # Process files
+        from rag_kb.ingest.pipeline import IngestPipeline
+        pipeline = IngestPipeline()
+        
+        processed = 0
+        skipped = 0
+        failed = 0
+        failed_files = []
+        
+        for file_path in files:
+            try:
+                doc = pipeline.run(file_path, acl=acl or {'read': [user_id], 'write': [user_id]})
+                processed += 1
+            except Exception as e:
+                failed += 1
+                failed_files.append({'file': str(file_path.name), 'error': str(e)})
+        
+        return {
+            'success': True,
+            'source_folder': str(folder),
+            'total_files_found': len(files),
+            'files_processed': processed,
+            'files_skipped': skipped,
+            'files_failed': failed,
+            'failed_files': failed_files,
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Folder import failed'}
+
+
 @app.post('/api/v1/search')
 async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8):
     """Search the RAG knowledge base.
