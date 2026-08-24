@@ -144,7 +144,9 @@ function Start-RAGKB {
     Write-Host "   按 Ctrl+C 停止服务器" -ForegroundColor Yellow
     
     try {
-        python -m uvicorn src.rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
+        # Set PYTHONPATH to include src directory
+        $env:PYTHONPATH = "src"
+        python -m uvicorn rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
     } catch {
         Write-Host "❌ 启动失败" -ForegroundColor Red
         exit 1

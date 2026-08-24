@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-08-24
+
+### Fixed
+- **Startup Script Fix**: Modified manage.ps1 to set PYTHONPATH and use correct module path
+- Changed uvicorn startup from `src.rag_kb.api.main:app` to `rag_kb.api.main:app` with PYTHONPATH set
+- This resolves import path issues in the PowerShell startup script
+
+### Changed
+- Updated manage.ps1 startup command to use PYTHONPATH environment variable
+- Ensures consistent import behavior across different startup methods
+
 ## [0.4.3] - 2026-08-24
 
 ### Fixed

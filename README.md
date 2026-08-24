@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.3 (Stable)  
+**Current Version**: v0.4.4 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.3 is a hotfix that completely resolves the import mechanism issues that persisted in v0.4.2, ensuring reliable startup in all environments.
+> **Version Note**: v0.4.4 fixes the PowerShell startup script to use correct import paths, ensuring reliable startup when using manage.ps1.
 
 ## Features
 
@@ -240,6 +240,11 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.4 (2026-08-24) - Startup Script Fix
+- **Fixed**: Modified manage.ps1 to set PYTHONPATH and use correct module path
+- **Changed**: uvicorn startup from `src.rag_kb.api.main:app` to `rag_kb.api.main:app` with PYTHONPATH set
+- **Resolved**: Import path issues in PowerShell startup script
 
 ### v0.4.3 (2026-08-24) - Hotfix
 - **Hotfix**: Completely removed importlib.util calls that were still causing null bytes errors in uvicorn runtime
