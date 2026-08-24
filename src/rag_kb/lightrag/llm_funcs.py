@@ -3,13 +3,6 @@
 import ollama
 from rag_kb.config import settings
 
-# For newer LightRAG versions that expect EmbeddingFunc and LLMFunc
-try:
-    from lightrag import LLMFunc, EmbeddingFunc
-except ImportError:
-    LLMFunc = None
-    EmbeddingFunc = None
-
 
 def ollama_llm(prompt: str, **kwargs):
     """Generate LLM response using Ollama.
@@ -32,17 +25,3 @@ def ollama_llm(prompt: str, **kwargs):
         },
     )
     return resp['message']['content']
-
-
-class OllamaLLMWrapper:
-    """Wrapper for Ollama LLM to support LightRAG's LLMFunc interface."""
-    
-    def __call__(self, prompt: str, **kwargs):
-        return ollama_llm(prompt, **kwargs)
-
-
-# Create LLMFunc instance if available
-if LLMFunc is not None:
-    ollama_llm_func = LLMFunc(callback=OllamaLLMWrapper())
-else:
-    ollama_llm_func = ollama_llm

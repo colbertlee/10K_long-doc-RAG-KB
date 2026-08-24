@@ -1,4 +1,3 @@
-# Core dependencies
 pydantic>=2.0
 pydantic-settings>=2.0
 fastapi>=0.110
@@ -10,33 +9,10 @@ pymupdf>=1.23
 pdfplumber>=0.10
 python-docx
 beautifulsoup4
+lightrag-hku
 ollama
 httpx
-numpy>=2.0.0,<2.8.0
-pytest>=8.0
-rank-bm25
-networkx
-psutil
-lightrag-hku>=1.5.6
-
-# Optional dependencies for reranking
-# Install with: pip install torch transformers
-# torch
-# transformers
-
-# Optional dependencies for evaluation
-# Install with: pip install ragas
-# ragas
-
-# Optional dependencies
-# Install with: pip install -e ".[lightrag,sentence-transformers,webui,dev]"
-lightrag-hku
 sentence-transformers>=2.3
-# open-webui>=0.1.0  # Requires Python 3.11+
-
-# Development dependencies
-# black>=23.0.0
-# isort>=5.12.0
-# flake8>=6.0.0
-# pylint>=2.17.0
-# pytest-cov>=4.0.0
+numpy
+pytest>=8.0
+open-webui

@@ -1,18 +1,11 @@
 """Tests for LightRAG integration."""
 
-import pytest
-
-try:
-    from rag_kb.lightrag.adapter import LightRAGAdapter
-    from rag_kb.lightrag.embedding_funcs import ollama_embed
-    from rag_kb.lightrag.llm_funcs import ollama_llm
-    from rag_kb.config import settings
-    LIGHTRAG_AVAILABLE = True
-except ImportError:
-    LIGHTRAG_AVAILABLE = False
+from rag_kb.lightrag.adapter import LightRAGAdapter
+from rag_kb.lightrag.embedding_funcs import ollama_embed
+from rag_kb.lightrag.llm_funcs import ollama_llm
+from rag_kb.config import settings
 
 
-@pytest.mark.skipif(not LIGHTRAG_AVAILABLE, reason="LightRAG not installed")
 def test_lightrag_adapter_initialization():
     """Test that LightRAG adapter can be initialized."""
     # Use a temporary directory for testing
@@ -25,7 +18,6 @@ def test_lightrag_adapter_initialization():
         assert adapter.rag is not None
 
 
-@pytest.mark.skipif(not LIGHTRAG_AVAILABLE, reason="LightRAG not installed")
 def test_lightrag_adapter_has_required_methods():
     """Test that LightRAG adapter has required methods."""
     import tempfile
@@ -37,7 +29,6 @@ def test_lightrag_adapter_has_required_methods():
         assert hasattr(adapter, 'stream_query')
 
 
-@pytest.mark.skipif(not LIGHTRAG_AVAILABLE, reason="LightRAG not installed")
 def test_embedding_function_signature():
     """Test that embedding function has correct signature."""
     import inspect
@@ -46,7 +37,6 @@ def test_embedding_function_signature():
     assert 'texts' in sig.parameters
 
 
-@pytest.mark.skipif(not LIGHTRAG_AVAILABLE, reason="LightRAG not installed")
 def test_llm_function_signature():
     """Test that LLM function has correct signature."""
     import inspect
@@ -57,7 +47,6 @@ def test_llm_function_signature():
 
 def test_settings_configuration():
     """Test that settings are properly configured."""
-    from rag_kb.config import settings
     assert settings.app_name == 'rag-kb'
     assert settings.embedding_provider == 'ollama'
     assert settings.llm_provider == 'ollama'

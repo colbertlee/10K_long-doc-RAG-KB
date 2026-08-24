@@ -370,46 +370,11 @@ Follow Conventional Commits:
 
 ### Release Process
 
-#### Smart Release (Recommended)
-
-Use the smart release script for automated version management and release:
-
-```powershell
-# Patch release (0.2.2 -> 0.2.3)
-.\scripts\smart_release.ps1 -VersionType patch
-
-# Minor release (0.2.2 -> 0.3.0)
-.\scripts\smart_release.ps1 -VersionType minor
-
-# Major release (0.2.2 -> 1.0.0)
-.\scripts\smart_release.ps1 -VersionType major
-
-# Dry run to test
-.\scripts\smart_release.ps1 -VersionType patch -DryRun
-
-# Custom release title and notes
-.\scripts\smart_release.ps1 -VersionType patch -ReleaseTitle "Fix critical bug" -ReleaseNotes "Custom release notes"
-```
-
-The smart release script automatically:
-- Reads current version from `pyproject.toml`
-- Calculates new version based on type (major/minor/patch)
-- Updates version in `pyproject.toml`
-- Updates release notes in both English and Chinese
-- Commits changes with proper message
-- Pushes to GitHub
-- Creates GitHub Release with proper formatting
-
-#### Manual Release Process
-
-For manual releases:
-
 1. Update version in `pyproject.toml`
-2. Update release notes in `docs/RELEASE_NOTES.md` and `docs/RELEASE_NOTES_CN.md`
-3. Commit changes
-4. Create git tag
-5. Push to GitHub
-6. Create GitHub Release
+2. Update `CHANGELOG.md`
+3. Create release branch
+4. Tag release
+5. Create GitHub Release
 
 ## API Documentation
 

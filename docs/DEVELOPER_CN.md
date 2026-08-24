@@ -370,46 +370,11 @@ def process_data(items: List[str]) -> Dict[str, Any]:
 
 ### 发布流程
 
-#### 智能发布（推荐）
-
-使用智能发布脚本进行自动化版本管理和发布：
-
-```powershell
-# 补丁版本发布 (0.2.2 -> 0.2.3)
-.\scripts\smart_release.ps1 -VersionType patch
-
-# 次要版本发布 (0.2.2 -> 0.3.0)
-.\scripts\smart_release.ps1 -VersionType minor
-
-# 主要版本发布 (0.2.2 -> 1.0.0)
-.\scripts\smart_release.ps1 -VersionType major
-
-# 试运行测试
-.\scripts\smart_release.ps1 -VersionType patch -DryRun
-
-# 自定义发布标题和说明
-.\scripts\smart_release.ps1 -VersionType patch -ReleaseTitle "修复关键错误" -ReleaseNotes "自定义发布说明"
-```
-
-智能发布脚本自动：
-- 从 `pyproject.toml` 读取当前版本
-- 根据类型计算新版本（主要/次要/补丁）
-- 更新 `pyproject.toml` 中的版本
-- 更新中英文发布说明
-- 使用正确的消息提交更改
-- 推送到 GitHub
-- 创建格式正确的 GitHub Release
-
-#### 手动发布流程
-
-对于手动发布：
-
 1. 更新 `pyproject.toml` 中的版本
-2. 更新 `docs/RELEASE_NOTES.md` 和 `docs/RELEASE_NOTES_CN.md` 中的发布说明
-3. 提交更改
-4. 创建 git 标签
-5. 推送到 GitHub
-6. 创建 GitHub Release
+2. 更新 `CHANGELOG.md`
+3. 创建发布分支
+4. 标记发布
+5. 创建 GitHub Release
 
 ## API 文档
 

@@ -1,7 +1,6 @@
 """Configuration management for RAG KB."""
 
 from pathlib import Path
-from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,7 +29,7 @@ class Settings(BaseSettings):
     # LLM settings
     llm_provider: str = 'ollama'
     llm_base_url: str = 'http://localhost:11434'
-    llm_model: str = 'qwen3.5:4b'
+    llm_model: str = 'qwen2.5'
     llm_temperature: float = 0.3
     llm_top_p: float = 0.9
     llm_max_tokens: int = 2048
@@ -42,8 +41,8 @@ class Settings(BaseSettings):
     lightrag_enable_llm_cache: bool = True
 
     # OpenAI-compatible remote LLM (optional)
-    openai_api_key: Optional[str] = Field(default=None)
-    openai_base_url: Optional[str] = Field(default=None)
+    openai_api_key: str | None = Field(default=None)
+    openai_base_url: str | None = Field(default=None)
 
 
 # Global settings instance

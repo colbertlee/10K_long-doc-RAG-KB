@@ -3,13 +3,11 @@
 ## 目录
 1. [快速开始](#快速开始)
 2. [基本使用](#基本使用)
-3. [文档管理界面](#文档管理界面)
-4. [文档导入](#文档导入)
-5. [本地文件夹导入](#本地文件夹导入)
-6. [查询知识库](#查询知识库)
-7. [使用 Open WebUI](#使用-open-webui)
-8. [配置](#配置)
-9. [故障排除](#故障排除)
+3. [文档导入](#文档导入)
+4. [查询知识库](#查询知识库)
+5. [使用 Open WebUI](#使用-open-webui)
+6. [配置](#配置)
+7. [故障排除](#故障排除)
 
 ## 快速开始
 
@@ -37,37 +35,10 @@
    .\scripts\start.ps1
    ```
 
-   **可选参数**：
-   ```powershell
-   # 不启动Open WebUI
-   .\scripts\start.ps1 -NoOpenWebUI
-
-   # 不自动打开浏览器
-   .\scripts\start.ps1 -NoBrowser
-   ```
-
 4. **访问界面：**
    - API: http://localhost:8000
    - API 文档: http://localhost:8000/docs
-   - 文档管理界面: http://localhost:8000/docs/docs-ui
    - Open WebUI: http://localhost:8080（如果已安装）
-
-### 单独启动Open WebUI
-
-如果您只想启动Open WebUI界面：
-
-```powershell
-.\scripts\open_webui.ps1
-```
-
-**可选参数**：
-```powershell
-# 指定端口
-.\scripts\open_webui.ps1 -Port 8080
-
-# 不自动打开浏览器
-.\scripts\open_webui.ps1 -NoBrowser
-```
 
 ## 基本使用
 
@@ -81,77 +52,6 @@ curl http://localhost:8000/health
 ```json
 {"status": "ok"}
 ```
-
-## 文档管理界面
-
-RAG知识库提供了一个现代化的Web界面，用于文档管理，包括文档上传、文件夹导入和文档管理功能。
-
-### 访问文档管理界面
-
-启动服务后，访问：
-```
-http://localhost:8000/docs/docs-ui
-```
-
-### 界面功能
-
-文档管理界面包含三个主要功能标签：
-
-#### 1. 📄 文档上传
-- 支持批量文件上传
-- 拖拽上传支持
-- 实时上传进度显示
-- 支持PDF、Word、Markdown、Text格式
-
-#### 2. 📁 文件夹导入
-- 通过浏览器文件选择器选择文件夹
-- 本地文件夹路径输入（备用方法）
-- 一键导入整个文件夹
-- 导入进度和统计显示
-- 自动跳过重复文件
-
-#### 3. 📋 文档管理
-- 查看知识库中的文档列表
-- 文档统计信息
-- 用户和知识库管理
-
-### 使用文档管理界面
-
-#### 上传文档
-1. 访问 http://localhost:8000/docs/docs-ui
-2. 选择"文档上传"标签
-3. 输入用户ID和知识库名称
-4. 点击上传区域或拖拽文件
-5. 点击"开始上传"
-
-#### 导入文件夹
-1. 选择"文件夹导入"标签
-2. 输入用户ID和知识库名称
-3. 选择以下方法之一：
-   - **方法1（推荐）**：点击"选择文件夹"按钮，从计算机中选择文件夹
-   - **方法2**：手动输入本地文件夹路径（如：`C:\Users\YourName\Documents\KB`）
-4. 点击"开始导入"
-
-**注意**：文件夹选择方法直接在浏览器中工作，并从您选择的文件夹上传文件。手动路径方法需要服务器对指定文件夹的访问权限。
-
-#### 管理文档
-1. 选择"文档管理"标签
-2. 输入用户ID和知识库名称
-3. 点击"加载文档列表"
-4. 查看文档统计和列表
-
-### 与Open WebUI集成
-
-文档管理界面可以与Open WebUI无缝集成使用：
-
-1. **启动服务**: `.\scripts\start.ps1`
-2. **访问Open WebUI**: http://localhost:8080
-3. **配置连接**: 设置 → 连接 → API地址: `http://localhost:8000/api/v1`
-4. **访问文档管理**: 在Open WebUI中添加自定义链接到文档管理界面
-5. **导入文档**: 使用文档管理界面导入文档
-6. **查询文档**: 返回Open WebUI进行RAG查询
-
-详细的集成指南请参考 [Open WebUI集成指南](OPENWEBUI_INTEGRATION_CN.md)。
 
 ## 文档导入
 
@@ -193,148 +93,6 @@ curl -X POST "http://localhost:8000/api/v1/ingest" \
 在导入时设置访问控制：
 - `dept`：部门（如"工程部"、"销售部"）
 - `level`：访问级别（如"内部"、"机密"）
-
-## 本地文件夹导入
-
-### 使用PowerShell脚本导入
-
-RAG知识库提供了便捷的本地文件夹导入功能，可以将您电脑上的整个文件夹直接导入到知识库中。
-
-#### 基本用法
-
-```powershell
-# 导入本地文件夹（简单模式）
-.\scripts\import_local_folder.ps1 -FolderPath "C:\Users\YourName\Documents\KB"
-
-# 指定用户和知识库名称
-.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents\Technical" -UserId "john" -KbName "tech_docs"
-
-# 使用简单模式（自动创建用户和知识库）
-.\scripts\import_local_folder.ps1 -FolderPath "C:\Documents" -SimpleMode
-```
-
-#### 参数说明
-
-- **-FolderPath**: 要导入的本地文件夹路径（必需）
-- **-UserId**: 用户ID（默认: "default"）
-- **-KbName**: 知识库名称（默认: "default"）
-- **-ApiUrl**: API地址（默认: "http://localhost:8000/api/v1"）
-- **-SimpleMode**: 简单模式，自动创建用户和知识库
-
-#### 导入过程
-
-脚本会自动：
-1. 扫描指定文件夹中的所有文件
-2. 统计文件数量和总大小
-3. 将文件复制到知识库的raw目录
-4. 处理每个文档（解析、清洗、切片）
-5. 显示导入结果统计
-
-#### 导入结果示例
-
-```
-=== RAG知识库本地文件夹导入 ===
-
-导入配置:
-  文件夹: C:\Users\YourName\Documents\KB
-  用户ID: default
-  知识库: default
-  API地址: http://localhost:8000/api/v1
-  简单模式: False
-
-文件夹信息:
-  文件数量: 25
-  总大小: 45.67 MB
-
-开始导入...
-导入完成!
-
-导入结果:
-  成功: True
-  源文件夹: C:\Users\YourName\Documents\KB
-  发现文件总数: 25
-  处理文件数: 23
-  跳过文件数: 2
-  失败文件数: 0
-
-处理的文档:
-  - document1.pdf
-  - document2.docx
-  - notes.md
-  ...
-
-导入完成! 您现在可以查询知识库了。
-```
-
-### 使用API导入文件夹
-
-如果您更喜欢使用API直接导入文件夹：
-
-#### 简单导入（推荐）
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/import-local-folder" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "folder_path": "C:\\Users\\YourName\\Documents\\KB",
-    "user_id": "default",
-    "kb_name": "default",
-    "acl": {
-      "read": ["default"],
-      "write": ["default"]
-    }
-  }'
-```
-
-#### 高级导入（需要先创建用户和知识库）
-
-```bash
-# 1. 创建用户知识库
-curl -X POST "http://localhost:8000/api/v1/users/john/kbs" \
-  -d "kb_name=my_documents"
-
-# 2. 导入文件夹
-curl -X POST "http://localhost:8000/api/v1/users/john/kbs/my_documents/import-folder" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "folder_path": "C:\\Documents\\Technical",
-    "acl": {
-      "read": ["john", "team"],
-      "write": ["john"]
-    }
-  }'
-```
-
-### 支持的文件格式
-
-文件夹导入支持以下文件格式：
-- PDF (.pdf)
-- Word (.docx)
-- Markdown (.md)
-- 文本 (.txt)
-- HTML (.html)
-
-### 导入最佳实践
-
-1. **文件夹组织**: 将相关文档放在同一文件夹中
-2. **文件命名**: 使用清晰的文件名便于识别
-3. **文件大小**: 单个文件建议不超过100MB
-4. **批量导入**: 大量文件建议分批导入
-5. **权限设置**: 根据需要设置ACL权限
-
-### 故障排除
-
-**导入失败常见原因**：
-- 文件夹路径不存在
-- API服务未启动
-- 文件格式不支持
-- 文件损坏或加密
-
-**解决方法**：
-1. 确认文件夹路径正确
-2. 检查API服务状态：`curl http://localhost:8000/health`
-3. 查看导入脚本的错误信息
-4. 检查文件是否可以正常打开
 
 ## 查询知识库
 

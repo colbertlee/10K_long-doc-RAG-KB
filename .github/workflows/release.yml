@@ -27,25 +27,6 @@ jobs:
         run: |
           python -m build
       
-      - name: Extract version from tag
-        id: get_version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-      
-      - name: Read release notes
-        id: read_notes
-        run: |
-          if [ -f "docs/RELEASE_NOTES.md" ]; then
-            echo "notes<<EOF" >> $GITHUB_OUTPUT
-            cat docs/RELEASE_NOTES.md >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "notes<<EOF" >> $GITHUB_OUTPUT
-            echo "Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
-      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -54,16 +35,21 @@ jobs:
             dist/*.tar.gz
           draft: false
           prerelease: false
-          generate_release_notes: false
-          body: ${{ steps.read_notes.outputs.notes }}
-          name: ${{ steps.get_version.outputs.VERSION }}
+          generate_release_notes: true
+          body: |
+            ## Release ${{ github.ref_name }}
+            
+            ### Installation
+            ```bash
+            pip install rag-kb==${{ github.ref_name }}
+            ```
+            
+            ### Documentation
+            - [Installation Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/INSTALLATION.md)
+            - [User Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/USER_GUIDE.md)
+            - [Developer Guide](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/DEVELOPER.md)
+            
+            ### What's Changed
+            See [CHANGELOG.md](https://github.com/yourusername/10K_long-doc-RAG-KB/blob/main/docs/RELEASE_NOTES.md) for details.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Publish to PyPI (optional)
-        if: false  # Set to true when ready for PyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-        run: |
-          twine upload dist/*
