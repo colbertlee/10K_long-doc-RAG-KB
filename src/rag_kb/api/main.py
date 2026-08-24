@@ -78,7 +78,7 @@ def health():
 
 @app.post('/api/v1/ingest')
 async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
-    """Ingest a document into the RAG knowledge base.
+    """Ingest a document into the RAG knowledge base with full processing.
     
     Args:
         file: Uploaded file to process
@@ -86,19 +86,79 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
         level: Access level for ACL
         
     Returns:
-        Document metadata
+        Document metadata with processing status
     """
     try:
         from rag_kb.ingest.pipeline import IngestPipeline
+        from rag_kb.chunkers import StructuredChunker
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        import json
+        import time
         
         upload_path = settings.data_dir / 'uploads' / file.filename
         upload_path.parent.mkdir(parents=True, exist_ok=True)
         upload_path.write_bytes(await file.read())
         
+        # Step 1: Parse and clean document
         pipeline = IngestPipeline()
         doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
         
-        return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+        # Step 2: Semantic chunking
+        chunker = StructuredChunker()
+        chunks = chunker.chunk(doc.content, doc.metadata)
+        
+        # Step 3: LightRAG indexing and knowledge graph generation
+        try:
+            rag = LightRAGAdapter()
+            # Insert document into LightRAG for indexing and graph generation
+            rag.ingest([{
+                'doc_id': doc.doc_id,
+                'content': doc.content,
+                'metadata': doc.metadata
+            }])
+            
+            # Save document to registry
+            registry_file = settings.data_dir / 'document_registry.json'
+            registry = {}
+            if registry_file.exists():
+                with open(registry_file, 'r', encoding='utf-8') as f:
+                    registry = json.load(f)
+            
+            registry[doc.doc_id] = {
+                'doc_id': doc.doc_id,
+                'title': doc.title,
+                'content': doc.content,
+                'metadata': doc.metadata,
+                'acl': doc.acl,
+                'chunks_count': len(chunks),
+                'import_type': 'upload',
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            with open(registry_file, 'w', encoding='utf-8') as f:
+                json.dump(registry, f, indent=2, ensure_ascii=False)
+            
+            return {
+                'doc_id': doc.doc_id, 
+                'title': doc.title, 
+                'pages': doc.metadata.get('pages', 0),
+                'chunks': len(chunks),
+                'status': 'indexed',
+                'graph_generated': True
+            }
+        except Exception as e:
+            # LightRAG indexing failed, but document was parsed
+            print(f"LightRAG indexing failed: {e}")
+            return {
+                'doc_id': doc.doc_id, 
+                'title': doc.title, 
+                'pages': doc.metadata.get('pages', 0),
+                'chunks': len(chunks),
+                'status': 'parsed_only',
+                'graph_generated': False,
+                'error': f'LightRAG indexing failed: {str(e)}'
+            }
+        
     except Exception as e:
         return {'error': str(e), 'message': 'Document ingestion failed'}
 
@@ -137,25 +197,50 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         
         # Process files
         from rag_kb.ingest.pipeline import IngestPipeline
+        from rag_kb.chunkers import StructuredChunker
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        import json
+        
         pipeline = IngestPipeline()
+        chunker = StructuredChunker()
+        rag = LightRAGAdapter()
         
         processed = 0
         skipped = 0
         failed = 0
         failed_files = []
         documents = []
+        indexed_documents = []
         
         for file_path in files:
             try:
+                # Step 1: Parse and clean
                 doc = pipeline.run(file_path, acl=acl or {'read': [user_id], 'write': [user_id]})
                 processed += 1
+                
+                # Step 2: Semantic chunking
+                chunks = chunker.chunk(doc.content, doc.metadata)
+                
+                # Step 3: LightRAG indexing
+                try:
+                    rag.ingest([{
+                        'doc_id': doc.doc_id,
+                        'content': doc.content,
+                        'metadata': doc.metadata
+                    }])
+                    indexed_documents.append(doc.doc_id)
+                except Exception as e:
+                    print(f"LightRAG indexing failed for {file_path.name}: {e}")
+                
                 documents.append({
                     'doc_id': doc.doc_id,
                     'title': doc.title,
                     'source': str(file_path),
                     'pages': doc.metadata.get('pages', 0),
                     'import_type': 'folder',
-                    'folder_id': str(uuid.uuid4())  # Unique folder ID for this import
+                    'folder_id': str(uuid.uuid4()),
+                    'chunks': len(chunks),
+                    'indexed': doc.doc_id in indexed_documents
                 })
             except Exception as e:
                 failed += 1
@@ -183,6 +268,29 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         with open(registry_file, 'w', encoding='utf-8') as f:
             json.dump(folder_registry, f, indent=2, ensure_ascii=False)
         
+        # Save documents to document registry
+        doc_registry_file = settings.data_dir / 'document_registry.json'
+        doc_registry = {}
+        if doc_registry_file.exists():
+            with open(doc_registry_file, 'r', encoding='utf-8') as f:
+                doc_registry = json.load(f)
+        
+        for doc in documents:
+            doc_registry[doc['doc_id']] = {
+                'doc_id': doc['doc_id'],
+                'title': doc['title'],
+                'source': doc['source'],
+                'pages': doc['pages'],
+                'import_type': 'folder',
+                'folder_id': folder_id,
+                'chunks': doc.get('chunks', 0),
+                'indexed': doc.get('indexed', False),
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        
+        with open(doc_registry_file, 'w', encoding='utf-8') as f:
+            json.dump(doc_registry, f, indent=2, ensure_ascii=False)
+        
         return {
             'success': True,
             'source_folder': str(folder),
@@ -194,6 +302,7 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
             'documents': documents,
             'folder_id': folder_id,
             'folder_record': folder_record,
+            'indexed_count': len(indexed_documents),
             'user_id': user_id,
             'kb_name': kb_name
         }

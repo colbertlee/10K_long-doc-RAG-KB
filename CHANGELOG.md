@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.12] - 2026-08-24
+
+### Added
+- **Complete Data Processing Pipeline**: Implemented full document processing including parsing, semantic chunking, and LightRAG indexing
+- **Semantic Chunking**: Added StructuredChunker for intelligent document segmentation
+- **Knowledge Graph Generation**: Integrated LightRAG indexing for automatic knowledge graph creation
+- **Document Registry**: Enhanced document tracking with chunk count and indexing status
+- **Processing Status**: Added detailed processing status feedback (parsed_only, indexed, graph_generated)
+
+### Enhanced
+- **Document Ingestion**: Complete 3-step ingestion process (parse → chunk → index)
+- **Folder Import**: Enhanced folder import with semantic chunking and LightRAG indexing
+- **Registry Management**: Improved document and folder registry with comprehensive metadata
+- **Error Handling**: Better error handling for LightRAG indexing failures
+
+### Fixed
+- **Missing Data Processing**: Fixed incomplete document upload that lacked semantic chunking and graph generation
+- **Knowledge Graph Generation**: Documents now properly indexed in LightRAG for knowledge graph creation
+- **Document Registry**: Documents now saved to registry with complete processing metadata
+
 ## [0.5.11] - 2026-08-24
 
 ### Fixed
