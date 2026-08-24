@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.6 (Stable)  
+**Current Version**: v0.5.7 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.6 fixes all interface functionality issues including document visibility, search errors, and chat streaming problems.
+> **Version Note**: v0.5.7 enhances knowledge manager with folder import tracking and file count statistics.
 
 ## Features
 
@@ -240,6 +240,14 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.7 (2026-08-24) - Enhanced Knowledge Manager
+- **Added**: Folder records API to track folder import history
+- **Added**: Folder count statistics in knowledge manager
+- **Added**: File count display for each imported folder
+- **Enhanced**: Knowledge manager UI with folder records section
+- **Enhanced**: Document tracking with folder_id for proper filtering
+- **Fixed**: Document visibility for both uploaded and folder documents
 
 ### v0.5.6 (2026-08-24) - Complete Interface Functionality Fix
 - **Fixed**: Knowledge manager document visibility with uploads directory fallback

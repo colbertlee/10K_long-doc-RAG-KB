@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2026-08-24
+
+### Added
+- **Folder Records API**: Added /api/v1/folders endpoint to track folder import history
+- **Folder Statistics**: Added folder count statistics in knowledge manager
+- **Folder File Count**: Display file count for each imported folder
+- **Folder Records Display**: Added separate section for folder import records
+
+### Enhanced
+- **Knowledge Manager UI**: Added folder records section with file count display
+- **Document Tracking**: Enhanced folder import to save folder records with metadata
+- **File Organization**: Better organization of uploaded vs folder-imported documents
+- **Statistics Display**: Added folder count to statistics dashboard
+
+### Fixed
+- **Document Visibility**: Enhanced document loading to show both uploaded and folder documents
+- **Folder Document Association**: Added folder_id to documents for proper filtering
+- **Event Integration**: Updated folder import events to include folder records
+
 ## [0.5.6] - 2026-08-24
 
 ### Fixed

@@ -298,8 +298,9 @@
                         `;
                         // 触发文件夹导入事件
                         const importedDocs = data.documents || [];
+                        const folderRecord = data.folder_record || null;
                         window.dispatchEvent(new CustomEvent('folderImported', {
-                            detail: importedDocs
+                            detail: { documents: importedDocs, folderRecord: folderRecord }
                         }));
                     }
                 } else {

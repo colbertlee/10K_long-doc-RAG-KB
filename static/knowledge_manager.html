@@ -68,6 +68,10 @@
                     <div class="stat-number" id="folder-docs">0</div>
                     <div class="stat-label">文件夹导入</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="folder-count">0</div>
+                    <div class="stat-label">导入文件夹数</div>
+                </div>
             </div>
         </div>
 
@@ -75,6 +79,13 @@
             <h2>📤 上传的文档</h2>
             <div id="uploaded-documents">
                 <div class="empty-state">暂无上传的文档</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📁 文件夹导入记录</h2>
+            <div id="folder-records">
+                <div class="empty-state">暂无文件夹导入记录</div>
             </div>
         </div>
 
@@ -97,6 +108,7 @@
         // 模拟文档数据（实际应该从API获取）
         let uploadedDocuments = [];
         let folderDocuments = [];
+        let folderRecords = [];
 
         function refreshKnowledgeBase() {
             // 这里应该调用API获取实际的文档列表
@@ -107,29 +119,40 @@
 
         async function loadDocuments() {
             try {
-                const response = await fetch(`${API_BASE}/documents`);
-                const data = await response.json();
+                // Load documents
+                const docResponse = await fetch(`${API_BASE}/documents`);
+                const docData = await docResponse.json();
                 
-                if (data.success) {
+                // Load folder records
+                const folderResponse = await fetch(`${API_BASE}/folders`);
+                const folderData = await folderResponse.json();
+                
+                if (docData.success) {
                     // 分类文档
-                    uploadedDocuments = data.documents.filter(doc => doc.import_type !== 'folder');
-                    folderDocuments = data.documents.filter(doc => doc.import_type === 'folder');
-                    
-                    renderDocuments();
-                } else {
-                    console.error('Failed to load documents:', data.error);
+                    uploadedDocuments = docData.documents.filter(doc => doc.import_type !== 'folder');
+                    folderDocuments = docData.documents.filter(doc => doc.import_type === 'folder');
                 }
+                
+                if (folderData.success) {
+                    folderRecords = folderData.folders;
+                }
+                
+                renderDocuments();
             } catch (error) {
                 console.error('Error loading documents:', error);
                 // 回退到本地存储
                 const storedUploads = localStorage.getItem('uploadedDocuments');
                 const storedFolders = localStorage.getItem('folderDocuments');
+                const storedFolderRecords = localStorage.getItem('folderRecords');
                 
                 if (storedUploads) {
                     uploadedDocuments = JSON.parse(storedUploads);
                 }
                 if (storedFolders) {
                     folderDocuments = JSON.parse(storedFolders);
+                }
+                if (storedFolderRecords) {
+                    folderRecords = JSON.parse(storedFolderRecords);
                 }
                 
                 renderDocuments();
@@ -139,6 +162,7 @@
         function renderDocuments() {
             const uploadedContainer = document.getElementById('uploaded-documents');
             const folderContainer = document.getElementById('folder-documents');
+            const folderRecordsContainer = document.getElementById('folder-records');
             
             // 渲染上传的文档
             if (uploadedDocuments.length === 0) {
@@ -150,12 +174,32 @@
                             <div class="document-info">
                                 <div class="document-title">${doc.title}</div>
                                 <div class="document-meta">
-                                    ID: ${doc.doc_id} | 页数: ${doc.pages} | 时间: ${doc.timestamp}
+                                    ID: ${doc.doc_id} | 页数: ${doc.pages || 'N/A'} | 时间: ${doc.timestamp ? new Date(doc.timestamp).toLocaleString() : 'N/A'}
                                 </div>
                             </div>
                             <div class="document-actions">
                                 <button class="btn" onclick="viewDocument('${doc.doc_id}')">查看</button>
                                 <button class="btn btn-danger" onclick="deleteDocument('${doc.doc_id}')">删除</button>
+                            </div>
+                        </li>
+                    `).join('') + '</ul>';
+            }
+            
+            // 渲染文件夹导入记录
+            if (folderRecords.length === 0) {
+                folderRecordsContainer.innerHTML = '<div class="empty-state">暂无文件夹导入记录</div>';
+            } else {
+                folderRecordsContainer.innerHTML = '<ul class="document-list">' + 
+                    folderRecords.map(record => `
+                        <li class="document-item">
+                            <div class="document-info">
+                                <div class="document-title">📁 ${record.folder_name}</div>
+                                <div class="document-meta">
+                                    路径: ${record.folder_path} | 文件数: ${record.file_count} | 时间: ${record.timestamp}
+                                </div>
+                            </div>
+                            <div class="document-actions">
+                                <button class="btn" onclick="viewFolderFiles('${record.folder_id}')">查看文件</button>
                             </div>
                         </li>
                     `).join('') + '</ul>';
@@ -171,7 +215,7 @@
                             <div class="document-info">
                                 <div class="document-title">${doc.title}</div>
                                 <div class="document-meta">
-                                    来源: ${doc.source} | 时间: ${doc.timestamp}
+                                    来源: ${doc.source} | 页数: ${doc.pages || 'N/A'} | 时间: ${doc.timestamp || 'N/A'}
                                 </div>
                             </div>
                             <div class="document-actions">
@@ -187,6 +231,32 @@
             document.getElementById('total-docs').textContent = uploadedDocuments.length + folderDocuments.length;
             document.getElementById('uploaded-docs').textContent = uploadedDocuments.length;
             document.getElementById('folder-docs').textContent = folderDocuments.length;
+            document.getElementById('folder-count').textContent = folderRecords.length;
+        }
+
+        function viewFolderFiles(folderId) {
+            // 过滤显示特定文件夹的文档
+            const filteredDocs = folderDocuments.filter(doc => doc.folder_id === folderId);
+            const folderContainer = document.getElementById('folder-documents');
+            
+            if (filteredDocs.length === 0) {
+                folderContainer.innerHTML = '<div class="empty-state">该文件夹暂无文档</div>';
+            } else {
+                folderContainer.innerHTML = '<ul class="document-list">' + 
+                    filteredDocs.map(doc => `
+                        <li class="document-item">
+                            <div class="document-info">
+                                <div class="document-title">${doc.title}</div>
+                                <div class="document-meta">
+                                    来源: ${doc.source} | 页数: ${doc.pages || 'N/A'}
+                                </div>
+                            </div>
+                            <div class="document-actions">
+                                <button class="btn" onclick="viewDocument('${doc.doc_id}')">查看</button>
+                            </div>
+                        </li>
+                    `).join('') + '</ul>';
+            }
         }
 
         function viewDocument(docId) {
@@ -227,12 +297,18 @@
         });
 
         window.addEventListener('folderImported', function(event) {
-            const docs = event.detail;
-            folderDocuments.push(...docs.map(doc => ({
-                ...doc,
-                timestamp: new Date().toLocaleString()
-            })));
+            const { documents, folderRecord } = event.detail;
+            if (documents && documents.length > 0) {
+                folderDocuments.push(...documents.map(doc => ({
+                    ...doc,
+                    timestamp: new Date().toLocaleString()
+                })));
+            }
+            if (folderRecord) {
+                folderRecords.push(folderRecord);
+            }
             localStorage.setItem('folderDocuments', JSON.stringify(folderDocuments));
+            localStorage.setItem('folderRecords', JSON.stringify(folderRecords));
             renderDocuments();
             updateStats();
         });

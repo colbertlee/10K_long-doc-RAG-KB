@@ -119,6 +119,8 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
     try:
         from pathlib import Path
         import glob
+        import json
+        import uuid
         
         folder = Path(folder_path)
         if not folder.exists() or not folder.is_dir():
@@ -152,11 +154,34 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
                     'title': doc.title,
                     'source': str(file_path),
                     'pages': doc.metadata.get('pages', 0),
-                    'import_type': 'folder'
+                    'import_type': 'folder',
+                    'folder_id': str(uuid.uuid4())  # Unique folder ID for this import
                 })
             except Exception as e:
                 failed += 1
                 failed_files.append({'file': str(file_path.name), 'error': str(e)})
+        
+        # Save folder record
+        folder_id = str(uuid.uuid4())
+        import time
+        folder_record = {
+            'folder_id': folder_id,
+            'folder_name': folder.name,
+            'folder_path': str(folder),
+            'file_count': processed,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Save to folder registry
+        registry_file = settings.data_dir / 'folder_registry.json'
+        folder_registry = {}
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                folder_registry = json.load(f)
+        
+        folder_registry[folder_id] = folder_record
+        with open(registry_file, 'w', encoding='utf-8') as f:
+            json.dump(folder_registry, f, indent=2, ensure_ascii=False)
         
         return {
             'success': True,
@@ -167,6 +192,8 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
             'files_failed': failed,
             'failed_files': failed_files,
             'documents': documents,
+            'folder_id': folder_id,
+            'folder_record': folder_record,
             'user_id': user_id,
             'kb_name': kb_name
         }
@@ -255,6 +282,33 @@ async def get_user_knowledge_bases(user_id: str):
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Failed to get knowledge bases', 'knowledge_bases': []}
+
+
+@app.get('/api/v1/folders')
+async def get_folder_records():
+    """Get list of folder import records.
+    
+    Returns:
+        List of folder import records
+    """
+    try:
+        import json
+        
+        registry_file = settings.data_dir / 'folder_registry.json'
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                folder_registry = json.load(f)
+                records = list(folder_registry.values())
+        else:
+            records = []
+        
+        return {
+            'success': True,
+            'folders': records,
+            'total': len(records)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get folder records', 'folders': [], 'total': 0}
 
 
 @app.get('/api/v1/documents')
