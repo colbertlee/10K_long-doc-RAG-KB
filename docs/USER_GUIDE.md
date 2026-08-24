@@ -4,10 +4,11 @@
 1. [Getting Started](#getting-started)
 2. [Basic Usage](#basic-usage)
 3. [Document Ingestion](#document-ingestion)
-4. [Querying the Knowledge Base](#querying-the-knowledge-base)
-5. [Using Open WebUI](#using-open-webui)
-6. [Configuration](#configuration)
-7. [Troubleshooting](#troubleshooting)
+4. [Knowledge Management Features (v0.4.0)](#knowledge-management-features-v040)
+5. [Querying the Knowledge Base](#querying-the-knowledge-base)
+6. [Using Open WebUI](#using-open-webui)
+7. [Configuration](#configuration)
+8. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -93,6 +94,135 @@ Supported formats:
 Set access control during ingestion:
 - `dept`: Department (e.g., "Engineering", "Sales")
 - `level`: Access level (e.g., "Internal", "Confidential")
+
+## Knowledge Management Features (v0.4.0)
+
+### Knowledge Organization API
+
+The knowledge organization API provides automatic document classification, intelligent tagging, and quality analysis.
+
+#### Document Organization
+
+Organize a document with automatic classification:
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/organize" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Python is a programming language used for AI and machine learning.",
+    "filename": "tech_doc.txt",
+    "metadata": {}
+  }'
+```
+
+Response:
+```json
+{
+  "organization": {
+    "category": "technical",
+    "tags": ["Python", "txt", "tech_doc"],
+    "entities": {
+      "technologies": ["Python"],
+      "dates": [],
+      "emails": [],
+      "urls": []
+    },
+    "suggested_folder": "技术文档",
+    "summary": "Python is a programming language used for AI and machine learning.",
+    "confidence": 0.8
+  },
+  "quality_analysis": {
+    "overall_score": 0.37,
+    "metrics": {
+      "completeness": 0.2,
+      "readability": 0.4,
+      "structure": 0.5
+    },
+    "suggestions": [
+      "建议补充文档元数据（标题、分类、标签）",
+      "建议增加文档内容长度",
+      "建议优化句子长度，提高可读性"
+    ]
+  }
+}
+```
+
+#### Supported Categories
+
+The system automatically classifies documents into these categories:
+- **technical**: Technical documents, architecture, development
+- **product**: Product requirements, features, user experience
+- **project**: Project management, milestones, resources
+- **business**: Business processes, policies, strategies
+- **legal**: Legal documents, contracts, compliance
+- **general**: Other documents
+
+### Batch Operations API
+
+Perform batch operations on multiple documents efficiently.
+
+#### Batch Tagging
+
+Tag multiple documents at once:
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/batch-operation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "tag",
+    "document_ids": ["doc1", "doc2", "doc3"],
+    "parameters": {
+      "tags": ["technical", "Python"]
+    }
+  }'
+```
+
+Response:
+```json
+{
+  "operation": "tag",
+  "total": 3,
+  "successful": 3,
+  "failed": 0,
+  "results": [
+    {
+      "doc_id": "doc1",
+      "status": "tagged",
+      "tags": ["technical", "Python"]
+    },
+    {
+      "doc_id": "doc2",
+      "status": "tagged",
+      "tags": ["technical", "Python"]
+    },
+    {
+      "doc_id": "doc3",
+      "status": "tagged",
+      "tags": ["technical", "Python"]
+    }
+  ]
+}
+```
+
+#### Supported Operations
+
+- **delete**: Delete multiple documents
+- **reindex**: Reindex documents for search
+- **tag**: Add tags to documents
+- **move**: Move documents to different categories
+
+### Knowledge Management Interface
+
+Access the unified knowledge management interface:
+```
+http://localhost:8000/knowledge-manager
+```
+
+#### Interface Features
+
+- **Drag-and-drop upload**: Easy document upload
+- **Real-time processing**: Live processing status updates
+- **Batch operations**: Multi-document management
+- **Quality analysis**: Document quality assessment
+- **Smart suggestions**: Improvement recommendations
 
 ## Querying the Knowledge Base
 

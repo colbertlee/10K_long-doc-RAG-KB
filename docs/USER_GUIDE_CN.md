@@ -4,10 +4,11 @@
 1. [快速开始](#快速开始)
 2. [基本使用](#基本使用)
 3. [文档导入](#文档导入)
-4. [查询知识库](#查询知识库)
-5. [使用 Open WebUI](#使用-open-webui)
-6. [配置](#配置)
-7. [故障排除](#故障排除)
+4. [知识管理功能 (v0.4.0)](#知识管理功能-v040)
+5. [查询知识库](#查询知识库)
+6. [使用 Open WebUI](#使用-open-webui)
+7. [配置](#配置)
+8. [故障排除](#故障排除)
 
 ## 快速开始
 
@@ -93,6 +94,135 @@ curl -X POST "http://localhost:8000/api/v1/ingest" \
 在导入时设置访问控制：
 - `dept`：部门（如"工程部"、"销售部"）
 - `level`：访问级别（如"内部"、"机密"）
+
+## 知识管理功能 (v0.4.0)
+
+### 知识组织 API
+
+知识组织 API 提供自动文档分类、智能标签和质量分析功能。
+
+#### 文档组织
+
+对文档进行自动分类和组织：
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/organize" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Python是一种编程语言，广泛应用于机器学习和人工智能领域。",
+    "filename": "tech_doc.txt",
+    "metadata": {}
+  }'
+```
+
+响应：
+```json
+{
+  "organization": {
+    "category": "technical",
+    "tags": ["Python", "txt", "tech_doc"],
+    "entities": {
+      "technologies": ["Python"],
+      "dates": [],
+      "emails": [],
+      "urls": []
+    },
+    "suggested_folder": "技术文档",
+    "summary": "Python是一种编程语言，广泛应用于机器学习和人工智能领域。",
+    "confidence": 0.8
+  },
+  "quality_analysis": {
+    "overall_score": 0.37,
+    "metrics": {
+      "completeness": 0.2,
+      "readability": 0.4,
+      "structure": 0.5
+    },
+    "suggestions": [
+      "建议补充文档元数据（标题、分类、标签）",
+      "建议增加文档内容长度",
+      "建议优化句子长度，提高可读性"
+    ]
+  }
+}
+```
+
+#### 支持的分类
+
+系统自动将文档分类到以下类别：
+- **technical**: 技术文档、架构、开发
+- **product**: 产品需求、功能、用户体验
+- **project**: 项目管理、里程碑、资源
+- **business**: 业务流程、政策、战略
+- **legal**: 法律文档、合同、合规
+- **general**: 其他文档
+
+### 批量操作 API
+
+高效地对多个文档执行批量操作。
+
+#### 批量标签
+
+一次为多个文档添加标签：
+```bash
+curl -X POST "http://localhost:8000/api/v1/knowledge/batch-operation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "tag",
+    "document_ids": ["doc1", "doc2", "doc3"],
+    "parameters": {
+      "tags": ["技术", "Python"]
+    }
+  }'
+```
+
+响应：
+```json
+{
+  "operation": "tag",
+  "total": 3,
+  "successful": 3,
+  "failed": 0,
+  "results": [
+    {
+      "doc_id": "doc1",
+      "status": "tagged",
+      "tags": ["技术", "Python"]
+    },
+    {
+      "doc_id": "doc2",
+      "status": "tagged",
+      "tags": ["技术", "Python"]
+    },
+    {
+      "doc_id": "doc3",
+      "status": "tagged",
+      "tags": ["技术", "Python"]
+    }
+  ]
+}
+```
+
+#### 支持的操作
+
+- **delete**: 删除多个文档
+- **reindex**: 重新索引文档以供搜索
+- **tag**: 为文档添加标签
+- **move**: 将文档移动到不同分类
+
+### 知识管理界面
+
+访问统一的知识管理界面：
+```
+http://localhost:8000/knowledge-manager
+```
+
+#### 界面功能
+
+- **拖拽上传**: 轻松上传文档
+- **实时处理**: 实时处理状态更新
+- **批量操作**: 多文档管理
+- **质量分析**: 文档质量评估
+- **智能建议**: 改进建议
 
 ## 查询知识库
 
