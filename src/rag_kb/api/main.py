@@ -1630,6 +1630,208 @@ async def execute_citation_stage(request: dict):
         return {'error': str(e), 'message': 'Citation stage failed'}
 
 
+@app.post('/api/v1/feedback')
+async def add_user_feedback(feedback_data: dict):
+    """Add user feedback for RAG quality improvement.
+    
+    Args:
+        feedback_data: Feedback data
+        
+    Returns:
+        Feedback addition result
+    """
+    try:
+        from rag_kb.feedback import feedback_manager, UserFeedback, FeedbackType, FeedbackReason
+        from datetime import datetime
+        import uuid
+        
+        feedback = UserFeedback(
+            feedback_id=str(uuid.uuid4()),
+            user_id=feedback_data.get('user_id', 'anonymous'),
+            query=feedback_data.get('query', ''),
+            answer=feedback_data.get('answer', ''),
+            feedback_type=FeedbackType(feedback_data.get('feedback_type', 'thumbs_up')),
+            feedback_reason=FeedbackReason(feedback_data['feedback_reason']) if feedback_data.get('feedback_reason') else None,
+            feedback_comment=feedback_data.get('feedback_comment', ''),
+            metadata=feedback_data.get('metadata', {})
+        )
+        
+        result = feedback_manager.add_feedback(feedback)
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to add feedback'}
+
+
+@app.get('/api/v1/feedback/statistics')
+async def get_feedback_statistics():
+    """Get feedback statistics.
+    
+    Returns:
+        Feedback statistics
+    """
+    try:
+        from rag_kb.feedback import feedback_manager
+        
+        stats = feedback_manager.get_feedback_statistics()
+        satisfaction_rate = feedback_manager.calculate_satisfaction_rate()
+        negative_reasons = feedback_manager.get_negative_feedback_reasons()
+        
+        return {
+            'success': True,
+            'statistics': stats,
+            'satisfaction_rate': satisfaction_rate,
+            'negative_feedback_reasons': negative_reasons
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get feedback statistics'}
+
+
+@app.get('/api/v1/feedback/recent')
+async def get_recent_feedback(limit: int = 10):
+    """Get recent feedback.
+    
+    Args:
+        limit: Number of recent feedback items
+        
+    Returns:
+        Recent feedback items
+    """
+    try:
+        from rag_kb.feedback import feedback_manager
+        
+        recent = feedback_manager.get_recent_feedback(limit)
+        
+        return {
+            'success': True,
+            'feedbacks': recent,
+            'count': len(recent)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get recent feedback'}
+
+
+@app.get('/api/v1/suggestions')
+async def get_search_suggestions(category: str = None, limit: int = 10):
+    """Get search suggestions and quick questions.
+    
+    Args:
+        category: Filter by category (optional)
+        limit: Maximum number of suggestions
+        
+    Returns:
+        Search suggestions
+    """
+    try:
+        from rag_kb.suggestions import suggestion_manager
+        
+        suggestions = suggestion_manager.get_suggestions(category, limit)
+        
+        return {
+            'success': True,
+            'suggestions': suggestions,
+            'count': len(suggestions)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get suggestions', 'suggestions': [], 'count': 0}
+
+
+@app.get('/api/v1/suggestions/autocomplete')
+async def get_autocomplete_suggestions(prefix: str, limit: int = 5):
+    """Get autocomplete suggestions based on text prefix.
+    
+    Args:
+        prefix: Text prefix to match
+        limit: Maximum number of suggestions
+        
+    Returns:
+        Autocomplete suggestions
+    """
+    try:
+        from rag_kb.suggestions import suggestion_manager
+        
+        suggestions = suggestion_manager.get_suggestions_by_prefix(prefix, limit)
+        
+        return {
+            'success': True,
+            'suggestions': suggestions,
+            'count': len(suggestions)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get autocomplete suggestions', 'suggestions': [], 'count': 0}
+
+
+@app.get('/api/v1/suggestions/quick-questions')
+async def get_quick_questions(product_id: str = None, limit: int = 5):
+    """Get quick questions for a specific product.
+    
+    Args:
+        product_id: Product ID (optional)
+        limit: Maximum number of questions
+        
+    Returns:
+        Quick questions
+    """
+    try:
+        from rag_kb.suggestions import suggestion_manager
+        
+        questions = suggestion_manager.get_quick_questions(product_id, limit)
+        
+        return {
+            'success': True,
+            'questions': questions,
+            'count': len(questions)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get quick questions', 'questions': [], 'count': 0}
+
+
+@app.post('/api/v1/suggestions/use')
+async def record_suggestion_use(suggestion_id: str):
+    """Record that a suggestion was used.
+    
+    Args:
+        suggestion_id: Suggestion ID
+        
+    Returns:
+        Update result
+    """
+    try:
+        from rag_kb.suggestions import suggestion_manager
+        
+        result = suggestion_manager.record_suggestion_use(suggestion_id)
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to record suggestion use'}
+
+
+@app.get('/api/v1/suggestions/categories')
+async def get_suggestion_categories():
+    """Get available suggestion categories.
+    
+    Returns:
+        Suggestion categories
+    """
+    try:
+        from rag_kb.suggestions import suggestion_manager
+        
+        categories = suggestion_manager.get_categories()
+        
+        return {
+            'success': True,
+            'categories': categories
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get categories', 'categories': {}}
+
+
+@app.get('/pdf-preview')
+async def pdf_preview_ui():
+    """PDF preview interface with paragraph highlighting."""
+    return FileResponse('static/pdf_preview.html')
+
+
 @app.get('/interactive-graph')
 async def interactive_graph_ui():
     """Interactive graph interface with entity linking and source tracing."""

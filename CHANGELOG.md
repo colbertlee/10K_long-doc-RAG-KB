@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.19] - 2026-08-24
+
+### Added
+- **PDF Preview with Highlighting**: Complete PDF viewer with paragraph highlighting and navigation
+- **User Feedback System**: Comprehensive feedback collection for RAG quality improvement
+- **Search Suggestions System**: Intelligent search suggestions and quick questions
+- **Feedback Types**: Thumbs up/down, regenerate, copy feedback options
+- **Feedback Reasons**: Hallucination, no relevant docs, incorrect citation, poor quality
+- **Suggestion Categories**: Frequent questions, core entities, troubleshooting, configuration, general
+- **Autocomplete**: Real-time search suggestions based on text prefix
+- **Quick Questions**: Product-specific quick question recommendations
+- **Feedback Statistics**: Comprehensive feedback analytics and satisfaction rate calculation
+- **Suggestion Tracking**: Frequency tracking and last-used timestamps for suggestions
+
+### Enhanced
+- **User Experience**: PDF preview with precise paragraph highlighting
+- **Quality Improvement**: User feedback integration for continuous improvement
+- **Search Efficiency**: Intelligent suggestions reduce query time
+- **Interaction**: Enhanced user interaction with feedback and suggestion systems
+- **Analytics**: Detailed feedback statistics and suggestion usage tracking
+
+### Technical
+- **New Feedback Module**: Complete user feedback management system
+- **New Suggestions Module**: Search suggestions and quick questions system
+- **PDF.js Integration**: Client-side PDF rendering with highlighting
+- **Feedback API**: RESTful API for feedback collection and analysis
+- **Suggestions API**: RESTful API for search suggestions and autocomplete
+- **Data Persistence**: JSON-based storage for feedback and suggestions
+
 ## [0.5.18] - 2026-08-24
 
 ### Added

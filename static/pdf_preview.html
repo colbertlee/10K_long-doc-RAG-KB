@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF原文预览 - 段落高亮</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2em; margin-bottom: 10px; }
+        
+        .main-layout { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
+        
+        .pdf-viewer { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .pdf-viewer h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        
+        .pdf-canvas-container { position: relative; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .pdf-canvas { display: block; margin: 0 auto; }
+        
+        .highlight-overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+        .highlight-box { position: absolute; background: rgba(255, 215, 0, 0.3); border: 2px solid #ffd700; pointer-events: auto; cursor: pointer; }
+        .highlight-box:hover { background: rgba(255, 215, 0, 0.5); }
+        
+        .pdf-controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .pdf-controls button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .pdf-controls button:hover { background: #5568d3; }
+        .pdf-controls input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 60px; }
+        
+        .sidebar { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .sidebar h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        
+        .citation-info { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea; }
+        .citation-info h3 { color: #667eea; margin-bottom: 10px; }
+        
+        .chunk-preview { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .chunk-preview h4 { color: #333; margin-bottom: 10px; }
+        .chunk-preview p { color: #666; line-height: 1.6; }
+        .chunk-preview .meta { color: #999; font-size: 0.9em; margin-top: 10px; }
+        
+        .highlighted-text { background: linear-gradient(120deg, #ffd700 0%, #ffec8b 100%); padding: 2px 4px; border-radius: 3px; }
+        
+        .loading { text-align: center; padding: 40px; color: #666; }
+        
+        .page-navigation { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .page-nav-btn { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .page-nav-btn:hover { background: #5568d3; }
+        .page-nav-btn:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF原文预览 - 段落高亮</h1>
+            <p>精准定位原文段落 | 智能高亮显示 | 快速导航</p>
+        </div>
+
+        <div class="main-layout">
+            <!-- PDF查看器 -->
+            <div class="pdf-viewer">
+                <h2>PDF文档预览</h2>
+                
+                <div class="pdf-controls">
+                    <button onclick="loadPDF()">加载PDF</button>
+                    <button onclick="previousPage()">上一页</button>
+                    <input type="number" id="page-num" value="1" min="1" onchange="goToPage()">
+                    <span id="page-count">/ 1</span>
+                    <button onclick="nextPage()">下一页</button>
+                    <button onclick="zoomIn()">放大</button>
+                    <button onclick="zoomOut()">缩小</button>
+                </div>
+                
+                <div class="pdf-canvas-container" id="pdf-container">
+                    <canvas id="pdf-canvas" class="pdf-canvas"></canvas>
+                    <div id="highlight-overlay" class="highlight-overlay"></div>
+                </div>
+                
+                <div class="page-navigation">
+                    <button class="page-nav-btn" onclick="goToFirstPage()">首页</button>
+                    <button class="page-nav-btn" onclick="goToLastPage()">末页</button>
+                </div>
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <h2>📋 引用信息</h2>
+                
+                <div class="citation-info" id="citation-info">
+                    <h3>文档信息</h3>
+                    <p><strong>文档ID:</strong> <span id="doc-id">-</span></p>
+                    <p><strong>标题:</strong> <span id="doc-title">-</span></p>
+                    <p><strong>页码:</strong> <span id="page-number">-</span></p>
+                    <p><strong>Chunk ID:</strong> <span id="chunk-id">-</span></p>
+                </div>
+                
+                <h2>📝 段落预览</h2>
+                <div class="chunk-preview" id="chunk-preview">
+                    <h4>相关段落</h4>
+                    <p id="chunk-text">加载PDF后显示相关段落...</p>
+                    <div class="meta">
+                        <p><strong>相似度:</strong> <span id="similarity-score">-</span></p>
+                        <p><strong>匹配类型:</strong> <span id="match-type">-</span></p>
+                    </div>
+                </div>
+                
+                <button onclick="highlightChunk()" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px;">高亮段落</button>
+                <button onclick="copyChunk()" style="width: 100%; padding: 12px; background: #5568d3; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px;">复制段落</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+        let canvas = document.getElementById('pdf-canvas');
+        let ctx = canvas.getContext('2d');
+        let highlightOverlay = document.getElementById('highlight-overlay');
+        
+        // Citation data from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const docId = urlParams.get('doc_id') || '';
+        const pageNumber = parseInt(urlParams.get('page_number')) || 1;
+        const chunkId = urlParams.get('chunk_id') || '';
+        
+        // Initialize citation info
+        document.getElementById('doc-id').textContent = docId || '-';
+        document.getElementById('page-number').textContent = pageNumber || '-';
+        document.getElementById('chunk-id').textContent = chunkId || '-';
+        
+        async function loadPDF() {
+            try {
+                // In a real implementation, you'd fetch the PDF from your server
+                // For demo, we'll use a sample PDF
+                const pdfUrl = `http://localhost:8000/api/v1/documents/${docId}/pdf`;
+                
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                pdfDoc = await loadingTask.promise;
+                
+                document.getElementById('page-count').textContent = `/ ${pdfDoc.numPages}`;
+                
+                // Go to the specified page
+                if (pageNumber && pageNumber <= pdfDoc.numPages) {
+                    pageNum = pageNumber;
+                    document.getElementById('page-num').value = pageNum;
+                }
+                
+                renderPage(pageNum);
+                loadChunkData();
+                
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                alert('PDF加载失败: ' + error.message);
+            }
+        }
+        
+        function renderPage(num) {
+            pageRendering = true;
+            
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+                
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+            
+            // Update page counters
+            document.getElementById('page-num').value = num;
+        }
+        
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+        
+        function previousPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        
+        function nextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+        
+        function goToPage() {
+            const pageInput = document.getElementById('page-num');
+            const newPageNum = parseInt(pageInput.value);
+            
+            if (newPageNum >= 1 && newPageNum <= pdfDoc.numPages) {
+                pageNum = newPageNum;
+                queueRenderPage(pageNum);
+            } else {
+                pageInput.value = pageNum;
+            }
+        }
+        
+        function goToFirstPage() {
+            pageNum = 1;
+            queueRenderPage(pageNum);
+        }
+        
+        function goToLastPage() {
+            pageNum = pdfDoc.numPages;
+            queueRenderPage(pageNum);
+        }
+        
+        function zoomIn() {
+            scale += 0.2;
+            queueRenderPage(pageNum);
+        }
+        
+        function zoomOut() {
+            if (scale > 0.6) {
+                scale -= 0.2;
+                queueRenderPage(pageNum);
+            }
+        }
+        
+        async function loadChunkData() {
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/chunks/${chunkId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('doc-title').textContent = data.title || '-';
+                    document.getElementById('chunk-text').innerHTML = data.text || '无内容';
+                    document.getElementById('similarity-score').textContent = (data.similarity || 0).toFixed(2);
+                    document.getElementById('match-type').textContent = data.match_type || '未知';
+                }
+            } catch (error) {
+                console.error('Error loading chunk data:', error);
+            }
+        }
+        
+        function highlightChunk() {
+            // Simulate highlighting by adding a highlight box
+            const highlightBox = document.createElement('div');
+            highlightBox.className = 'highlight-box';
+            highlightBox.style.left = '50px';
+            highlightBox.style.top = '100px';
+            highlightBox.style.width = '300px';
+            highlightBox.style.height = '50px';
+            highlightBox.title = '点击查看详情';
+            
+            highlightBox.onclick = function() {
+                alert('高亮段落详情');
+            };
+            
+            highlightOverlay.appendChild(highlightBox);
+        }
+        
+        function copyChunk() {
+            const chunkText = document.getElementById('chunk-text').textContent;
+            navigator.clipboard.writeText(chunkText).then(() => {
+                alert('段落已复制到剪贴板');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败');
+            });
+        }
+        
+        // Load PDF on page load if doc_id is provided
+        if (docId) {
+            loadPDF();
+        }
+    </script>
+</body>
+</html>
