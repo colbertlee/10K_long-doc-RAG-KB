@@ -438,15 +438,26 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
             results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
             
             # Generate answer using LightRAG
-            lightrag_answer = rag.query(q, mode='hybrid')
+            try:
+                lightrag_answer = rag.query(q, mode='hybrid')
+                if not lightrag_answer or lightrag_answer == "":
+                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
+            except Exception as e:
+                lightrag_answer = f"LightRAG查询失败: {str(e)}"
             
             return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid'}
             
         else:  # lightrag mode (default)
             rag = LightRAGAdapter()
-            answer = rag.query(q, mode='hybrid')
-            
-            return {'answer': answer, 'sources': [], 'mode': 'lightrag'}
+            try:
+                answer = rag.query(q, mode='hybrid')
+                if not answer or answer == "":
+                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'status': 'no_documents'}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag'}
+            except Exception as e:
+                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'error': str(e)}
             
     except Exception as e:
         return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode}

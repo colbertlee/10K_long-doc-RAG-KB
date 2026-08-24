@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.11] - 2026-08-24
+
+### Fixed
+- **Search API Response**: Fixed search API returning undefined answers and empty sources
+- **LightRAG Error Handling**: Added proper error handling for LightRAG query failures
+- **Empty Answer Handling**: Added fallback messages when LightRAG returns empty results
+- **Hybrid Search Enhancement**: Improved hybrid search error handling and response formatting
+
+### Enhanced
+- **Search Error Messages**: Better user feedback when search fails or no documents are available
+- **LightRAG Configuration Check**: Added checks for LightRAG configuration and document indexing
+- **Response Format**: Ensured consistent response format across all search modes
+
 ## [0.5.10] - 2026-08-24
 
 ### Fixed
