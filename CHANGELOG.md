@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.18] - 2026-08-24
+
+### Added
+- **Complete RAG Workflow Manager**: Implementation of standardized three-stage RAG workflow
+- **Ingestion Stage**: Standardized knowledge base construction with quality checks
+- **Retrieval Stage**: Enhanced retrieval with multi-mode support and quality validation
+- **Generation Stage**: Structured answer generation with relevance checking
+- **Citation Stage**: Comprehensive citation system with page numbers and chunk IDs
+- **Workflow Context**: Structured context management for workflow execution
+- **Quality Control Points**: Automated quality checks at each workflow stage
+- **Stage Results**: Detailed result tracking for each workflow stage
+- **Workflow API**: Complete API for executing individual stages and complete workflows
+- **Stage Status Tracking**: Real-time status monitoring for workflow execution
+- **Performance Metrics**: Duration and performance tracking for each stage
+
+### Enhanced
+- **Workflow Standardization**: Complete standardization of RAG three-stage workflow
+- **Quality Assurance**: Automated quality checks ensure reliable results
+- **Error Handling**: Comprehensive error handling and recovery mechanisms
+- **Monitoring**: Detailed metrics and status tracking for workflow execution
+- **Flexibility**: Support for executing individual stages or complete workflows
+- **Multi-KB Integration**: Seamless integration with multi-knowledge base system
+
+### Technical
+- **New Workflow Module**: Complete workflow management system
+- **Stage Handlers**: Specialized handlers for each workflow stage
+- **Quality Checkers**: Automated quality validation for each stage
+- **Context Management**: Structured context for workflow execution
+- **Result Tracking**: Comprehensive result tracking and reporting
+- **API Endpoints**: RESTful API for workflow management
+
 ## [0.5.17] - 2026-08-24
 
 ### Added

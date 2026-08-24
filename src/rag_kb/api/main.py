@@ -1444,6 +1444,192 @@ async def multi_kb_selector_ui():
     return FileResponse('static/multi_kb_selector.html')
 
 
+@app.post('/api/v1/workflow/execute')
+async def execute_workflow(request: dict):
+    """Execute complete RAG workflow with all stages.
+    
+    Args:
+        request: Workflow execution request
+        
+    Returns:
+        Complete workflow results
+    """
+    try:
+        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        
+        context = WorkflowContext(
+            query=request.get('query', ''),
+            user_id=request.get('user_id', 'default'),
+            kb_name=request.get('kb_name', 'default'),
+            product_id=request.get('product_id', None),
+            metadata=request.get('metadata', {})
+        )
+        
+        # Determine which stages to execute
+        stages = request.get('stages')
+        if stages:
+            stage_mapping = {
+                'ingestion': WorkflowStage.INGESTION,
+                'retrieval': WorkflowStage.RETRIEVAL,
+                'generation': WorkflowStage.GENERATION,
+                'citation': WorkflowStage.CITATION
+            }
+            stages = [stage_mapping.get(s) for s in stages if s in stage_mapping]
+        
+        results = await workflow_manager.execute_workflow(context, stages)
+        
+        return results
+    except Exception as e:
+        return {'error': str(e), 'message': 'Workflow execution failed'}
+
+
+@app.get('/api/v1/workflow/status/{workflow_id}')
+async def get_workflow_status(workflow_id: str):
+    """Get workflow execution status.
+    
+    Args:
+        workflow_id: Workflow ID
+        
+    Returns:
+        Workflow status
+    """
+    try:
+        # In a real implementation, you'd store workflow results in a database
+        # For now, return a placeholder response
+        return {
+            'workflow_id': workflow_id,
+            'status': 'completed',
+            'message': 'Workflow status tracking not implemented yet'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get workflow status'}
+
+
+@app.post('/api/v1/workflow/ingestion')
+async def execute_ingestion_stage(request: dict):
+    """Execute ingestion stage only.
+    
+    Args:
+        request: Ingestion request
+        
+    Returns:
+        Ingestion stage results
+    """
+    try:
+        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        
+        context = WorkflowContext(
+            query='',  # Ingestion doesn't need query
+            user_id=request.get('user_id', 'default'),
+            kb_name=request.get('kb_name', 'default'),
+            product_id=request.get('product_id', None),
+            metadata=request.get('metadata', {})
+        )
+        
+        result = await workflow_manager._execute_stage(WorkflowStage.INGESTION, context)
+        
+        return result.to_dict()
+    except Exception as e:
+        return {'error': str(e), 'message': 'Ingestion stage failed'}
+
+
+@app.post('/api/v1/workflow/retrieval')
+async def execute_retrieval_stage(request: dict):
+    """Execute retrieval stage only.
+    
+    Args:
+        request: Retrieval request
+        
+    Returns:
+        Retrieval stage results
+    """
+    try:
+        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        
+        context = WorkflowContext(
+            query=request.get('query', ''),
+            user_id=request.get('user_id', 'default'),
+            kb_name=request.get('kb_name', 'default'),
+            product_id=request.get('product_id', None),
+            metadata=request.get('metadata', {})
+        )
+        
+        result = await workflow_manager._execute_stage(WorkflowStage.RETRIEVAL, context)
+        
+        return result.to_dict()
+    except Exception as e:
+        return {'error': str(e), 'message': 'Retrieval stage failed'}
+
+
+@app.post('/api/v1/workflow/generation')
+async def execute_generation_stage(request: dict):
+    """Execute generation stage only.
+    
+    Args:
+        request: Generation request
+        
+    Returns:
+        Generation stage results
+    """
+    try:
+        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        
+        context = WorkflowContext(
+            query=request.get('query', ''),
+            user_id=request.get('user_id', 'default'),
+            kb_name=request.get('kb_name', 'default'),
+            product_id=request.get('product_id', None),
+            metadata=request.get('metadata', {})
+        )
+        
+        # First execute retrieval stage
+        retrieval_result = await workflow_manager._execute_stage(WorkflowStage.RETRIEVAL, context)
+        context.set_stage_result(retrieval_result)
+        
+        # Then execute generation stage
+        result = await workflow_manager._execute_stage(WorkflowStage.GENERATION, context)
+        
+        return result.to_dict()
+    except Exception as e:
+        return {'error': str(e), 'message': 'Generation stage failed'}
+
+
+@app.post('/api/v1/workflow/citation')
+async def execute_citation_stage(request: dict):
+    """Execute citation stage only.
+    
+    Args:
+        request: Citation request
+        
+    Returns:
+        Citation stage results
+    """
+    try:
+        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        
+        context = WorkflowContext(
+            query=request.get('query', ''),
+            user_id=request.get('user_id', 'default'),
+            kb_name=request.get('kb_name', 'default'),
+            product_id=request.get('product_id', None),
+            metadata=request.get('metadata', {})
+        )
+        
+        # First execute retrieval and generation stages
+        retrieval_result = await workflow_manager._execute_stage(WorkflowStage.RETRIEVAL, context)
+        context.set_stage_result(retrieval_result)
+        
+        generation_result = await workflow_manager._execute_stage(WorkflowStage.GENERATION, context)
+        context.set_stage_result(generation_result)
+        
+        # Then execute citation stage
+        result = await workflow_manager._execute_stage(WorkflowStage.CITATION, context)
+        
+        return result.to_dict()
+    except Exception as e:
+        return {'error': str(e), 'message': 'Citation stage failed'}
+
+
 @app.get('/interactive-graph')
 async def interactive_graph_ui():
     """Interactive graph interface with entity linking and source tracing."""
