@@ -1,5 +1,36 @@
 # 发布说明
 
+## [0.4.0] - 2026-08-24
+
+### 知识管理功能
+- **自动文档分类**: 智能分类（技术、产品、项目、业务、法律）
+- **智能标签**: 从文档内容自动提取标签
+- **实体识别**: 识别技术、日期、邮箱和URL
+- **质量分析**: 文档质量评估和改进建议
+- **批量操作**: 高效的多文档处理（删除、重新索引、移动、标签）
+- **知识管理界面**: 统一的管理界面 `/knowledge-manager`
+
+### 新增 API 端点
+- `POST /api/v1/knowledge/organize` - 文档组织和分类
+- `POST /api/v1/knowledge/batch-operation` - 批量文档操作
+- `GET /knowledge-manager` - 知识管理界面
+
+### 技术改进
+- **稳定性**: 解决了v0.5.0的null bytes损坏问题
+- **渐进式集成**: 干净地实现了v0.5.0功能
+- **测试**: 新功能100%测试通过率
+- **文档**: 完整的用户指南和示例
+
+### 文档更新
+- 更新 USER_GUIDE.md 添加知识管理功能
+- 更新 USER_GUIDE_CN.md 添加知识管理功能
+- 添加 examples/knowledge_management_examples.py
+- 更新 INSTALLATION.md 和 INSTALLATION_CN.md 到v0.4.0
+- 添加CI/CD配置用于自动化测试和部署
+
+### 使用示例
+参见 `examples/knowledge_management_examples.py` 获取完整的使用示例。
+
 ## [0.1.0] - 2026-08-17
 
 ### 新增功能

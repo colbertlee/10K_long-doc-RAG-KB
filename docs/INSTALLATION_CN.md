@@ -1,5 +1,10 @@
 # 安装指南 - RAG 知识库
 
+**当前版本**: v0.4.0 (稳定版本)  
+**发布日期**: 2026-08-24
+
+> **版本说明**: v0.4.0 包含知识管理功能，支持自动文档分类、批量操作和质量分析。
+
 ## 系统要求
 
 ### 硬件要求
@@ -155,6 +160,23 @@ open-webui serve
    - **OpenAI API Base URL**: `http://localhost:8000/api/v1`
    - **API Key**: `not-needed-for-local`
    - **Default Model**: `rag-kb-pipeline`
+
+## v0.4.0 新功能
+
+### 知识管理功能
+v0.4.0 引入了高级知识管理功能：
+
+- **自动文档分类**: 智能分类（技术、产品、项目、业务、法律）
+- **智能标签**: 从文档内容自动提取标签
+- **实体识别**: 识别技术、日期、邮箱和URL
+- **质量分析**: 文档质量评估和改进建议
+- **批量操作**: 高效的多文档处理
+- **知识管理界面**: 统一的管理界面 `/knowledge-manager`
+
+### 新增 API 端点
+- `POST /api/v1/knowledge/organize` - 文档组织和分类
+- `POST /api/v1/knowledge/batch-operation` - 批量文档操作
+- `GET /knowledge-manager` - 知识管理界面
 
 ## 配置
 

@@ -1,5 +1,36 @@
 # Release Notes
 
+## [0.4.0] - 2026-08-24
+
+### Knowledge Management Features
+- **Automatic Document Classification**: Intelligent categorization (technical, product, project, business, legal)
+- **Smart Tagging**: Automatic tag extraction from document content
+- **Entity Recognition**: Identify technologies, dates, emails, and URLs
+- **Quality Analysis**: Document quality assessment with improvement suggestions
+- **Batch Operations**: Efficient multi-document processing (delete, reindex, move, tag)
+- **Knowledge Management Interface**: Unified interface at `/knowledge-manager`
+
+### New API Endpoints
+- `POST /api/v1/knowledge/organize` - Document organization and classification
+- `POST /api/v1/knowledge/batch-operation` - Batch document operations
+- `GET /knowledge-manager` - Knowledge management interface
+
+### Technical Improvements
+- **Stability**: Resolved null bytes corruption from v0.5.0
+- **Progressive Integration**: Clean implementation of v0.5.0 features
+- **Testing**: 100% test pass rate for new features
+- **Documentation**: Comprehensive user guides and examples
+
+### Documentation Updates
+- Updated USER_GUIDE.md with knowledge management features
+- Updated USER_GUIDE_CN.md with knowledge management features
+- Added examples/knowledge_management_examples.py
+- Updated INSTALLATION.md and INSTALLATION_CN.md to v0.4.0
+- Added CI/CD configuration for automated testing and deployment
+
+### Usage Examples
+See `examples/knowledge_management_examples.py` for comprehensive usage examples.
+
 ## [0.1.0] - 2026-08-17
 
 ### Added

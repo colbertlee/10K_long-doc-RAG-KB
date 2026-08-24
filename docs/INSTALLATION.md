@@ -1,5 +1,10 @@
 # Installation Guide - RAG Knowledge Base
 
+**Current Version**: v0.4.0 (Stable)  
+**Release Date**: 2026-08-24
+
+> **Version Note**: v0.4.0 includes knowledge management features with automatic document classification, batch operations, and quality analysis.
+
 ## System Requirements
 
 ### Hardware Requirements
@@ -155,6 +160,23 @@ Access at: http://localhost:8080
    - **OpenAI API Base URL**: `http://localhost:8000/api/v1`
    - **API Key**: `not-needed-for-local`
    - **Default Model**: `rag-kb-pipeline`
+
+## New Features in v0.4.0
+
+### Knowledge Management Features
+v0.4.0 introduces advanced knowledge management capabilities:
+
+- **Automatic Document Classification**: Intelligent categorization (technical, product, project, business, legal)
+- **Smart Tagging**: Automatic tag extraction from document content
+- **Entity Recognition**: Identify technologies, dates, emails, and URLs
+- **Quality Analysis**: Document quality assessment with improvement suggestions
+- **Batch Operations**: Efficient multi-document processing
+- **Knowledge Management Interface**: Unified interface at `/knowledge-manager`
+
+### New API Endpoints
+- `POST /api/v1/knowledge/organize` - Document organization and classification
+- `POST /api/v1/knowledge/batch-operation` - Batch document operations
+- `GET /knowledge-manager` - Knowledge management interface
 
 ## Configuration
 
