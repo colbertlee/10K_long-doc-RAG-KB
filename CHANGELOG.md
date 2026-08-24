@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2026-08-24
+
+### Added
+- **Enhanced PII Masking**: Advanced PII detection and masking with multiple entity types (phone, ID card, email, credit card, IP, URL)
+- **BM25 Sparse Search**: Complete BM25 implementation for keyword-based retrieval
+- **Hybrid Search**: RRF (Reciprocal Rank Fusion) combining BM25 and LightRAG results
+- **RAGAS Evaluation Framework**: Comprehensive evaluation metrics (faithfulness, answer relevance, context precision, context recall)
+- **Enhanced Text Cleaning**: Improved text cleaning with deduplication and noise removal
+- **Multi-Mode Search API**: Support for lightrag, bm25, and hybrid search modes
+- **Evaluation API**: New endpoint for RAG quality assessment
+
+### Enhanced
+- **Data Pipeline**: Enhanced ingestion pipeline with PII masking and text cleaning
+- **Search Capabilities**: Multiple search modes for different use cases
+- **Quality Assurance**: Built-in evaluation framework for continuous improvement
+- **Security**: Enhanced PII protection for compliance
+
+### Technical
+- **New Modules**: Added retrieval and evaluation modules
+- **Performance**: Optimized search with multiple retrieval strategies
+- **Monitoring**: Added evaluation metrics tracking
+
 ## [0.5.7] - 2026-08-24
 
 ### Added

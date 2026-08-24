@@ -3,7 +3,7 @@
 import pytest
 from typing import List, Dict, Any
 from rag_kb.models import SearchResult, Document, Chunk
-from rag_kb.retrieval.bm25_search import BM25SearchEngine
+from rag_kb.retrieval.bm25_search import BM25Search
 
 
 class RAGASEvaluator:
@@ -305,7 +305,7 @@ def sample_documents():
 @pytest.fixture
 def bm25_engine():
     """Create BM25 search engine for testing."""
-    engine = BM25SearchEngine()
+    engine = BM25Search()
     return engine
 
 
@@ -433,22 +433,26 @@ def test_average_metrics(ragas_evaluator):
 
 def test_bm25_integration(bm25_engine, sample_documents):
     """Test BM25 integration with evaluation."""
-    # Add documents to BM25 index
-    for doc in sample_documents:
-        bm25_engine.add_document(doc.doc_id, doc.content, doc.metadata)
+    # Convert documents to BM25 format
+    bm25_docs = [
+        {'id': doc.doc_id, 'text': doc.content, 'metadata': doc.metadata}
+        for doc in sample_documents
+    ]
     
-    bm25_engine.build_index()
+    # Add documents to BM25 index
+    bm25_engine.add_documents(bm25_docs)
     
     # Search
     results = bm25_engine.search("machine learning", top_k=2)
     
     assert len(results) > 0
-    assert all(isinstance(score, (int, float)) for _, score in results)
+    assert all('score' in result for result in results)
     
     # Test with evaluation
     search_results = [
-        SearchResult(chunk_id=doc_id, doc_id=doc_id, text="content", score=score, rank=i+1)
-        for i, (doc_id, score) in enumerate(results)
+        SearchResult(chunk_id=result['id'], doc_id=result['id'], text=result['text'], 
+                   score=result['score'], rank=i+1)
+        for i, result in enumerate(results)
     ]
     
     ground_truth = ["doc1", "doc2"]

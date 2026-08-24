@@ -359,29 +359,61 @@ async def get_documents():
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8):
-    """Search the RAG knowledge base.
+async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid'):
+    """Search the RAG knowledge base with multiple modes.
     
     Args:
         q: Search query
         dept: Department filter
         level: Access level filter
         top_k: Number of results to return
+        mode: Search mode ('lightrag', 'bm25', 'hybrid')
         
     Returns:
         Search results with answer and sources
     """
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter
+        from rag_kb.retrieval import BM25Search, HybridSearch
         
         user_acl = {'dept': [dept], 'level': [level]}
-        rag = LightRAGAdapter()
-        answer = rag.query(q, mode='hybrid')
+        bm25_index_path = settings.data_dir / 'bm25_index.json'
         
-        # Metadata filtering through post-filtering or sub-library implementation
-        return {'answer': answer, 'sources': []}
+        if mode == 'bm25':
+            # BM25-only search
+            bm25 = BM25Search()
+            # Load BM25 index if available
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            results = bm25.search(q, top_k=top_k)
+            answer = f"Found {len(results)} relevant documents using BM25 search."
+            return {'answer': answer, 'sources': results, 'mode': 'bm25'}
+            
+        elif mode == 'hybrid':
+            # Hybrid search (BM25 + LightRAG)
+            rag = LightRAGAdapter()
+            bm25 = BM25Search()
+            
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
+            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
+            
+            # Generate answer using LightRAG
+            lightrag_answer = rag.query(q, mode='hybrid')
+            
+            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid'}
+            
+        else:  # lightrag mode (default)
+            rag = LightRAGAdapter()
+            answer = rag.query(q, mode='hybrid')
+            
+            return {'answer': answer, 'sources': [], 'mode': 'lightrag'}
+            
     except Exception as e:
-        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': []}
+        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
@@ -411,6 +443,37 @@ async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
     if buf:
         yield 'data: ' + json.dumps({'choices': [{'delta': {'content': buf}}]}) + SSE_END
     yield 'data: [DONE]' + SSE_END
+
+
+@app.post('/api/v1/evaluate')
+async def evaluate_rag(test_case: dict):
+    """Evaluate RAG performance using RAGAS metrics.
+    
+    Args:
+        test_case: Test case with query, contexts, answer, ground_truth
+        
+    Returns:
+        Evaluation results with metrics
+    """
+    try:
+        from rag_kb.evaluation import RAGASEvaluator
+        
+        evaluator = RAGASEvaluator()
+        result = evaluator.evaluate_single(
+            query=test_case.get('query', ''),
+            retrieved_contexts=test_case.get('retrieved_contexts', []),
+            generated_answer=test_case.get('generated_answer', ''),
+            ground_truth=test_case.get('ground_truth', '')
+        )
+        
+        return {
+            'query': result.query,
+            'metrics': result.metrics,
+            'latency': result.latency,
+            'average_metrics': evaluator.get_average_metrics()
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Evaluation failed'}
 
 
 @app.post('/api/v1/chat/completions')

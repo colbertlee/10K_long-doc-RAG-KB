@@ -117,10 +117,9 @@
             <div class="form-group">
                 <label>搜索模式</label>
                 <select id="search-mode">
-                    <option value="hybrid">混合检索</option>
-                    <option value="naive">简单检索</option>
-                    <option value="local">本地检索</option>
-                    <option value="global">全局检索</option>
+                    <option value="hybrid">混合检索 (BM25 + LightRAG)</option>
+                    <option value="lightrag">LightRAG 语义检索</option>
+                    <option value="bm25">BM25 关键词检索</option>
                 </select>
             </div>
             <button class="btn" onclick="searchDocuments()">搜索</button>
@@ -337,11 +336,13 @@
                     resultDiv.innerHTML = `<strong>搜索失败:</strong> ${data.error}<br>${data.message}`;
                 } else {
                     const sources = data.sources || [];
+                    const mode = data.mode || 'lightrag';
                     resultDiv.className = 'result success';
                     resultDiv.innerHTML = `
-                        <strong>搜索结果:</strong><br>
+                        <strong>搜索结果 (${mode}模式):</strong><br>
                         <p>答案: ${data.answer}</p>
                         <p>来源数量: ${sources.length}</p>
+                        ${sources.length > 0 ? '<p>来源详情:</p><ul>' + sources.map(s => `<li>${s.id} (分数: ${s.score || s.rrf_score?.toFixed(2) || 'N/A'})</li>`).join('') + '</ul>' : ''}
                     `;
                 }
             } catch (error) {
