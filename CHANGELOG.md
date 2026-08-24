@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-24
+
+### Fixed
+- **Hardcoded Version Number**: Fixed hardcoded version '0.4.4' in main.py root endpoint
+- **Dynamic Version Import**: Changed to use __version__ from rag_kb.__init__ for dynamic version display
+- **Version Consistency**: Ensures API endpoint displays correct version from source code
+
+### Changed
+- **Root Endpoint**: Now dynamically imports and displays version from __init__.py
+- **Import Structure**: Added __version__ import from rag_kb package
+
 ## [0.4.9] - 2026-08-24
 
 ### Added

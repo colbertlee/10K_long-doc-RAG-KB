@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from rag_kb.config import settings
+from rag_kb import __version__
 
 app = FastAPI(title=settings.app_name)
 
@@ -33,7 +34,7 @@ def root():
     """Root endpoint with system information."""
     return {
         'message': 'RAG KB API Server',
-        'version': '0.4.4',
+        'version': __version__,
         'endpoints': {
             'health': '/health',
             'api_docs': '/docs',

@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.9 (Stable)  
+**Current Version**: v0.5.0 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.9 adds a direct source startup script to bypass package version synchronization issues and provides alternative startup method.
+> **Version Note**: v0.5.0 fixes the hardcoded version number in the API root endpoint, ensuring dynamic version display from source code.
 
 ## Features
 
@@ -240,6 +240,11 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.0 (2026-08-24) - Hardcoded Version Fix
+- **Fixed**: Hardcoded version '0.4.4' in main.py root endpoint
+- **Changed**: Dynamic version import from __init__.py for consistency
+- **Fixed**: API endpoint now displays correct version from source code
 
 ### v0.4.9 (2026-08-24) - Direct Source Startup Script
 - **Added**: start_direct.bat for direct source code execution
