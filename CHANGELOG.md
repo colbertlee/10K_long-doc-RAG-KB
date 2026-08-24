@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.9] - 2026-08-24
+
+### Fixed
+- **Knowledge Manager Statistics**: Fixed statistics display showing 0 by ensuring updateStats() is called after data loading
+- **Knowledge Graph Display**: Enhanced graph API to read actual LightRAG graph data and create nodes from documents
+- **Chat Interface Streaming**: Fixed chat streaming response to properly display assistant messages in real-time
+- **Graph Data Source**: Added fallback to create graph nodes from document registry when LightRAG graph is unavailable
+
+### Enhanced
+- **Knowledge Graph API**: Improved graph endpoint to return node/edge counts and handle missing graph data gracefully
+- **Chat Message Display**: Added real-time message updates during streaming and proper error handling
+- **Document-based Graph**: Created document nodes from registry when no LightRAG graph exists
+
 ## [0.5.8] - 2026-08-24
 
 ### Added

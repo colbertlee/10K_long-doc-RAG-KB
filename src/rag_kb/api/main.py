@@ -215,32 +215,68 @@ async def get_knowledge_graph(user_id: str, kb_name: str):
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter
         import json
+        from pathlib import Path
         
         rag = LightRAGAdapter()
         
-        # Try to get graph data from LightRAG
-        # This is a simplified implementation - in a real system, you'd extract actual graph data
+        # Try to get actual graph data from LightRAG
         graph_data = {
-            'nodes': [
-                {'id': 'node1', 'label': 'Document', 'type': 'document'},
-                {'id': 'node2', 'label': 'Entity', 'type': 'entity'},
-                {'id': 'node3', 'label': 'Concept', 'type': 'concept'}
-            ],
-            'edges': [
-                {'source': 'node1', 'target': 'node2', 'label': 'contains'},
-                {'source': 'node2', 'target': 'node3', 'label': 'related_to'}
-            ]
+            'nodes': [],
+            'edges': []
         }
+        
+        # Check if LightRAG graph data exists
+        lightrag_dir = settings.data_dir / 'lightrag_output'
+        if lightrag_dir.exists():
+            # Try to read LightRAG graph files
+            graph_file = lightrag_dir / 'graph_index.json'
+            if graph_file.exists():
+                try:
+                    with open(graph_file, 'r', encoding='utf-8') as f:
+                        lightrag_graph = json.load(f)
+                        # Convert LightRAG graph format to our format
+                        if 'nodes' in lightrag_graph:
+                            graph_data['nodes'] = lightrag_graph['nodes']
+                        if 'edges' in lightrag_graph:
+                            graph_data['edges'] = lightrag_graph['edges']
+                except Exception as e:
+                    print(f"Error reading LightRAG graph: {e}")
+        
+        # If no graph data exists, create nodes from documents
+        if not graph_data['nodes']:
+            registry_file = settings.data_dir / 'document_registry.json'
+            if registry_file.exists():
+                with open(registry_file, 'r', encoding='utf-8') as f:
+                    registry = json.load(f)
+                    # Create nodes from documents
+                    for doc_id, doc_data in registry.items():
+                        graph_data['nodes'].append({
+                            'id': doc_id,
+                            'label': doc_data.get('title', doc_id),
+                            'type': 'document'
+                        })
+        
+        # If still no nodes, create sample nodes
+        if not graph_data['nodes']:
+            graph_data['nodes'] = [
+                {'id': 'node1', 'label': '文档节点示例', 'type': 'document'},
+                {'id': 'node2', 'label': '实体节点示例', 'type': 'entity'}
+            ]
+            graph_data['edges'] = [
+                {'source': 'node1', 'target': 'node2', 'label': '关联'}
+            ]
         
         return {
             'success': True,
             'nodes': graph_data['nodes'],
             'edges': graph_data['edges'],
             'user_id': user_id,
-            'kb_name': kb_name
+            'kb_name': kb_name,
+            'node_count': len(graph_data['nodes']),
+            'edge_count': len(graph_data['edges'])
         }
     except Exception as e:
-        return {'error': str(e), 'message': 'Failed to get graph data', 'nodes': [], 'edges': []}
+        return {'error': str(e), 'message': 'Failed to get graph data', 'nodes': [], 'edges': [], 'node_count': 0, 'edge_count': 0}
 
 
 @app.get('/api/v1/users/{user_id}/kbs')

@@ -138,6 +138,7 @@
                 }
                 
                 renderDocuments();
+                updateStats(); // 确保在数据加载后更新统计
             } catch (error) {
                 console.error('Error loading documents:', error);
                 // 回退到本地存储
@@ -156,6 +157,7 @@
                 }
                 
                 renderDocuments();
+                updateStats();
             }
         }
 

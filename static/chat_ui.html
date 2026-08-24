@@ -226,6 +226,17 @@
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
                     let assistantMessage = '';
+                    let currentMessageDiv = null;
+                    
+                    // 创建消息容器
+                    currentMessageDiv = document.createElement('div');
+                    currentMessageDiv.className = 'message assistant';
+                    currentMessageDiv.innerHTML = `
+                        <div class="message-content">
+                            <div class="typing-text">正在思考...</div>
+                        </div>
+                    `;
+                    document.getElementById('chatMessages').appendChild(currentMessageDiv);
                     
                     while (true) {
                         const { done, value } = await reader.read();
@@ -242,7 +253,14 @@
                                 try {
                                     const parsed = JSON.parse(data);
                                     if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
-                                        assistantMessage += parsed.choices[0].delta.content || '';
+                                        const content = parsed.choices[0].delta.content || '';
+                                        assistantMessage += content;
+                                        
+                                        // 更新消息内容
+                                        const messageContent = currentMessageDiv.querySelector('.message-content');
+                                        if (messageContent) {
+                                            messageContent.innerHTML = assistantMessage.replace(/\n/g, '<br>');
+                                        }
                                     }
                                 } catch (e) {
                                     console.error('Error parsing SSE data:', e);
@@ -251,8 +269,25 @@
                         }
                     }
                     
-                    // 添加助手回复
-                    addMessage('assistant', assistantMessage, []);
+                    // 最终更新消息
+                    if (assistantMessage) {
+                        const messageContent = currentMessageDiv.querySelector('.message-content');
+                        if (messageContent) {
+                            messageContent.innerHTML = assistantMessage.replace(/\n/g, '<br>');
+                        }
+                    } else {
+                        // 如果没有内容，显示默认消息
+                        const messageContent = currentMessageDiv.querySelector('.message-content');
+                        if (messageContent) {
+                            messageContent.innerHTML = '抱歉，我无法生成回答。请检查后端服务是否正常运行。';
+                        }
+                    }
+                    
+                    // 添加时间戳
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    timeDiv.textContent = new Date().toLocaleTimeString();
+                    currentMessageDiv.appendChild(timeDiv);
                     
                     // 添加到对话上下文
                     conversationContext.push({ role: 'assistant', content: assistantMessage });
@@ -261,7 +296,7 @@
                     updateChatHistory(message, assistantMessage);
                 } else {
                     const errorData = await response.json();
-                    addMessage('assistant', '❌ 抱歉，搜索失败: ' + (errorData.error || errorData.message || '未知错误'));
+                    addMessage('assistant', `❌ 网络错误: ${errorData.error || errorData.message || 'Unknown error'}`, []);
                 }
             } catch (error) {
                 document.getElementById('typingIndicator').classList.remove('active');
