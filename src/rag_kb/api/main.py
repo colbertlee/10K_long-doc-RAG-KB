@@ -572,13 +572,14 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
         return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode}
 
 
-async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
-    """Stream answer from LightRAG in SSE format.
+async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> AsyncIterator[str]:
+    """Stream answer from LightRAG in SSE format with citations.
     
     Args:
         rag: LightRAG adapter instance
         prompt: Query prompt
         mode: Query mode
+        with_citations: Whether to include citations
         
     Yields:
         SSE-formatted response chunks
@@ -598,7 +599,83 @@ async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
     
     if buf:
         yield 'data: ' + json.dumps({'choices': [{'delta': {'content': buf}}]}) + SSE_END
+    
+    # Add citations if requested
+    if with_citations:
+        try:
+            sources = _get_search_sources(rag, prompt, mode)
+            if sources:
+                citations_text = "\n\n**参考来源：**\n"
+                for i, source in enumerate(sources[:5], 1):
+                    doc_id = source.get('doc_id', f"doc_{i}")
+                    title = source.get('title', f"文档 {i}")
+                    citations_text += f"{i}. [{title}](#doc-{doc_id})\n"
+                
+                payload = json.dumps({'choices': [{'delta': {'content': citations_text}}]})
+                yield 'data: ' + payload + SSE_END
+        except Exception as e:
+            print(f"Error adding citations: {e}")
+    
     yield 'data: [DONE]' + SSE_END
+
+
+def _get_search_sources(rag, query, mode='hybrid') -> List[Dict[str, Any]]:
+    """Get search sources for citations.
+    
+    Args:
+        rag: LightRAG adapter instance
+        query: Search query
+        mode: Search mode
+        
+    Returns:
+        List of source documents
+    """
+    try:
+        from rag_kb.retrieval import BM25Search, HybridSearch
+        
+        bm25_index_path = settings.data_dir / 'bm25_index.json'
+        
+        if mode == 'hybrid':
+            bm25 = BM25Search()
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
+            results = hybrid.search(query, top_k=5, use_bm25=True, use_lightrag=True)
+            
+            sources = []
+            for result in results:
+                sources.append({
+                    'doc_id': result.get('doc_id', ''),
+                    'title': result.get('title', 'Unknown'),
+                    'score': result.get('score', 0.0),
+                    'text': result.get('text', '')[:200]
+                })
+            return sources
+        
+        elif mode == 'bm25':
+            bm25 = BM25Search()
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            results = bm25.search(query, top_k=5)
+            
+            sources = []
+            for result in results:
+                sources.append({
+                    'doc_id': result.get('id', ''),
+                    'title': result.get('title', 'Unknown'),
+                    'score': result.get('score', 0.0),
+                    'text': result.get('text', '')[:200]
+                })
+            return sources
+        
+        else:  # lightrag mode
+            return []
+            
+    except Exception as e:
+        print(f"Error getting search sources: {e}")
+        return []
 
 
 @app.post('/api/v1/evaluate')
@@ -1002,6 +1079,12 @@ async def chat_completions(body: dict):
     except Exception as e:
         # Return error as JSON instead of streaming
         return {'error': str(e), 'message': 'Chat completion failed'}
+
+
+@app.get('/enhanced-search')
+async def enhanced_search_ui():
+    """Enhanced search interface with hybrid retrieval and multi-modal interaction."""
+    return FileResponse('static/enhanced_search.html')
 
 
 @app.get('/chat-ui')

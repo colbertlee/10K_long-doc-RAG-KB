@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强搜索 - 混合检索 + 多形态交互</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2em; margin-bottom: 10px; }
+        
+        .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        
+        .sidebar { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .sidebar h3 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        
+        .filter-group { margin-bottom: 20px; }
+        .filter-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .filter-group select, .filter-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        
+        .search-area { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-box input { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .search-box input:focus { border-color: #667eea; outline: none; }
+        .search-box button { padding: 15px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        .search-box button:hover { background: #5568d3; }
+        
+        .search-modes { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-mode { padding: 10px 20px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; background: white; }
+        .search-mode.active { border-color: #667eea; background: #667eea; color: white; }
+        
+        .results-area { margin-top: 20px; }
+        .result-item { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea; }
+        .result-item h4 { color: #333; margin-bottom: 10px; }
+        .result-item p { color: #666; line-height: 1.6; }
+        .result-item .meta { color: #999; font-size: 0.9em; margin-top: 10px; }
+        
+        .chat-area { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
+        .chat-messages { max-height: 400px; overflow-y: auto; margin-bottom: 20px; }
+        .message { padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .message.user { background: #e3f2fd; align-self: flex-end; }
+        .message.assistant { background: #f5f5f5; align-self: flex-start; }
+        .message .citations { margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.9em; }
+        .message .citations a { color: #667eea; text-decoration: none; }
+        .message .citations a:hover { text-decoration: underline; }
+        
+        .loading { text-align: center; padding: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 增强搜索 - 混合检索 + 多形态交互</h1>
+            <p>智能对话 | 关键词搜索 | 分类筛选</p>
+        </div>
+
+        <div class="main-layout">
+            <!-- 侧边栏：分类与元数据筛选 -->
+            <div class="sidebar">
+                <h3>📁 分类筛选</h3>
+                
+                <div class="filter-group">
+                    <label>文档类型</label>
+                    <select id="doc-type-filter">
+                        <option value="">全部类型</option>
+                        <option value="pdf">PDF文档</option>
+                        <option value="txt">文本文件</option>
+                        <option value="md">Markdown</option>
+                        <option value="docx">Word文档</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>创建时间</label>
+                    <select id="time-filter">
+                        <option value="">全部时间</option>
+                        <option value="today">今天</option>
+                        <option value="week">最近一周</option>
+                        <option value="month">最近一月</option>
+                        <option value="year">最近一年</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>部门</label>
+                    <select id="dept-filter">
+                        <option value="">全部部门</option>
+                        <option value="Engineering">工程部</option>
+                        <option value="Marketing">市场部</option>
+                        <option value="Sales">销售部</option>
+                        <option value="HR">人力资源</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>访问级别</label>
+                    <select id="level-filter">
+                        <option value="">全部级别</option>
+                        <option value="Internal">内部</option>
+                        <option value="Confidential">机密</option>
+                        <option value="Public">公开</option>
+                    </select>
+                </div>
+                
+                <button onclick="applyFilters()" style="width: 100%; padding: 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">应用筛选</button>
+            </div>
+
+            <!-- 主搜索区域 -->
+            <div class="search-area">
+                <h3>🔍 混合搜索</h3>
+                
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="输入自然语言问题或关键词搜索...">
+                    <button onclick="performSearch()">搜索</button>
+                </div>
+                
+                <div class="search-modes">
+                    <div class="search-mode active" onclick="setSearchMode('hybrid')" data-mode="hybrid">混合检索</div>
+                    <div class="search-mode" onclick="setSearchMode('semantic')" data-mode="semantic">语义检索</div>
+                    <div class="search-mode" onclick="setSearchMode('keyword')" data-mode="keyword">关键词检索</div>
+                </div>
+                
+                <div class="results-area" id="search-results">
+                    <div class="loading">输入查询开始搜索...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 智能对话区域 -->
+        <div class="chat-area">
+            <h3>💬 智能对话</h3>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant">
+                    <p>您好！我是智能助手，可以帮您搜索和回答问题。您可以：</p>
+                    <ul>
+                        <li>输入自然语言问题，我会基于检索到的上下文回答</li>
+                        <li>搜索具体的关键词、错误代码或型号</li>
+                        <li>使用侧边栏筛选特定类型的文档</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="chat-input" placeholder="输入您的问题..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        let currentSearchMode = 'hybrid';
+        let currentFilters = {};
+
+        function setSearchMode(mode) {
+            currentSearchMode = mode;
+            document.querySelectorAll('.search-mode').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+        }
+
+        function applyFilters() {
+            currentFilters = {
+                docType: document.getElementById('doc-type-filter').value,
+                time: document.getElementById('time-filter').value,
+                dept: document.getElementById('dept-filter').value,
+                level: document.getElementById('level-filter').value
+            };
+            performSearch();
+        }
+
+        async function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            const resultsDiv = document.getElementById('search-results');
+            
+            if (!searchInput.value.trim()) {
+                alert('请输入搜索内容');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading">搜索中...</div>';
+
+            try {
+                let mode = 'hybrid';
+                if (currentSearchMode === 'semantic') mode = 'lightrag';
+                if (currentSearchMode === 'keyword') mode = 'bm25';
+
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="result-item"><h4>搜索失败</h4><p>${data.error}</p></div>`;
+                } else {
+                    const sources = data.sources || [];
+                    let html = `<div class="result-item"><h4>搜索结果 (${data.mode}模式)</h4><p><strong>答案：</strong>${data.answer}</p>`;
+                    
+                    if (sources.length > 0) {
+                        html += '<div class="meta"><strong>来源文档：</strong><ul>';
+                        sources.forEach((source, i) => {
+                            html += `<li><a href="#doc-${source.doc_id || source.id}">${source.title || '文档 ' + (i+1)}</a> (分数: ${(source.score || 0).toFixed(2)})</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+                    
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item"><h4>搜索失败</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function sendChatMessage() {
+            const chatInput = document.getElementById('chat-input');
+            const messagesDiv = document.getElementById('chat-messages');
+            
+            if (!chatInput.value.trim()) {
+                return;
+            }
+
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.innerHTML = `<p>${chatInput.value}</p>`;
+            messagesDiv.appendChild(userMessage);
+            
+            const query = chatInput.value;
+            chatInput.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Add loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant loading';
+            loadingDiv.innerHTML = '<p>正在思考...</p>';
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{ content: query }],
+                        mode: currentSearchMode === 'hybrid' ? 'hybrid' : 'lightrag'
+                    })
+                });
+
+                // Remove loading indicator
+                messagesDiv.removeChild(loadingDiv);
+
+                // Add assistant message
+                const assistantMessage = document.createElement('div');
+                assistantMessage.className = 'message assistant';
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') break;
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
+                                    fullResponse += parsed.choices[0].delta.content || '';
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+                
+                assistantMessage.innerHTML = `<p>${fullResponse.replace(/\n/g, '<br>')}</p>`;
+                messagesDiv.appendChild(assistantMessage);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                
+            } catch (error) {
+                messagesDiv.removeChild(loadingDiv);
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'message assistant';
+                errorMessage.innerHTML = `<p>❌ 网络错误: ${error.message}</p>`;
+                messagesDiv.appendChild(errorMessage);
+            }
+        }
+    </script>
+</body>
+</html>

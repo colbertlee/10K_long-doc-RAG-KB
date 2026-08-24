@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.14] - 2026-08-24
+
+### Added
+- **Enhanced Search Interface**: New multi-modal interaction interface with hybrid retrieval
+- **Smart Chat with Citations**: Intelligent dialogue with document references and jump links
+- **Keyword/Semantic Hybrid Search**: Combined search box supporting both natural language and keyword queries
+- **Faceted Search**: Sidebar with document type, time, department, and access level filters
+- **Enhanced Reranking**: Improved lightweight reranker with bge-reranker-base model
+- **Weighted Hybrid Search**: Configurable BM25 and LightRAG weights in fusion
+- **Citation System**: Automatic source citations in chat responses with document links
+- **Search Mode Selection**: User-selectable search modes (hybrid, semantic, keyword)
+
+### Enhanced
+- **Hybrid Search Logic**: Enhanced RRF fusion with configurable weights and reranking
+- **Cross-Encoder Integration**: Better integration with BAAI/bge-reranker-base model
+- **Multi-Stage Reranking**: Pipeline for multi-stage reranking with metadata consideration
+- **User Experience**: Improved interface with real-time search and chat capabilities
+- **Result Presentation**: Better result display with scores, sources, and metadata
+
+### Technical
+- **New Enhanced Search UI**: Dedicated interface for multi-modal search interaction
+- **Citation API**: Enhanced streaming with citation generation
+- **Filter System**: Client-side and server-side filtering capabilities
+- **Reranker Pipeline**: Improved reranking with fallback mechanisms
+
 ## [0.5.13] - 2026-08-24
 
 ### Added
