@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.1 (Stable)  
+**Current Version**: v0.5.2 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.1 adds reliable startup scripts and confirms all version display issues are resolved.
+> **Version Note**: v0.5.2 introduces a unified main interface that integrates all features into a single page, eliminating the need for users to remember multiple URLs.
 
 ## Features
 
@@ -240,6 +240,13 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.2 (2026-08-24) - Unified Main Interface
+- **Added**: main_ui.html as single-page application for all features
+- **Added**: Tabbed navigation for document upload, search, graph, status, and docs
+- **Added**: Embedded graph viewer with iframe integration
+- **Changed**: Root endpoint now serves unified main interface
+- **Improved**: User experience with single landing page for all functions
 
 ### v0.5.1 (2026-08-24) - Reliable Startup Scripts
 - **Added**: start_server.ps1 and start_server.bat for reliable server startup

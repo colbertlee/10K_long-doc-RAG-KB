@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-08-24
+
+### Added
+- **Unified Main Interface**: Created main_ui.html as single-page application for all features
+- **Tabbed Navigation**: Integrated document upload, search, graph, status, and docs in one interface
+- **Embedded Graph Viewer**: Added iframe integration for knowledge graph visualization
+- **Simplified User Experience**: Users no longer need to remember multiple URLs
+
+### Changed
+- **Root Endpoint**: Root endpoint now serves unified main interface instead of JSON
+- **User Experience**: All major functions accessible from single landing page
+- **Navigation**: Tab-based navigation for better user experience
+
 ## [0.5.1] - 2026-08-24
 
 ### Added

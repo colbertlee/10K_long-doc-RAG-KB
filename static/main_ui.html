@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG知识库 - 统一管理界面</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .tabs { display: flex; background: white; border-radius: 10px; padding: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; border-radius: 8px; transition: all 0.3s; font-weight: 600; color: #666; }
+        .tab:hover { background: #f0f0f0; }
+        .tab.active { background: #667eea; color: white; }
+        .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: none; }
+        .card.active { display: block; }
+        .card h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .form-group textarea { height: 100px; resize: vertical; }
+        .btn { background: #667eea; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        .btn:hover { background: #5568d3; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 4px solid #667eea; }
+        .success { background: #d4edda; color: #155724; border-left-color: #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left-color: #dc3545; }
+        .loading { text-align: center; padding: 20px; color: #666; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .status-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .status-label { font-weight: 600; color: #555; }
+        .status-value { color: #667eea; font-weight: 600; }
+        .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .link-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; text-decoration: none; color: #333; transition: all 0.3s; }
+        .link-card:hover { background: #667eea; color: white; transform: translateY(-5px); }
+        .link-card h3 { margin-bottom: 10px; }
+        .link-card p { font-size: 0.9em; color: #666; }
+        .link-card:hover p { color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 RAG知识库 - 统一管理界面</h1>
+            <p>文档上传、智能查询、知识图谱 - 一站式解决方案</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('upload')">📤 文档上传</div>
+            <div class="tab" onclick="showTab('search')">🔍 智能查询</div>
+            <div class="tab" onclick="showTab('graph')">🕸️ 知识图谱</div>
+            <div class="tab" onclick="showTab('status')">📊 系统状态</div>
+            <div class="tab" onclick="showTab('docs')">📚 文档链接</div>
+        </div>
+
+        <!-- 文档上传卡片 -->
+        <div id="upload-card" class="card active">
+            <h2>📤 文档上传</h2>
+            <div class="form-group">
+                <label>选择文件</label>
+                <input type="file" id="file-input" accept=".pdf,.txt,.docx,.md">
+            </div>
+            <div class="form-group">
+                <label>部门</label>
+                <select id="dept-select">
+                    <option value="">选择部门</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Sales">Sales</option>
+                    <option value="HR">HR</option>
+                    <option value="Finance">Finance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>密级</label>
+                <select id="level-select">
+                    <option value="Internal">Internal</option>
+                    <option value="Confidential">Confidential</option>
+                    <option value="Secret">Secret</option>
+                </select>
+            </div>
+            <button class="btn" onclick="uploadFile()">上传文档</button>
+            <div id="upload-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- 智能查询卡片 -->
+        <div id="search-card" class="card">
+            <h2>🔍 智能查询</h2>
+            <div class="form-group">
+                <label>搜索查询</label>
+                <textarea id="search-input" placeholder="输入您的问题..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>搜索模式</label>
+                <select id="search-mode">
+                    <option value="hybrid">混合检索</option>
+                    <option value="naive">简单检索</option>
+                    <option value="local">本地检索</option>
+                    <option value="global">全局检索</option>
+                </select>
+            </div>
+            <button class="btn" onclick="searchDocuments()">搜索</button>
+            <div id="search-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- 知识图谱卡片 -->
+        <div id="graph-card" class="card">
+            <h2>🕸️ 知识图谱</h2>
+            <div class="form-group">
+                <label>图谱操作</label>
+                <select id="graph-action">
+                    <option value="view">查看图谱</option>
+                    <option value="refresh">刷新图谱</option>
+                    <option value="export">导出图谱</option>
+                </select>
+            </div>
+            <button class="btn" onclick="handleGraphAction()">执行操作</button>
+            <div id="graph-result" class="result" style="display: none;"></div>
+            <div style="margin-top: 20px; text-align: center;">
+                <iframe src="/graph-ui" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px;"></iframe>
+            </div>
+        </div>
+
+        <!-- 系统状态卡片 -->
+        <div id="status-card" class="card">
+            <h2>📊 系统状态</h2>
+            <div id="system-status" class="loading">检查系统状态...</div>
+        </div>
+
+        <!-- 文档链接卡片 -->
+        <div id="docs-card" class="card">
+            <h2>📚 文档和工具链接</h2>
+            <div class="link-grid">
+                <a href="/docs" class="link-card" target="_blank">
+                    <h3>📖 API文档</h3>
+                    <p>完整的API接口文档</p>
+                </a>
+                <a href="/chat-ui" class="link-card" target="_blank">
+                    <h3>💬 聊天界面</h3>
+                    <p>对话式查询界面</p>
+                </a>
+                <a href="/knowledge-manager" class="link-card" target="_blank">
+                    <h3>🗂️ 知识管理</h3>
+                    <p>知识库管理界面</p>
+                </a>
+                <a href="/static/simple_ui.html" class="link-card" target="_blank">
+                    <h3>🎯 简易界面</h3>
+                    <p>简化的操作界面</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        function showTab(tabName) {
+            // Hide all cards
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            // Show selected card
+            document.getElementById(tabName + '-card').classList.add('active');
+            // Activate selected tab
+            event.target.classList.add('active');
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const deptSelect = document.getElementById('dept-select');
+            const levelSelect = document.getElementById('level-select');
+            const resultDiv = document.getElementById('upload-result');
+
+            if (!fileInput.files[0]) {
+                alert('请选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('dept', deptSelect.value);
+            formData.append('level', levelSelect.value);
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '上传中...';
+
+            try {
+                const response = await fetch(`${API_BASE}/ingest`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>上传成功!</strong><br>
+                    文档ID: ${data.doc_id}<br>
+                    标题: ${data.title}<br>
+                    页数: ${data.pages}
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '上传失败: ' + error.message;
+            }
+        }
+
+        async function searchDocuments() {
+            const searchInput = document.getElementById('search-input');
+            const searchMode = document.getElementById('search-mode');
+            const resultDiv = document.getElementById('search-result');
+
+            if (!searchInput.value.trim()) {
+                alert('请输入搜索查询');
+                return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '搜索中...';
+
+            try {
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${searchMode.value}`);
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>搜索结果:</strong><br>
+                    <p>答案: ${data.answer}</p>
+                    <p>来源数量: ${data.sources.length}</p>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '搜索失败: ' + error.message;
+            }
+        }
+
+        function handleGraphAction() {
+            const action = document.getElementById('graph-action').value;
+            const resultDiv = document.getElementById('graph-result');
+            
+            resultDiv.style.display = 'block';
+            
+            if (action === 'view') {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '图谱显示在下方iframe中';
+            } else if (action === 'refresh') {
+                resultDiv.className = 'result loading';
+                resultDiv.textContent = '刷新图谱...';
+                setTimeout(() => {
+                    document.querySelector('iframe').src = '/graph-ui';
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '图谱已刷新';
+                }, 1000);
+            } else if (action === 'export') {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '图谱导出功能需要通过知识图谱界面操作';
+            }
+        }
+
+        async function checkSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `
+                    <div class="status-item">
+                        <span class="status-label">系统状态</span>
+                        <span class="status-value">${data.status}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">API版本</span>
+                        <span class="status-value">v0.5.1</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">服务地址</span>
+                        <span class="status-value">http://localhost:8000</span>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '无法连接到服务器';
+            }
+        }
+
+        // 页面加载时检查系统状态
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>

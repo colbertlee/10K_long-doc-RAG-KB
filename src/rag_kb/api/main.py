@@ -31,18 +31,43 @@ else:
 
 @app.get('/')
 def root():
-    """Root endpoint with system information."""
-    return {
-        'message': 'RAG KB API Server',
-        'version': __version__,
-        'endpoints': {
-            'health': '/health',
-            'api_docs': '/docs',
-            'chat_ui': '/chat-ui',
-            'graph_ui': '/graph-ui',
-            'knowledge_manager': '/knowledge-manager'
+    """Root endpoint with unified interface."""
+    try:
+        main_ui_file = static_dir / "main_ui.html"
+        if main_ui_file.exists():
+            content = main_ui_file.read_text(encoding='utf-8')
+            return HTMLResponse(content=content)
+        else:
+            # Fallback to simple UI if main UI doesn't exist
+            simple_ui_file = static_dir / "simple_ui.html"
+            if simple_ui_file.exists():
+                content = simple_ui_file.read_text(encoding='utf-8')
+                return HTMLResponse(content=content)
+            else:
+                return {
+                    'message': 'RAG KB API Server',
+                    'version': __version__,
+                    'endpoints': {
+                        'health': '/health',
+                        'api_docs': '/docs',
+                        'chat_ui': '/chat-ui',
+                        'graph_ui': '/graph-ui',
+                        'knowledge_manager': '/knowledge-manager'
+                    }
+                }
+    except Exception as e:
+        return {
+            'message': 'RAG KB API Server',
+            'version': __version__,
+            'error': str(e),
+            'endpoints': {
+                'health': '/health',
+                'api_docs': '/docs',
+                'chat_ui': '/chat-ui',
+                'graph_ui': '/graph-ui',
+                'knowledge_manager': '/knowledge-manager'
+            }
         }
-    }
 
 
 @app.get('/health')
@@ -152,16 +177,31 @@ async def chat_completions(body: dict):
 @app.get('/chat-ui')
 async def chat_ui():
     """Chat interface endpoint."""
-    chat_file = static_dir / "chat_ui.html"
-    if chat_file.exists():
-        return HTMLResponse(content=chat_file.read_text(encoding='utf-8'))
-    else:
-        return HTMLResponse(content="""
+    try:
+        chat_file = static_dir / "chat_ui.html"
+        if chat_file.exists():
+            content = chat_file.read_text(encoding='utf-8')
+            return HTMLResponse(content=content)
+        else:
+            return HTMLResponse(content=f"""
+            <html>
+            <head><title>RAG KB Chat Interface</title></head>
+            <body>
+            <h1>RAG KB Chat Interface</h1>
+            <p>Chat interface not found. Please ensure static files are properly configured.</p>
+            <p>Static directory: {static_dir}</p>
+            <p>Available endpoints: <a href="/docs">API Documentation</a></p>
+            </body>
+            </html>
+            """)
+    except Exception as e:
+        return HTMLResponse(content=f"""
         <html>
-        <head><title>RAG KB Chat Interface</title></head>
+        <head><title>Chat Interface Error</title></head>
         <body>
-        <h1>RAG KB Chat Interface</h1>
-        <p>Chat interface not found. Please ensure static files are properly configured.</p>
+        <h1>Chat Interface Error</h1>
+        <p>Error loading chat interface: {str(e)}</p>
+        <p>Static directory: {static_dir}</p>
         <p>Available endpoints: <a href="/docs">API Documentation</a></p>
         </body>
         </html>
@@ -191,20 +231,27 @@ async def graph_ui():
 @app.get('/knowledge-manager')
 async def knowledge_manager():
     """Unified knowledge management interface."""
-    km_file = static_dir / "knowledge_manager.html"
-    if km_file.exists():
-        return HTMLResponse(content=km_file.read_text(encoding='utf-8'))
-    else:
-        return HTMLResponse(content="""
-        <html>
-        <head><title>Knowledge Manager</title></head>
-        <body>
-        <h1>Knowledge Manager</h1>
-        <p>Knowledge manager interface not found. Please ensure static files are properly configured.</p>
-        <p>Available endpoints: <a href="/docs">API Documentation</a></p>
-        </body>
-        </html>
-        """)
+    try:
+        km_file = static_dir / "knowledge_manager.html"
+        if km_file.exists():
+            content = km_file.read_text(encoding='utf-8')
+            return HTMLResponse(content=content)
+        else:
+            html_content = "<html><head><title>Knowledge Manager</title></head><body>"
+            html_content += "<h1>Knowledge Manager</h1>"
+            html_content += "<p>Knowledge manager interface not found. Please ensure static files are properly configured.</p>"
+            html_content += "<p>Static directory: " + str(static_dir) + "</p>"
+            html_content += "<p>Available endpoints: <a href=\"/docs\">API Documentation</a></p>"
+            html_content += "</body></html>"
+            return HTMLResponse(content=html_content)
+    except Exception as e:
+        html_content = "<html><head><title>Knowledge Manager Error</title></head><body>"
+        html_content += "<h1>Knowledge Manager Error</h1>"
+        html_content += "<p>Error loading knowledge manager: " + str(e) + "</p>"
+        html_content += "<p>Static directory: " + str(static_dir) + "</p>"
+        html_content += "<p>Available endpoints: <a href=\"/docs\">API Documentation</a></p>"
+        html_content += "</body></html>"
+        return HTMLResponse(content=html_content)
 
 
 if __name__ == '__main__':
