@@ -637,7 +637,7 @@ async def get_documents():
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid'):
+async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid'):
     """Search the RAG knowledge base with multiple modes.
     
     Args:
@@ -679,30 +679,30 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
             hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
             results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
             
-            # Generate answer using LightRAG
+            # Generate answer using LightRAG with specified query mode
             try:
-                lightrag_answer = rag.query(q, mode='hybrid')
+                lightrag_answer = rag.query(q, mode=query_mode)
                 if not lightrag_answer or lightrag_answer == "":
                     lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
             except Exception as e:
                 lightrag_answer = f"LightRAG查询失败: {str(e)}"
             
-            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid'}
+            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode}
             
         else:  # lightrag mode (default)
             rag = LightRAGAdapter()
             try:
-                answer = rag.query(q, mode='hybrid')
+                answer = rag.query(q, mode=query_mode)
                 if not answer or answer == "":
                     answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'status': 'no_documents'}
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag'}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'status': 'no_documents'}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode}
             except Exception as e:
                 answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'error': str(e)}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'error': str(e)}
             
     except Exception as e:
-        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode}
+        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> AsyncIterator[str]:

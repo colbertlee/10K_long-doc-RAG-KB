@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.16] - 2026-08-24
+
+### Added
+- **LightRAG Multi-Mode Query Selector**: Frontend interface for selecting LightRAG query modes (naive, local, global, hybrid)
+- **Query Mode Integration**: Backend support for LightRAG query modes in search API
+- **Intent-Based Query Routing**: Support for different query intents (local entity questions, global summaries, hybrid)
+- **Enhanced Search Interface**: Added LightRAG query mode selector to enhanced search UI
+- **Query Mode Descriptions**: User-friendly descriptions for each query mode use case
+
+### Enhanced
+- **Search Flexibility**: Users can now choose between different LightRAG query strategies
+- **Query Intent Matching**: Better alignment between user intent and search strategy
+- **User Control**: Advanced users can manually select query modes, while hybrid mode remains default
+- **API Response**: Search API now returns both search mode and query mode information
+
+### Technical
+- **Search API Enhancement**: Added query_mode parameter to search endpoint
+- **LightRAG Integration**: Deeper integration with LightRAG's multi-mode capabilities
+- **Frontend Controls**: UI controls for query mode selection with descriptions
+
 ## [0.5.15] - 2026-08-24
 
 ### Added

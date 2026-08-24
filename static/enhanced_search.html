@@ -36,9 +36,13 @@
         .search-box button { padding: 15px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; }
         .search-box button:hover { background: #5568d3; }
         
-        .search-modes { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-modes { display: flex; gap: 10px; margin-bottom: 15px; }
         .search-mode { padding: 10px 20px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; background: white; }
         .search-mode.active { border-color: #667eea; background: #667eea; color: white; }
+        
+        .query-modes { margin-bottom: 15px; }
+        .query-modes label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .query-modes select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
         
         .results-area { margin-top: 20px; }
         .result-item { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea; }
@@ -131,6 +135,16 @@
                     <div class="search-mode" onclick="setSearchMode('keyword')" data-mode="keyword">关键词检索</div>
                 </div>
                 
+                <div class="query-modes">
+                    <label>LightRAG查询模式:</label>
+                    <select id="query-mode" onchange="setQueryMode()">
+                        <option value="hybrid">混合模式 (推荐)</option>
+                        <option value="local">局部模式 (实体问答)</option>
+                        <option value="global">全局模式 (宏观总结)</option>
+                        <option value="naive">简单模式</option>
+                    </select>
+                </div>
+                
                 <div class="results-area" id="search-results">
                     <div class="loading">输入查询开始搜索...</div>
                 </div>
@@ -171,6 +185,7 @@
     <script>
         const API_BASE = 'http://localhost:8000/api/v1';
         let currentSearchMode = 'hybrid';
+        let currentQueryMode = 'hybrid';
         let currentFilters = {};
         let miniCy = null;
 
@@ -178,6 +193,10 @@
             currentSearchMode = mode;
             document.querySelectorAll('.search-mode').forEach(el => el.classList.remove('active'));
             document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+        }
+
+        function setQueryMode() {
+            currentQueryMode = document.getElementById('query-mode').value;
         }
 
         function applyFilters() {
@@ -208,7 +227,7 @@
                 if (currentSearchMode === 'semantic') mode = 'lightrag';
                 if (currentSearchMode === 'keyword') mode = 'bm25';
 
-                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}`);
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}&query_mode=${currentQueryMode}`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -370,7 +389,7 @@
                 if (currentSearchMode === 'semantic') mode = 'lightrag';
                 if (currentSearchMode === 'keyword') mode = 'bm25';
 
-                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}`);
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}&query_mode=${currentQueryMode}`);
                 const data = await response.json();
                 
                 if (data.error) {
