@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-08-24
+
+### Added
+- **Reliable Startup Scripts**: Added start_server.ps1 and start_server.bat for reliable server startup
+- **Enhanced Startup Logging**: Added detailed logging in startup scripts for debugging
+- **PYTHONPATH Configuration**: Automatic PYTHONPATH configuration in startup scripts
+
+### Fixed
+- **Version Display**: Confirmed dynamic version import working correctly
+- **Import Issues**: Resolved all import and version display issues
+- **Startup Reliability**: Created foolproof startup methods
+
 ## [0.5.0] - 2026-08-24
 
 ### Fixed
