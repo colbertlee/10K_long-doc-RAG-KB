@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-08-24
+
+### Fixed
+- **Static Directory Path**: Fixed static directory path calculation to properly navigate to project root
+- **Changed**: Path from `Path(__file__).parent.parent / "static"` to `Path(__file__).parent.parent.parent.parent / "static"`
+- **Added**: Warning message when static directory is not found for debugging
+
+### Changed
+- **Path Resolution**: Improved static file path resolution for correct directory navigation
+- **Error Messages**: Enhanced error handling with static directory information
+
 ## [0.4.6] - 2026-08-24
 
 ### Added

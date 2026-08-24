@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.6 (Stable)  
+**Current Version**: v0.4.7 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.6 adds static file serving and fixes static file access, ensuring all HTML interfaces load properly.
+> **Version Note**: v0.4.7 fixes static directory path calculation to properly serve HTML interfaces from the correct location.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.7 (2026-08-24) - Static Directory Path Fix
+- **Fixed**: Static directory path calculation to properly navigate to project root
+- **Changed**: Path resolution from src/rag_kb/api to project root static directory
+- **Added**: Warning message when static directory is not found for debugging
+- **Improved**: Error handling with static directory information
 
 ### v0.4.6 (2026-08-24) - Static File Serving Fix
 - **Added**: StaticFiles mounting for serving static content

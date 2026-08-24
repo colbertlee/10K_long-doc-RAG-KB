@@ -18,12 +18,14 @@ try:
 except Exception as e:
     print(f"Warning: Could not import API routes: {e}")
 
-# Static files directory
-static_dir = Path(__file__).parent.parent / "static"
+# Static files directory - navigate to project root
+static_dir = Path(__file__).parent.parent.parent.parent / "static"
 
 # Mount static files directory
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+else:
+    print(f"Warning: Static directory not found at {static_dir}")
 
 
 @app.get('/')
@@ -160,7 +162,6 @@ async def chat_ui():
         <h1>RAG KB Chat Interface</h1>
         <p>Chat interface not found. Please ensure static files are properly configured.</p>
         <p>Available endpoints: <a href="/docs">API Documentation</a></p>
-        <p>Or use: <a href="/static/simple_ui.html">Simple UI</a></p>
         </body>
         </html>
         """)
