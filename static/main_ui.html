@@ -331,12 +331,18 @@
                 const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${searchMode.value}`);
                 const data = await response.json();
                 
-                resultDiv.className = 'result success';
-                resultDiv.innerHTML = `
-                    <strong>搜索结果:</strong><br>
-                    <p>答案: ${data.answer}</p>
-                    <p>来源数量: ${data.sources.length}</p>
-                `;
+                if (data.error) {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>搜索失败:</strong> ${data.error}<br>${data.message}`;
+                } else {
+                    const sources = data.sources || [];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>搜索结果:</strong><br>
+                        <p>答案: ${data.answer}</p>
+                        <p>来源数量: ${sources.length}</p>
+                    `;
+                }
             } catch (error) {
                 resultDiv.className = 'result error';
                 resultDiv.textContent = '搜索失败: ' + error.message;

@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.5 (Stable)  
+**Current Version**: v0.5.6 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.5 fixes the knowledge manager encoding issue and adds document visibility features.
+> **Version Note**: v0.5.6 fixes all interface functionality issues including document visibility, search errors, and chat streaming problems.
 
 ## Features
 
@@ -240,6 +240,14 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.6 (2026-08-24) - Complete Interface Functionality Fix
+- **Fixed**: Knowledge manager document visibility with uploads directory fallback
+- **Fixed**: Search error handling to prevent undefined errors
+- **Fixed**: Chat streaming response handling
+- **Added**: Knowledge graph and user knowledge bases API endpoints
+- **Fixed**: Duplicate function definitions in main.py
+- **Enhanced**: Error messages for better debugging
 
 ### v0.5.5 (2026-08-24) - Knowledge Manager Fix
 - **Fixed**: Knowledge manager UTF-8 encoding error

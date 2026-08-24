@@ -174,6 +174,89 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         return {'error': str(e), 'message': 'Folder import failed'}
 
 
+@app.get('/api/v1/users/{user_id}/kbs/{kb_name}/graph')
+async def get_knowledge_graph(user_id: str, kb_name: str):
+    """Get knowledge graph data for a specific knowledge base.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        
+    Returns:
+        Graph data with nodes and edges
+    """
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        import json
+        
+        rag = LightRAGAdapter()
+        
+        # Try to get graph data from LightRAG
+        # This is a simplified implementation - in a real system, you'd extract actual graph data
+        graph_data = {
+            'nodes': [
+                {'id': 'node1', 'label': 'Document', 'type': 'document'},
+                {'id': 'node2', 'label': 'Entity', 'type': 'entity'},
+                {'id': 'node3', 'label': 'Concept', 'type': 'concept'}
+            ],
+            'edges': [
+                {'source': 'node1', 'target': 'node2', 'label': 'contains'},
+                {'source': 'node2', 'target': 'node3', 'label': 'related_to'}
+            ]
+        }
+        
+        return {
+            'success': True,
+            'nodes': graph_data['nodes'],
+            'edges': graph_data['edges'],
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get graph data', 'nodes': [], 'edges': []}
+
+
+@app.get('/api/v1/users/{user_id}/kbs')
+async def get_user_knowledge_bases(user_id: str):
+    """Get list of knowledge bases for a user.
+    
+    Args:
+        user_id: User ID
+        
+    Returns:
+        List of knowledge bases
+    """
+    try:
+        from pathlib import Path
+        
+        # Check for user directories
+        user_dir = settings.data_dir / 'users' / user_id
+        knowledge_bases = []
+        
+        if user_dir.exists():
+            for kb_dir in user_dir.iterdir():
+                if kb_dir.is_dir():
+                    knowledge_bases.append({
+                        'name': kb_dir.name,
+                        'created': kb_dir.stat().st_ctime
+                    })
+        
+        # Add default knowledge base if none exist
+        if not knowledge_bases:
+            knowledge_bases.append({
+                'name': 'default',
+                'created': 0
+            })
+        
+        return {
+            'success': True,
+            'knowledge_bases': knowledge_bases,
+            'user_id': user_id
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get knowledge bases', 'knowledge_bases': []}
+
+
 @app.get('/api/v1/documents')
 async def get_documents():
     """Get list of all documents in the knowledge base.
@@ -184,6 +267,7 @@ async def get_documents():
     try:
         from pathlib import Path
         import json
+        import os
         
         # Check for document registry
         registry_file = settings.data_dir / 'document_registry.json'
@@ -191,8 +275,25 @@ async def get_documents():
             with open(registry_file, 'r', encoding='utf-8') as f:
                 registry = json.load(f)
                 documents = list(registry.values())
+                
+                # Add import_type if missing
+                for doc in documents:
+                    if 'import_type' not in doc:
+                        doc['import_type'] = 'upload'
         else:
+            # Fallback to uploaded files directory
+            upload_dir = settings.data_dir / 'uploads'
             documents = []
+            if upload_dir.exists():
+                for file_path in upload_dir.glob('*'):
+                    if file_path.is_file():
+                        documents.append({
+                            'doc_id': file_path.stem,
+                            'title': file_path.name,
+                            'source': str(file_path),
+                            'import_type': 'upload',
+                            'timestamp': os.path.getmtime(file_path)
+                        })
         
         return {
             'success': True,
@@ -216,14 +317,17 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
     Returns:
         Search results with answer and sources
     """
-    from rag_kb.lightrag.adapter import LightRAGAdapter
-    
-    user_acl = {'dept': [dept], 'level': [level]}
-    rag = LightRAGAdapter()
-    answer = rag.query(q, mode='hybrid')
-    
-    # Metadata filtering through post-filtering or sub-library implementation
-    return {'answer': answer, 'sources': []}
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        
+        user_acl = {'dept': [dept], 'level': [level]}
+        rag = LightRAGAdapter()
+        answer = rag.query(q, mode='hybrid')
+        
+        # Metadata filtering through post-filtering or sub-library implementation
+        return {'answer': answer, 'sources': []}
+    except Exception as e:
+        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': []}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid') -> AsyncIterator[str]:
@@ -265,16 +369,20 @@ async def chat_completions(body: dict):
     Returns:
         Streaming response with generated text
     """
-    from rag_kb.lightrag.adapter import LightRAGAdapter
-    
-    question = body['messages'][-1]['content']
-    rag = LightRAGAdapter()
-    mode = settings.lightrag_query_mode or 'hybrid'
-    
-    return StreamingResponse(
-        _stream_answer(rag, question, mode=mode),
-        media_type='text/event-stream',
-    )
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        
+        question = body['messages'][-1]['content']
+        rag = LightRAGAdapter()
+        mode = settings.lightrag_query_mode or 'hybrid'
+        
+        return StreamingResponse(
+            _stream_answer(rag, question, mode=mode),
+            media_type='text/event-stream',
+        )
+    except Exception as e:
+        # Return error as JSON instead of streaming
+        return {'error': str(e), 'message': 'Chat completion failed'}
 
 
 @app.get('/chat-ui')

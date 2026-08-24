@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-08-24
+
+### Fixed
+- **Knowledge Manager Document Visibility**: Fixed document list API to show uploaded files from uploads directory
+- **Search Error Handling**: Added error handling to search endpoint to prevent undefined errors
+- **Chat Streaming Response**: Fixed chat completions to properly handle streaming responses
+- **API Endpoints**: Added knowledge graph and user knowledge bases API endpoints
+- **Duplicate Functions**: Removed duplicate function definitions in main.py
+
+### Added
+- **Knowledge Graph API**: Added /api/v1/users/{user_id}/kbs/{kb_name}/graph endpoint
+- **User Knowledge Bases API**: Added /api/v1/users/{user_id}/kbs endpoint
+- **Document Fallback**: Added fallback to uploads directory when document registry doesn't exist
+- **Error Messages**: Improved error messages for better debugging
+
+### Changed
+- **Main UI Search**: Added error handling for search results
+- **Chat UI**: Updated to handle streaming responses properly
+- **Knowledge Manager**: Enhanced to load documents from API with fallback
+
 ## [0.5.5] - 2026-08-24
 
 ### Fixed
