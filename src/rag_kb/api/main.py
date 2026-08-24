@@ -637,7 +637,102 @@ async def get_documents():
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid'):
+async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all'):
+    """Search the RAG knowledge base with multi-knowledge base support.
+
+    Args:
+        q: Search query
+        dept: Department filter
+        level: Access level filter
+        top_k: Number of results to return
+        mode: Search mode ('lightrag', 'bm25', 'hybrid')
+        query_mode: LightRAG query mode ('naive', 'local', 'global', 'hybrid')
+        category: Product category for multi-knowledge base routing
+
+    Returns:
+        Search results with answer and sources
+    """
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        from rag_kb.retrieval import BM25Search, HybridSearch
+        from rag_kb.multi_kb import multi_kb_manager
+        
+        # Multi-knowledge base routing
+        if category != 'all':
+            # Use product-specific knowledge base
+            kb_result = multi_kb_manager.search_product_kb(
+                product_id=category,
+                query=q,
+                query_mode=query_mode,
+                top_k=top_k
+            )
+            
+            if kb_result.get('error'):
+                # Fallback to global KB if product KB fails
+                print(f"Product KB search failed: {kb_result.get('error')}, falling back to global KB")
+                rag = LightRAGAdapter()
+                answer = rag.query(q, mode=query_mode)
+                return {
+                    'answer': answer,
+                    'sources': [],
+                    'mode': 'lightrag',
+                    'query_mode': query_mode,
+                    'category': category,
+                    'kb_type': 'fallback'
+                }
+            else:
+                return kb_result
+        
+        # Standard search logic for global KB
+        user_acl = {'dept': [dept], 'level': [level]}
+        bm25_index_path = settings.data_dir / 'bm25_index.json'
+        
+        if mode == 'bm25':
+            # BM25-only search
+            bm25 = BM25Search()
+            # Load BM25 index if available
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            results = bm25.search(q, top_k=top_k)
+            answer = f"Found {len(results)} relevant documents using BM25 search."
+            return {'answer': answer, 'sources': results, 'mode': 'bm25', 'query_mode': query_mode, 'category': category}
+            
+        elif mode == 'hybrid':
+            # Hybrid search (BM25 + LightRAG)
+            rag = LightRAGAdapter()
+            bm25 = BM25Search()
+            
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
+            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
+            
+            # Generate answer using LightRAG with specified query mode
+            try:
+                lightrag_answer = rag.query(q, mode=query_mode)
+                if not lightrag_answer or lightrag_answer == "":
+                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
+            except Exception as e:
+                lightrag_answer = f"LightRAG查询失败: {str(e)}"
+            
+            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode, 'category': category}
+            
+        else:  # lightrag mode (default)
+            rag = LightRAGAdapter()
+            try:
+                answer = rag.query(q, mode=query_mode)
+                if not answer or answer == "":
+                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
+                    return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'status': 'no_documents'}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category}
+            except Exception as e:
+                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'error': str(e)}
+            
+    except Exception as e:
+        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode, 'category': category}
     """Search the RAG knowledge base with multiple modes.
     
     Args:
@@ -742,7 +837,13 @@ async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> Asy
                 for i, source in enumerate(sources[:5], 1):
                     doc_id = source.get('doc_id', f"doc_{i}")
                     title = source.get('title', f"文档 {i}")
-                    citations_text += f"{i}. [{title}](#doc-{doc_id})\n"
+                    page_num = source.get('metadata', {}).get('page_number', 'N/A')
+                    chunk_id = source.get('chunk_id', f"chunk_{i}")
+                    
+                    citations_text += f"{i}. [{title}](#doc-{doc_id}) "
+                    if page_num != 'N/A':
+                        citations_text += f"(页码: {page_num}) "
+                    citations_text += f"[{chunk_id}]\n"
                 
                 payload = json.dumps({'choices': [{'delta': {'content': citations_text}}]})
                 yield 'data: ' + payload + SSE_END
@@ -1245,6 +1346,102 @@ async def chat_completions(body: dict):
     except Exception as e:
         # Return error as JSON instead of streaming
         return {'error': str(e), 'message': 'Chat completion failed'}
+
+
+@app.post('/api/v1/multi-kb/register')
+async def register_product_kb(product_data: dict):
+    """Register a new product knowledge base.
+    
+    Args:
+        product_data: Product registration data
+        
+    Returns:
+        Registration results
+    """
+    try:
+        from rag_kb.multi_kb import multi_kb_manager
+        
+        result = multi_kb_manager.register_product_kb(
+            product_id=product_data.get('product_id', ''),
+            product_name=product_data.get('product_name', ''),
+            source_folder=product_data.get('source_folder', ''),
+            kb_name=product_data.get('kb_name', 'default')
+        )
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Product KB registration failed'}
+
+
+@app.get('/api/v1/multi-kb/products')
+async def get_available_products():
+    """Get list of available product knowledge bases.
+    
+    Returns:
+        List of available products
+    """
+    try:
+        from rag_kb.multi_kb import multi_kb_manager
+        
+        products = multi_kb_manager.get_available_products()
+        
+        return {
+            'success': True,
+            'products': products,
+            'total': len(products)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get products', 'products': [], 'total': 0}
+
+
+@app.post('/api/v1/multi-kb/update')
+async def update_product_kb(product_id: str, source_folder: str = None):
+    """Update a product knowledge base with new documents.
+    
+    Args:
+        product_id: Product identifier
+        source_folder: Path to new documentation folder
+        
+    Returns:
+        Update results
+    """
+    try:
+        from rag_kb.multi_kb import multi_kb_manager
+        
+        result = multi_kb_manager.update_product_kb(
+            product_id=product_id,
+            source_folder=source_folder
+        )
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Product KB update failed'}
+
+
+@app.delete('/api/v1/multi-kb/{product_id}')
+async def delete_product_kb(product_id: str):
+    """Delete a product knowledge base.
+    
+    Args:
+        product_id: Product identifier
+        
+    Returns:
+        Deletion results
+    """
+    try:
+        from rag_kb.multi_kb import multi_kb_manager
+        
+        result = multi_kb_manager.delete_product_kb(product_id=product_id)
+        
+        return result
+    except Exception as e:
+        return {'error': str(e), 'message': 'Product KB deletion failed'}
+
+
+@app.get('/multi-kb-selector')
+async def multi_kb_selector_ui():
+    """Multi-knowledge base selector interface."""
+    return FileResponse('static/multi_kb_selector.html')
 
 
 @app.get('/interactive-graph')

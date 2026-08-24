@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.17] - 2026-08-24
+
+### Added
+- **Multi-Knowledge Base System**: Complete implementation of product-specific knowledge base isolation
+- **Product Selector Interface**: Frontend interface with product tabs and dropdown selection
+- **Multi-KB Manager**: Backend manager for handling multiple isolated knowledge bases
+- **Physical Isolation**: Each product gets its own working directory for 100% context isolation
+- **Multi-KB Routing**: Automatic routing of queries to product-specific knowledge bases
+- **Incremental KB Updates**: Product-specific incremental update mechanism
+- **KB Registration API**: API endpoints for registering, updating, and deleting product KBs
+- **Product List API**: API endpoint for listing available product knowledge bases
+- **Enhanced Citations**: Citations now include page numbers and chunk IDs for precise source tracing
+- **Category Parameter**: Search API now supports category parameter for multi-KB routing
+
+### Enhanced
+- **Search API**: Multi-knowledge base support with automatic fallback to global KB
+- **Citation System**: Enhanced citations with page numbers and chunk IDs
+- **Knowledge Base Management**: Complete lifecycle management for product-specific KBs
+- **User Experience**: Product selection for precise knowledge base targeting
+- **Isolation Strategy**: Physical-level isolation prevents cross-product knowledge contamination
+
+### Technical
+- **New Multi-KB Module**: Complete multi-knowledge base management system
+- **Product-Specific Working Directories**: Isolated storage per product
+- **KB Configuration Management**: JSON-based configuration for multiple KBs
+- **Adapter Instance Management**: Efficient management of multiple LightRAG adapters
+- **Fallback Mechanism**: Automatic fallback to global KB when product KB fails
+
 ## [0.5.16] - 2026-08-24
 
 ### Added
