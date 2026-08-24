@@ -637,7 +637,116 @@ async def get_documents():
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all'):
+async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
+    """Search the RAG knowledge base with multi-knowledge base support and automatic intent classification.
+
+    Args:
+        q: Search query
+        dept: Department filter
+        level: Access level filter
+        top_k: Number of results to return
+        mode: Search mode ('lightrag', 'bm25', 'hybrid')
+        query_mode: LightRAG query mode ('naive', 'local', 'global', 'hybrid')
+        category: Product category for multi-knowledge base routing
+        auto_classify: Whether to automatically classify query intent
+
+    Returns:
+        Search results with answer and sources
+    """
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        from rag_kb.retrieval import BM25Search, HybridSearch
+        from rag_kb.multi_kb import multi_kb_manager
+        from rag_kb.intent import intent_classifier
+        
+        # Automatic intent classification if enabled
+        if auto_classify:
+            classification = intent_classifier.classify(q)
+            if classification.confidence > 0.6:
+                # Use classified mode if confidence is high enough
+                if classification.recommended_mode == 'bm25':
+                    mode = 'bm25'
+                elif classification.recommended_mode in ['local', 'global', 'naive']:
+                    query_mode = classification.recommended_mode
+        
+        # Multi-knowledge base routing
+        if category != 'all':
+            # Use product-specific knowledge base
+            kb_result = multi_kb_manager.search_product_kb(
+                product_id=category,
+                query=q,
+                query_mode=query_mode,
+                top_k=top_k
+            )
+            
+            if kb_result.get('error'):
+                # Fallback to global KB if product KB fails
+                print(f"Product KB search failed: {kb_result.get('error')}, falling back to global KB")
+                rag = LightRAGAdapter()
+                answer = rag.query(q, mode=query_mode)
+                return {
+                    'answer': answer,
+                    'sources': [],
+                    'mode': 'lightrag',
+                    'query_mode': query_mode,
+                    'category': category,
+                    'kb_type': 'fallback',
+                    'intent_classification': classification.to_dict() if auto_classify else None
+                }
+            else:
+                kb_result['intent_classification'] = classification.to_dict() if auto_classify else None
+                return kb_result
+        
+        # Standard search logic for global KB
+        user_acl = {'dept': [dept], 'level': [level]}
+        bm25_index_path = settings.data_dir / 'bm25_index.json'
+        
+        if mode == 'bm25':
+            # BM25-only search
+            bm25 = BM25Search()
+            # Load BM25 index if available
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            results = bm25.search(q, top_k=top_k)
+            answer = f"Found {len(results)} relevant documents using BM25 search."
+            return {'answer': answer, 'sources': results, 'mode': 'bm25', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
+            
+        elif mode == 'hybrid':
+            # Hybrid search (BM25 + LightRAG)
+            rag = LightRAGAdapter()
+            bm25 = BM25Search()
+            
+            if bm25_index_path.exists():
+                bm25.load_index(bm25_index_path)
+            
+            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
+            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
+            
+            # Generate answer using LightRAG with specified query mode
+            try:
+                lightrag_answer = rag.query(q, mode=query_mode)
+                if not lightrag_answer or lightrag_answer == "":
+                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
+            except Exception as e:
+                lightrag_answer = f"LightRAG查询失败: {str(e)}"
+            
+            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
+            
+        else:  # lightrag mode (default)
+            rag = LightRAGAdapter()
+            try:
+                answer = rag.query(q, mode=query_mode)
+                if not answer or answer == "":
+                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
+                    return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'status': 'no_documents', 'intent_classification': classification.to_dict() if auto_classify else None}
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'intent_classification': classification.to_dict() if auto_classify else None}
+            except Exception as e:
+                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
+                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'category': category, 'error': str(e), 'intent_classification': classification.to_dict() if auto_classify else None}
+            
+    except Exception as e:
+        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode, 'category': category}
     """Search the RAG knowledge base with multi-knowledge base support.
 
     Args:
@@ -1824,6 +1933,154 @@ async def get_suggestion_categories():
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Failed to get categories', 'categories': {}}
+
+
+@app.get('/api/v1/processing/task/{task_id}')
+async def get_processing_task(task_id: str):
+    """Get processing task status by ID.
+    
+    Args:
+        task_id: Task ID
+        
+    Returns:
+        Task status
+    """
+    try:
+        from rag_kb.processing import processing_tracker
+        
+        task = processing_tracker.get_task(task_id)
+        
+        if task:
+            return {
+                'success': True,
+                'task': task
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Task not found'
+            }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get task status'}
+
+
+@app.get('/api/v1/processing/user/{user_id}')
+async def get_user_processing_tasks(user_id: str):
+    """Get all processing tasks for a user.
+    
+    Args:
+        user_id: User ID
+        
+    Returns:
+        List of user's tasks
+    """
+    try:
+        from rag_kb.processing import processing_tracker
+        
+        tasks = processing_tracker.get_user_tasks(user_id)
+        
+        return {
+            'success': True,
+            'tasks': tasks,
+            'count': len(tasks)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get user tasks', 'tasks': [], 'count': 0}
+
+
+@app.get('/api/v1/processing/kb/{kb_name}/summary')
+async def get_kb_processing_summary(kb_name: str):
+    """Get processing summary for a knowledge base.
+    
+    Args:
+        kb_name: Knowledge base name
+        
+    Returns:
+        Processing summary
+    """
+    try:
+        from rag_kb.processing import processing_tracker
+        
+        summary = processing_tracker.get_processing_summary(kb_name)
+        
+        return {
+            'success': True,
+            'summary': summary
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get processing summary'}
+
+
+@app.get('/api/v1/processing/active')
+async def get_active_processing_tasks():
+    """Get all active processing tasks.
+    
+    Returns:
+        List of active tasks
+    """
+    try:
+        from rag_kb.processing import processing_tracker
+        
+        tasks = processing_tracker.get_active_tasks()
+        
+        return {
+            'success': True,
+            'tasks': tasks,
+            'count': len(tasks)
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to get active tasks', 'tasks': [], 'count': 0}
+
+
+@app.post('/api/v1/processing/cleanup')
+async def cleanup_old_processing_tasks(days: int = 7):
+    """Clean up old processing tasks.
+    
+    Args:
+        days: Number of days to keep
+        
+    Returns:
+        Cleanup result
+    """
+    try:
+        from rag_kb.processing import processing_tracker
+        
+        processing_tracker.cleanup_old_tasks(days)
+        
+        return {
+            'success': True,
+            'message': f'Cleaned up tasks older than {days} days'
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to cleanup tasks'}
+
+
+@app.get('/api/v1/intent/classify')
+async def classify_query_intent(query: str):
+    """Classify query intent for automatic mode selection.
+    
+    Args:
+        query: User query
+        
+    Returns:
+        Intent classification result
+    """
+    try:
+        from rag_kb.intent import intent_classifier
+        
+        classification = intent_classifier.classify(query)
+        
+        return {
+            'success': True,
+            'classification': {
+                'intent': classification.intent.value,
+                'confidence': classification.confidence,
+                'recommended_mode': classification.recommended_mode,
+                'reasoning': classification.reasoning
+            }
+        }
+    except Exception as e:
+        return {'error': str(e), 'message': 'Failed to classify intent'}
 
 
 @app.get('/pdf-preview')

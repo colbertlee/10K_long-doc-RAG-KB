@@ -2,13 +2,14 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.7 (Stable)  
+**Current Version**: v0.5.20 (Latest)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.7 enhances knowledge manager with folder import tracking and file count statistics.
+> **Version Note**: v0.5.20 implements short-term optimizations including intent classification, document processing tracking, and enhanced user experience features.
 
 ## Features
 
+### Core RAG Capabilities
 - **Structure-aware Chunking**: Semantic document segmentation preserving hierarchy and context
 - **LightRAG Integration**: Graph-enhanced retrieval with hybrid/local/global/naive query modes
 - **Multi-format Parsing**: Support for PDF, Word, HTML, and Markdown documents
@@ -18,6 +19,17 @@ An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system d
 - **Windows Native**: Designed for Windows deployment with Ollama local models
 - **Open WebUI Integration**: Modern chat interface for querying
 - **FastAPI Backend**: RESTful API with OpenAI-compatible endpoints
+
+### Advanced Features (v0.5.20)
+- **Multi-Knowledge Base System**: Product-specific knowledge base isolation
+- **Interactive Knowledge Graph**: Entity linking, node tracing, dynamic subgraph display
+- **Complete RAG Workflow**: Standardized three-stage workflow with quality control
+- **PDF Preview with Highlighting**: Precise document preview with paragraph highlighting
+- **User Feedback System**: Comprehensive feedback collection for quality improvement
+- **Search Suggestions**: Intelligent autocomplete and quick question recommendations
+- **Intent Classification**: Automatic query mode selection based on intent
+- **Document Processing Tracking**: Real-time progress tracking for document ingestion
+- **Enhanced Citations**: Page numbers, chunk IDs, and entity information in citations
 
 ## Architecture
 

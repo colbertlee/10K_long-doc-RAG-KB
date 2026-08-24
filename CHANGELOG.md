@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.20] - 2026-08-24
+
+### Added
+- **Intent Classifier**: Lightweight intent classifier for automatic query mode selection
+- **Document Processing Tracker**: Complete tracking system for document processing progress
+- **Processing Status API**: Real-time status queries for document processing tasks
+- **Automatic Mode Selection**: Search API now supports automatic intent-based mode selection
+- **Progress Notifications**: Users can track document processing progress in real-time
+- **Task Management**: Create, update, and query processing tasks
+- **KB Processing Summary**: Get comprehensive processing summary for knowledge bases
+- **Intent Classification API**: API for classifying query intent manually
+- **Processing Cleanup**: Automatic cleanup of old processing tasks
+- **User Task Queries**: Query all processing tasks for a specific user
+
+### Enhanced
+- **User Experience**: Users can now track when their documents are ready for querying
+- **Search Intelligence**: Automatic intent classification improves search accuracy
+- **Processing Visibility**: Real-time progress tracking for document ingestion
+- **Mode Selection**: Intelligent automatic mode selection based on query intent
+- **Task Management**: Better visibility into document processing pipeline
+
+### Technical
+- **New Intent Module**: Complete intent classification system with pattern matching
+- **New Processing Module**: Document processing tracking and notification system
+- **Enhanced Ingestion Pipeline**: Integrated with processing tracker for progress updates
+- **Search API Enhancement**: Added auto_classify parameter for automatic mode selection
+- **Thread-Safe Tracking**: Thread-safe task tracking with locks
+- **JSON Persistence**: Persistent storage for processing tasks and history
+
 ## [0.5.19] - 2026-08-24
 
 ### Added
