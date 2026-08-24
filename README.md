@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.7 (Stable)  
+**Current Version**: v0.4.8 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.7 fixes static directory path calculation to properly serve HTML interfaces from the correct location.
+> **Version Note**: v0.4.8 fixes the virtual environment Python detection in manage.ps1, ensuring the correct Python environment is used for startup.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.8 (2026-08-24) - Virtual Environment Python Fix
+- **Fixed**: manage.ps1 to use virtual environment Python instead of system Python
+- **Added**: Logic to detect and use virtual environment Python when available
+- **Added**: Display of which Python executable is being used for debugging
+- **Changed**: Enhanced manage.ps1 to properly handle virtual environment activation
 
 ### v0.4.7 (2026-08-24) - Static Directory Path Fix
 - **Fixed**: Static directory path calculation to properly navigate to project root

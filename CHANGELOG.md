@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2026-08-24
+
+### Fixed
+- **Virtual Environment Python**: Fixed manage.ps1 to use virtual environment Python instead of system Python
+- **Python Command Detection**: Added logic to detect and use virtual environment Python when available
+- **Version Display**: Added display of which Python executable is being used for debugging
+
+### Changed
+- **Startup Script**: Enhanced manage.ps1 to properly handle virtual environment activation
+- **Python Path**: Ensured correct Python executable is used for uvicorn startup
+
 ## [0.4.7] - 2026-08-24
 
 ### Fixed

@@ -129,9 +129,11 @@ function Start-RAGKB {
     
     # 检查虚拟环境
     Write-Host "🐍 检查虚拟环境..." -ForegroundColor Yellow
+    $pythonCmd = "python"
     if (Test-Path ".venv") {
         Write-Host "✅ 虚拟环境存在" -ForegroundColor Green
-        & ".venv\Scripts\Activate.ps1"
+        $pythonCmd = ".venv\Scripts\python.exe"
+        Write-Host "📍 使用虚拟环境 Python: $pythonCmd" -ForegroundColor Cyan
     } else {
         Write-Host "⚠️  虚拟环境不存在，使用系统 Python" -ForegroundColor Yellow
     }
@@ -146,7 +148,7 @@ function Start-RAGKB {
     try {
         # Set PYTHONPATH to include src directory
         $env:PYTHONPATH = "src"
-        python -m uvicorn rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
+        & $pythonCmd -m uvicorn rag_kb.api.main:app --host 0.0.0.0 --port 8000 --reload
     } catch {
         Write-Host "❌ 启动失败" -ForegroundColor Red
         exit 1
