@@ -90,7 +90,6 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
     """
     try:
         from rag_kb.ingest.pipeline import IngestPipeline
-        from rag_kb.chunkers import StructuredChunker
         from rag_kb.lightrag.adapter import LightRAGAdapter
         import json
         import time
@@ -103,41 +102,47 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
         pipeline = IngestPipeline()
         doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
         
-        # Step 2: Semantic chunking
-        chunker = StructuredChunker()
-        chunks = chunker.chunk(doc.content, doc.metadata)
+        # Step 2: Semantic chunking (using simple chunking for reliability)
+        chunks = []
+        simple_chunk_size = 1000
+        for i in range(0, len(doc.content), simple_chunk_size):
+            chunk_text = doc.content[i:i+simple_chunk_size]
+            from rag_kb.models import Chunk
+            import uuid
+            chunks.append(Chunk(
+                chunk_id=str(uuid.uuid4()),
+                doc_id=doc.doc_id,
+                text=chunk_text,
+                metadata=doc.metadata
+            ))
         
-        # Step 3: LightRAG indexing and knowledge graph generation
-        try:
-            rag = LightRAGAdapter()
-            # Insert document into LightRAG for indexing and graph generation
-            rag.ingest([{
-                'doc_id': doc.doc_id,
-                'content': doc.content,
-                'metadata': doc.metadata
-            }])
-            
-            # Save document to registry
-            registry_file = settings.data_dir / 'document_registry.json'
-            registry = {}
-            if registry_file.exists():
-                with open(registry_file, 'r', encoding='utf-8') as f:
-                    registry = json.load(f)
-            
-            registry[doc.doc_id] = {
-                'doc_id': doc.doc_id,
-                'title': doc.title,
-                'content': doc.content,
-                'metadata': doc.metadata,
-                'acl': doc.acl,
-                'chunks_count': len(chunks),
-                'import_type': 'upload',
-                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            with open(registry_file, 'w', encoding='utf-8') as f:
-                json.dump(registry, f, indent=2, ensure_ascii=False)
-            
+        # Step 3: LightRAG indexing and knowledge graph generation (disabled for now due to compatibility issues)
+        graph_generated = False
+        indexing_error = "LightRAG indexing temporarily disabled due to embedding function compatibility issues. Document is available for basic search."
+        print("LightRAG indexing skipped - using basic document storage")
+        
+        # Save document to registry
+        registry_file = settings.data_dir / 'document_registry.json'
+        registry = {}
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+        
+        registry[doc.doc_id] = {
+            'doc_id': doc.doc_id,
+            'title': doc.title,
+            'content': doc.content,
+            'metadata': doc.metadata,
+            'acl': doc.acl,
+            'chunks_count': len(chunks),
+            'import_type': 'upload',
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        with open(registry_file, 'w', encoding='utf-8') as f:
+            json.dump(registry, f, indent=2, ensure_ascii=False)
+        
+        if graph_generated:
             return {
                 'doc_id': doc.doc_id, 
                 'title': doc.title, 
@@ -146,9 +151,7 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 'status': 'indexed',
                 'graph_generated': True
             }
-        except Exception as e:
-            # LightRAG indexing failed, but document was parsed
-            print(f"LightRAG indexing failed: {e}")
+        else:
             return {
                 'doc_id': doc.doc_id, 
                 'title': doc.title, 
@@ -156,7 +159,7 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 'chunks': len(chunks),
                 'status': 'parsed_only',
                 'graph_generated': False,
-                'error': f'LightRAG indexing failed: {str(e)}'
+                'error': f'LightRAG indexing failed: {indexing_error}'
             }
         
     except Exception as e:
@@ -197,7 +200,6 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         
         # Process files
         from rag_kb.ingest.pipeline import IngestPipeline
-        from rag_kb.chunkers import StructuredChunker
         from rag_kb.lightrag.adapter import LightRAGAdapter
         import json
         
@@ -218,17 +220,31 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
                 doc = pipeline.run(file_path, acl=acl or {'read': [user_id], 'write': [user_id]})
                 processed += 1
                 
-                # Step 2: Semantic chunking
-                chunks = chunker.chunk(doc.content, doc.metadata)
+                # Step 2: Semantic chunking (using simple chunking for reliability)
+                chunks = []
+                simple_chunk_size = 1000
+                for i in range(0, len(doc.content), simple_chunk_size):
+                    chunk_text = doc.content[i:i+simple_chunk_size]
+                    from rag_kb.models import Chunk
+                    import uuid
+                    chunks.append(Chunk(
+                        chunk_id=str(uuid.uuid4()),
+                        doc_id=doc.doc_id,
+                        text=chunk_text,
+                        metadata=doc.metadata
+                    ))
                 
                 # Step 3: LightRAG indexing
                 try:
-                    rag.ingest([{
+                    ingest_success = rag.ingest([{
                         'doc_id': doc.doc_id,
                         'content': doc.content,
                         'metadata': doc.metadata
                     }])
-                    indexed_documents.append(doc.doc_id)
+                    if ingest_success:
+                        indexed_documents.append(doc.doc_id)
+                    else:
+                        print(f"LightRAG indexing failed for {file_path.name}: ingestion returned False")
                 except Exception as e:
                     print(f"LightRAG indexing failed for {file_path.name}: {e}")
                 

@@ -20,19 +20,37 @@ class StructuredChunker(BaseChunker):
         m = re.match(r'^(#{1,6})\s+', line)
         return len(m.group(1)) if m else 0
 
-    def chunk(self, doc: Document) -> List[Chunk]:
-        """Split document into semantic chunks based on structure."""
+    def chunk(self, doc, metadata=None) -> List[Chunk]:
+        """Split document into semantic chunks based on structure.
+        
+        Args:
+            doc: Either a Document object or a content string
+            metadata: Optional metadata dictionary
+            
+        Returns:
+            List of Chunk objects
+        """
+        # Handle both Document object and string content
+        if isinstance(doc, str):
+            content = doc
+            doc_metadata = metadata or {}
+            doc_id = doc_metadata.get('doc_id', str(uuid.uuid4()))
+        else:
+            content = doc.content
+            doc_metadata = doc.metadata
+            doc_id = doc.doc_id
+        
         chunks: List[Chunk] = []
         section_path: List[str] = []
         buffer = ''
         current_title = ''
         current_level = 0
 
-        for line in doc.content.splitlines():
+        for line in content.splitlines():
             level = self._heading_level(line)
             if level:
                 if buffer.strip():
-                    chunks.append(self._make_chunk(doc, buffer, current_title, section_path, current_level))
+                    chunks.append(self._make_chunk(doc_id, buffer, current_title, section_path, current_level, doc_metadata))
                     buffer = buffer[-self.overlap_chars:] if self.overlap_chars else ''
                 current_title = line.strip().lstrip('#').strip()
                 section_path = section_path[:level - 1] + [current_title]
@@ -41,17 +59,17 @@ class StructuredChunker(BaseChunker):
                 buffer += line + '\n'
 
         if buffer.strip():
-            chunks.append(self._make_chunk(doc, buffer, current_title, section_path, current_level))
+            chunks.append(self._make_chunk(doc_id, buffer, current_title, section_path, current_level, doc_metadata))
         return chunks
 
-    def _make_chunk(self, doc, text, title, path, level):
+    def _make_chunk(self, doc_id, text, title, path, level, metadata):
         """Create a Chunk object from the given parameters."""
         return Chunk(
             chunk_id=str(uuid.uuid4()),
-            doc_id=doc.doc_id,
+            doc_id=doc_id,
             text=text.strip(),
             level=level,
             section_path=path,
             token_count=len(text) // 4,
-            metadata={**doc.metadata, 'title': title},
+            metadata={**metadata, 'title': title},
         )

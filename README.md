@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.22 (Latest)  
+**Current Version**: v0.5.24 (Latest)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.22 implements long-term optimizations including basic RLHF system, advanced graph analysis, and basic multimodal support.
+> **Version Note**: v0.5.24 includes critical fixes for API routes, document ingestion, and search functionality. LightRAG advanced features temporarily disabled due to embedding compatibility issues.
 
 ## Features
 
@@ -251,7 +251,47 @@ Specify your license here.
 
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
+## Current Status (v0.5.24)
+
+### ✅ Working Features
+- **Document Upload**: PDF, TXT, MD, DOCX file upload and parsing
+- **Basic Search**: Text-based document search with content preview
+- **Document Storage**: Document registry with metadata tracking
+- **API Endpoints**: RESTful API for document management and search
+- **Health Monitoring**: System health check endpoint
+
+### ⚠️ Temporarily Disabled Features
+- **LightRAG Semantic Search**: Disabled due to embedding function compatibility issues
+- **Knowledge Graph Generation**: Temporarily unavailable
+- **Vector Embedding Search**: Not functional due to dependency conflicts
+- **Hybrid Search**: BM25 + LightRAG combination unavailable
+
+### 🔧 Known Issues
+- **LightRAG Integration**: Embedding function interface incompatibility with lightrag-hku v1.5.6
+- **Advanced Dependencies**: Some features require torch and other heavy dependencies
+- **Ollama Service**: Requires manual startup for LLM functionality
+
+### 📝 Usage Notes
+- Documents can be uploaded and stored successfully
+- Basic text search is functional for document retrieval
+- For advanced semantic search, embedding compatibility needs to be resolved
+- System operates in degraded mode with core functionality preserved
+
 ## Recent Fixes
+
+### v0.5.24 (2026-08-24) - Critical API and Search Fixes
+- **Fixed**: Empty routes.py file - restored complete API endpoints for search and chat
+- **Fixed**: Document ingestion with simplified chunking strategy
+- **Fixed**: LightRAG adapter embedding function compatibility attempts
+- **Added**: Basic text search as fallback when advanced features unavailable
+- **Enhanced**: Error handling with graceful degradation
+- **Updated**: Default LLM model to qwen3.5:4b for better compatibility
+
+### v0.5.23 (2026-08-24) - Import and Startup Fixes
+- **Fixed**: Missing type imports (List, Dict, Any) in main.py
+- **Fixed**: Git stash command syntax in upgrade.ps1 script
+- **Fixed**: Server startup failures due to missing type hints
+- **Enhanced**: Error handling in upgrade scripts
 
 ### v0.5.7 (2026-08-24) - Enhanced Knowledge Manager
 - **Added**: Folder records API to track folder import history

@@ -20,10 +20,12 @@ class LightRAGAdapter:
         Args:
             working_dir: Directory for LightRAG storage (uses default from settings if None)
         """
-        self.working_dir = Path(working_dir or settings.lightrag_working_dir)
-        self.working_dir.mkdir(parents=True, exist_ok=True)
+        self.working_dir = str(Path(working_dir or settings.lightrag_working_dir))
+        Path(self.working_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Use the embedding function directly - LightRAG will handle the interface
         self.rag = LightRAG(
-            working_dir=str(self.working_dir),
+            working_dir=self.working_dir,
             llm_model_func=ollama_llm,
             embedding_func=ollama_embed,
             chunk_token_size=settings.lightrag_chunk_token_size,
@@ -48,6 +50,26 @@ class LightRAGAdapter:
         doc_text = (NL + NL).join(parts)
         self.rag.insert(doc_text)
 
+    def ingest(self, documents):
+        """Ingest documents into LightRAG for indexing and knowledge graph generation.
+        
+        Args:
+            documents: List of document dictionaries with 'doc_id', 'content', and 'metadata'
+        """
+        try:
+            for doc in documents:
+                content = doc.get('content', '')
+                
+                # Insert content directly into LightRAG
+                self.rag.insert(content)
+                
+            return True
+        except Exception as e:
+            print(f"LightRAG ingestion error: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
     def query(self, question, mode=None):
         """Query LightRAG with a question.
         
@@ -58,11 +80,21 @@ class LightRAGAdapter:
         Returns:
             Query response text
         """
-        mode = mode or settings.lightrag_query_mode
-        return self.rag.query(
-            question,
-            param=QueryParam(mode=mode, only_need_context=False),
-        )
+        try:
+            mode = mode or settings.lightrag_query_mode
+            print(f"LightRAG query: question='{question}', mode='{mode}'")
+            result = self.rag.query(
+                question,
+                param=QueryParam(mode=mode, only_need_context=False),
+            )
+            print(f"LightRAG result: {result}")
+            return result
+        except Exception as e:
+            print(f"LightRAG query error: {e}")
+            import traceback
+            traceback.print_exc()
+            # Return a more informative error message
+            return f"LightRAG查询错误: {str(e)}。知识库可能为空或未正确索引文档。"
 
     async def stream_query(self, question, mode=None):
         """Stream query response in SSE format.

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.25] - 2026-08-24
+
+### Fixed
+- **Critical API Routes**: Restored complete search and chat endpoints in routes.py
+- **Document Ingestion**: Simplified chunking strategy for better compatibility
+- **Search Functionality**: Implemented basic text search as fallback for advanced features
+- **Error Handling**: Enhanced error handling with graceful degradation
+- **LightRAG Integration**: Multiple attempts to resolve embedding function compatibility
+
+### Changed
+- **Search Mode**: Temporarily using basic text search instead of LightRAG semantic search
+- **API Response**: Updated error messages to inform users about temporarily disabled features
+- **Document Storage**: Documents are stored and searchable even without LightRAG indexing
+
+### Technical
+- **Routes.py**: Complete rewrite with search, chat, and user management endpoints
+- **Adapter.py**: Multiple embedding function wrapper attempts for LightRAG compatibility
+- **Embedding Functions**: Created dataclass-based embedding function wrapper
+- **Main.py**: Simplified document ingestion with better error handling
+
+### Known Issues
+- **LightRAG Semantic Search**: Temporarily disabled due to embedding function interface incompatibility
+- **Knowledge Graph Generation**: Not functional without LightRAG integration
+- **Advanced Dependencies**: Some features require torch and other heavy dependencies
+
 ## [0.5.24] - 2026-08-24
 
 ### Changed

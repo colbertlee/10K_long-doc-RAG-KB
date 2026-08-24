@@ -40,7 +40,7 @@ class HybridSearch:
             self.reranker = None
         
     def search(self, query: str, top_k: int = 10, use_bm25: bool = True, use_lightrag: bool = True,
-              bm25_weight: float = 0.3, lightrag_weight: float = 0.7, apply_reranking: bool = True) -> List[Dict[str, Any]]:
+              bm25_weight: float = 0.3, lightrag_weight: float = 0.7, apply_reranking: bool = True) -> Dict[str, Any]:
         """
         Perform enhanced hybrid search with RRF fusion and optional reranking.
         
@@ -54,32 +54,12 @@ class HybridSearch:
             apply_reranking: Whether to apply reranking
             
         Returns:
-            List of fused and potentially reranked search results
+            Dictionary with answer and sources
         """
         all_results = {}
+        lightrag_answer = ""
         
-        # BM25 sparse retrieval
-        if use_bm25 and self.bm25_search:
-            try:
-                bm25_results = self.bm25_search.search(query, top_k=top_k * 2)
-                for rank, result in enumerate(bm25_results):
-                    doc_id = result['id']
-                    if doc_id not in all_results:
-                        all_results[doc_id] = {
-                            'id': doc_id,
-                            'text': result['text'],
-                            'title': result.get('title', ''),
-                            'metadata': result.get('metadata', {}),
-                            'bm25_score': result['score'],
-                            'lightrag_score': 0.0,
-                            'rrf_score': 0.0,
-                            'source': 'bm25'
-                        }
-                    all_results[doc_id]['bm25_score'] = result['score']
-            except Exception as e:
-                print(f"BM25 search failed: {e}")
-        
-        # LightRAG dense retrieval
+        # LightRAG dense retrieval (get answer first)
         if use_lightrag and self.lightrag_adapter:
             try:
                 lightrag_answer = self.lightrag_adapter.query(query, mode='hybrid')
@@ -102,6 +82,28 @@ class HybridSearch:
                     all_results[doc_id]['lightrag_score'] = result['score']
             except Exception as e:
                 print(f"LightRAG search failed: {e}")
+                lightrag_answer = f"LightRAG search failed: {str(e)}"
+        
+        # BM25 sparse retrieval
+        if use_bm25 and self.bm25_search:
+            try:
+                bm25_results = self.bm25_search.search(query, top_k=top_k * 2)
+                for rank, result in enumerate(bm25_results):
+                    doc_id = result['id']
+                    if doc_id not in all_results:
+                        all_results[doc_id] = {
+                            'id': doc_id,
+                            'text': result['text'],
+                            'title': result.get('title', ''),
+                            'metadata': result.get('metadata', {}),
+                            'bm25_score': result['score'],
+                            'lightrag_score': 0.0,
+                            'rrf_score': 0.0,
+                            'source': 'bm25'
+                        }
+                    all_results[doc_id]['bm25_score'] = result['score']
+            except Exception as e:
+                print(f"BM25 search failed: {e}")
         
         # Apply weighted RRF fusion
         for doc_id, result in all_results.items():
@@ -125,7 +127,13 @@ class HybridSearch:
         if apply_reranking and self.enable_reranking and self.reranker and len(sorted_results) > 1:
             sorted_results = self._apply_reranking(query, sorted_results, top_k)
         
-        return sorted_results[:top_k]
+        # Return answer and sources
+        return {
+            'answer': lightrag_answer or "No answer generated from search results",
+            'sources': sorted_results[:top_k],
+            'mode': 'hybrid',
+            'source_count': len(sorted_results[:top_k])
+        }
     
     def _parse_lightrag_results(self, lightrag_answer: str) -> List[Dict[str, Any]]:
         """
@@ -137,10 +145,19 @@ class HybridSearch:
         Returns:
             List of parsed results
         """
-        # This is a simplified implementation
-        # In practice, you'd need to parse the actual LightRAG output format
-        # For now, return empty list
-        return []
+        # Parse LightRAG answer to extract relevant content
+        # LightRAG returns a direct answer, so we create a synthetic result
+        if not lightrag_answer or lightrag_answer.strip() == "":
+            return []
+        
+        # Create a result from the LightRAG answer
+        return [{
+            'id': f"lightrag_{hash(lightrag_answer)}",
+            'text': lightrag_answer,
+            'title': 'LightRAG Answer',
+            'metadata': {'source': 'lightrag', 'mode': 'hybrid'},
+            'score': 1.0  # Give LightRAG answer high score
+        }]
     
     def _apply_reranking(self, query: str, results: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
         """
