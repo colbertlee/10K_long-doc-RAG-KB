@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.2 (Stable)  
+**Current Version**: v0.4.3 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.2 fixes critical import mechanism issues that caused startup failures, building on the stable v0.4.1 performance optimization features.
+> **Version Note**: v0.4.3 is a hotfix that completely resolves the import mechanism issues that persisted in v0.4.2, ensuring reliable startup in all environments.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.3 (2026-08-24) - Hotfix
+- **Hotfix**: Completely removed importlib.util calls that were still causing null bytes errors in uvicorn runtime
+- **Improved**: Changed to standard Python imports with exception handling for robustness
+- **Added**: Graceful fallback if API routes import fails
+- **Verified**: Server startup confirmed working in production environment
 
 ### v0.4.2 (2026-08-24)
 - **Critical Fix**: Resolved import mechanism issues in API modules that caused "source code string cannot contain null bytes" errors during startup

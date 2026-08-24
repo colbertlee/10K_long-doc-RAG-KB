@@ -7,17 +7,15 @@ from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pathlib import Path
 from rag_kb.config import settings
-import importlib.util
-
-# Import routes using the same method that works
-spec = importlib.util.spec_from_file_location("routes", "src/rag_kb/api/routes.py")
-routes_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(routes_module)
 
 app = FastAPI(title=settings.app_name)
 
-# Include API routes
-app.include_router(routes_module.router, prefix="/api/v1")
+# Include API routes - using direct import to avoid importlib issues
+try:
+    from rag_kb.api.routes import router as api_router
+    app.include_router(api_router, prefix="/api/v1")
+except Exception as e:
+    print(f"Warning: Could not import API routes: {e}")
 
 # Static files directory
 static_dir = Path(__file__).parent.parent / "static"

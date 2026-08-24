@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-08-24
+
+### Fixed
+- **Hotfix**: Completely removed importlib.util.spec_from_file_location calls that were still causing null bytes errors in uvicorn runtime
+- Changed to standard Python imports with exception handling for robustness
+- Added graceful fallback if API routes import fails
+
+### Changed
+- Simplified main.py import mechanism to use direct imports
+- Updated test expectations to handle optional API router availability
+
 ## [0.4.2] - 2026-08-24
 
 ### Fixed
