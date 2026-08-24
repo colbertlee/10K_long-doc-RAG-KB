@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-08-24
+
+### Added
+- **Frontend Routes**: Added missing frontend routes for chat-ui, graph-ui, and knowledge-manager
+- **Root Endpoint**: Added root endpoint with system information and available endpoints
+- **Fallback UI**: Added fallback HTML interfaces when static files are not found
+
+### Fixed
+- **404 Errors**: Resolved "Not Found" errors for frontend interface routes
+- **User Experience**: Improved error messages with links to API documentation
+
 ## [0.4.4] - 2026-08-24
 
 ### Fixed

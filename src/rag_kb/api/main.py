@@ -21,6 +21,22 @@ except Exception as e:
 static_dir = Path(__file__).parent.parent / "static"
 
 
+@app.get('/')
+def root():
+    """Root endpoint with system information."""
+    return {
+        'message': 'RAG KB API Server',
+        'version': '0.4.4',
+        'endpoints': {
+            'health': '/health',
+            'api_docs': '/docs',
+            'chat_ui': '/chat-ui',
+            'graph_ui': '/graph-ui',
+            'knowledge_manager': '/knowledge-manager'
+        }
+    }
+
+
 @app.get('/health')
 def health():
     """Health check endpoint."""
@@ -125,6 +141,44 @@ async def chat_completions(body: dict):
     )
 
 
+@app.get('/chat-ui')
+async def chat_ui():
+    """Chat interface endpoint."""
+    chat_file = static_dir / "chat_ui.html"
+    if chat_file.exists():
+        return HTMLResponse(content=chat_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>RAG KB Chat Interface</title></head>
+        <body>
+        <h1>RAG KB Chat Interface</h1>
+        <p>Chat interface not found. Please ensure static files are properly configured.</p>
+        <p>Available endpoints: <a href="/docs">API Documentation</a></p>
+        </body>
+        </html>
+        """)
+
+
+@app.get('/graph-ui')
+async def graph_ui():
+    """Knowledge graph visualization interface."""
+    graph_file = static_dir / "graph_ui.html"
+    if graph_file.exists():
+        return HTMLResponse(content=graph_file.read_text(encoding='utf-8'))
+    else:
+        return HTMLResponse(content="""
+        <html>
+        <head><title>Knowledge Graph Visualization</title></head>
+        <body>
+        <h1>Knowledge Graph Visualization</h1>
+        <p>Graph visualization interface not found. Please ensure static files are properly configured.</p>
+        <p>Available endpoints: <a href="/docs">API Documentation</a></p>
+        </body>
+        </html>
+        """)
+
+
 @app.get('/knowledge-manager')
 async def knowledge_manager():
     """Unified knowledge management interface."""
@@ -138,6 +192,7 @@ async def knowledge_manager():
         <body>
         <h1>Knowledge Manager</h1>
         <p>Knowledge manager interface not found. Please ensure static files are properly configured.</p>
+        <p>Available endpoints: <a href="/docs">API Documentation</a></p>
         </body>
         </html>
         """)

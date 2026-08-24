@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.4 (Stable)  
+**Current Version**: v0.4.5 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.4 fixes the PowerShell startup script to use correct import paths, ensuring reliable startup when using manage.ps1.
+> **Version Note**: v0.4.5 adds missing frontend routes and fixes 404 errors for web interfaces, ensuring complete web UI functionality.
 
 ## Features
 
@@ -240,6 +240,12 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.4.5 (2026-08-24) - Frontend Routes Fix
+- **Added**: Missing frontend routes for chat-ui, graph-ui, and knowledge-manager
+- **Added**: Root endpoint with system information and available endpoints
+- **Fixed**: 404 errors for web interface routes
+- **Improved**: User experience with fallback HTML interfaces and documentation links
 
 ### v0.4.4 (2026-08-24) - Startup Script Fix
 - **Fixed**: Modified manage.ps1 to set PYTHONPATH and use correct module path
