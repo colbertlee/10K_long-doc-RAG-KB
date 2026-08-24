@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.10] - 2026-08-24
+
+### Fixed
+- **Simple UI Search**: Fixed intelligent search in simple interface to use correct search API endpoint
+- **Search Mode Options**: Updated search mode options to match available backend modes (hybrid, lightrag, bm25)
+- **Search Results Display**: Enhanced search results to show mode, answer, sources, and scores
+- **API Integration**: Changed from chat/completions to search endpoint for proper search functionality
+
 ## [0.5.9] - 2026-08-24
 
 ### Fixed

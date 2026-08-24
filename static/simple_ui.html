@@ -74,10 +74,9 @@
                 <div class="form-group">
                     <label>搜索模式</label>
                     <select id="search-mode">
-                        <option value="hybrid">混合检索</option>
-                        <option value="naive">简单检索</option>
-                        <option value="local">本地检索</option>
-                        <option value="global">全局检索</option>
+                        <option value="hybrid">混合检索 (BM25 + LightRAG)</option>
+                        <option value="lightrag">LightRAG 语义检索</option>
+                        <option value="bm25">BM25 关键词检索</option>
                     </select>
                 </div>
                 <button class="btn" onclick="searchDocuments()">搜索</button>
@@ -146,32 +145,20 @@
             resultDiv.innerHTML = '<div class="loading">搜索中...</div>';
 
             try {
-                const response = await fetch(`${API_BASE}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        messages: [{ content: searchInput.value }],
-                        mode: searchMode.value,
-                        user_roles: {
-                            dept: [],
-                            level: ['Internal']
-                        }
-                    })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    let html = '<h3>搜索结果</h3>';
-                    html += '<p><strong>回答:</strong></p>';
-                    html += '<p>' + (result.answer || '无回答') + '</p>';
-                    html += '<p><strong>来源:</strong> ' + (result.sources ? result.sources.length : 0) + ' 个文档</p>';
-                    resultDiv.innerHTML = html;
-                    resultDiv.className = 'result success';
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${searchMode.value}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    showResult(resultDiv, '❌ 搜索失败: ' + data.error, 'error');
                 } else {
-                    showResult(resultDiv, '❌ 搜索失败: ' + (result.detail || '未知错误'), 'error');
+                    const sources = data.sources || [];
+                    const mode = data.mode || 'lightrag';
+                    showResult(resultDiv, `
+                        <strong>搜索结果 (${mode}模式):</strong><br>
+                        <p>答案: ${data.answer}</p>
+                        <p>来源数量: ${sources.length}</p>
+                        ${sources.length > 0 ? '<p>来源详情:</p><ul>' + sources.map(s => `<li>${s.id} (分数: ${s.score || s.rrf_score?.toFixed(2) || 'N/A'})</li>`).join('') + '</ul>' : ''}
+                    `, 'success');
                 }
             } catch (error) {
                 showResult(resultDiv, '❌ 搜索失败: ' + error.message, 'error');
