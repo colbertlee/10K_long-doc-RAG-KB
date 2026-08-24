@@ -7,12 +7,9 @@ from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pathlib import Path
 from rag_kb.config import settings
-from rag_kb.ingest.pipeline import IngestPipeline
-from rag_kb.lightrag.adapter import LightRAGAdapter
-from rag_kb.security.acl import build_acl_filter
 import importlib.util
 
-# Direct import to avoid __init__.py encoding issues
+# Import routes using the same method that works
 spec = importlib.util.spec_from_file_location("routes", "src/rag_kb/api/routes.py")
 routes_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(routes_module)
@@ -44,6 +41,8 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
     Returns:
         Document metadata
     """
+    from rag_kb.ingest.pipeline import IngestPipeline
+    
     upload_path = settings.data_dir / 'uploads' / file.filename
     upload_path.parent.mkdir(parents=True, exist_ok=True)
     upload_path.write_bytes(await file.read())
@@ -67,6 +66,8 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
     Returns:
         Search results with answer and sources
     """
+    from rag_kb.lightrag.adapter import LightRAGAdapter
+    
     user_acl = {'dept': [dept], 'level': [level]}
     rag = LightRAGAdapter()
     answer = rag.query(q, mode='hybrid')
@@ -114,6 +115,8 @@ async def chat_completions(body: dict):
     Returns:
         Streaming response with generated text
     """
+    from rag_kb.lightrag.adapter import LightRAGAdapter
+    
     question = body['messages'][-1]['content']
     rag = LightRAGAdapter()
     mode = settings.lightrag_query_mode or 'hybrid'

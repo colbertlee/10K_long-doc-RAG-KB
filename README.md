@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.4.1 (Stable)  
+**Current Version**: v0.4.2 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.4.1 adds performance optimization and monitoring capabilities, building on the stable v0.4.0 knowledge management features.
+> **Version Note**: v0.4.2 fixes critical import mechanism issues that caused startup failures, building on the stable v0.4.1 performance optimization features.
 
 ## Features
 
@@ -238,3 +238,11 @@ Specify your license here.
 ## Support
 
 For issues and questions, please refer to the project documentation or create an issue in the repository.
+
+## Recent Fixes
+
+### v0.4.2 (2026-08-24)
+- **Critical Fix**: Resolved import mechanism issues in API modules that caused "source code string cannot contain null bytes" errors during startup
+- **Improved**: Simplified import structure using lazy imports for heavy modules
+- **Added**: Unit tests for API import mechanisms to prevent regression
+- **Verified**: All 29 tests passing (22 existing + 7 new import tests)
