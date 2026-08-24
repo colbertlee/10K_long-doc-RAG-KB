@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.24] - 2026-08-24
+
+### Changed
+- **Default LLM Model**: Updated default LLM model from qwen2.5 to qwen3.5:4b
+- **Model Compatibility**: Aligned with available local models (nomic-embed-text, gemm4:e4b, qwen3.5:4b)
+
+### Technical
+- **Configuration Update**: Modified src/rag_kb/config.py default llm_model setting
+- **Version Update**: Bumped version to v0.5.24
+
 ## [0.5.23] - 2026-08-24
 
 ### Fixed

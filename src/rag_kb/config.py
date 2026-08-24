@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # LLM settings
     llm_provider: str = 'ollama'
     llm_base_url: str = 'http://localhost:11434'
-    llm_model: str = 'qwen2.5'
+    llm_model: str = 'qwen3.5:4b'
     llm_temperature: float = 0.3
     llm_top_p: float = 0.9
     llm_max_tokens: int = 2048
