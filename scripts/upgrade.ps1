@@ -69,7 +69,7 @@ Write-Host "拉取最新代码..." -ForegroundColor Yellow
 try {
     # Stash any local changes (including untracked files) to avoid conflicts
     Write-Host "暂存本地更改..." -ForegroundColor Yellow
-    git stash push --include-untracked --message "Auto-stash before upgrade" -ErrorAction SilentlyContinue
+    git stash push -u -m "Auto-stash before upgrade" 2>$null
     
     git fetch origin
     git checkout master
@@ -86,7 +86,7 @@ if ($targetVersion -ne "latest" -and $targetVersion -ne $currentVersion) {
     Write-Host "切换到版本 $targetVersion..." -ForegroundColor Yellow
     try {
         # Stash any local changes first
-        git stash push --include-untracked --message "Auto-stash before version switch" -ErrorAction SilentlyContinue
+        git stash push -u -m "Auto-stash before version switch" 2>$null
         git checkout "v$targetVersion"
         Write-Host "版本切换完成" -ForegroundColor Green
     } catch {

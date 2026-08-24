@@ -2,7 +2,7 @@
 
 import json
 import asyncio
-from typing import AsyncIterator
+from typing import AsyncIterator, List, Dict, Any
 from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
