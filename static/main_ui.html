@@ -195,15 +195,30 @@
                     method: 'POST',
                     body: formData
                 });
-                const data = await response.json();
                 
-                resultDiv.className = 'result success';
-                resultDiv.innerHTML = `
-                    <strong>上传成功!</strong><br>
-                    文档ID: ${data.doc_id}<br>
-                    标题: ${data.title}<br>
-                    页数: ${data.pages}
-                `;
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `<strong>上传失败:</strong> ${data.error}<br>${data.message}`;
+                    } else {
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = `
+                            <strong>上传成功!</strong><br>
+                            文档ID: ${data.doc_id}<br>
+                            标题: ${data.title}<br>
+                            页数: ${data.pages}
+                        `;
+                    }
+                } else {
+                    // Handle non-JSON response
+                    const text = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>服务器错误:</strong> ${text}`;
+                }
             } catch (error) {
                 resultDiv.className = 'result error';
                 resultDiv.textContent = '上传失败: ' + error.message;

@@ -88,16 +88,19 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
     Returns:
         Document metadata
     """
-    from rag_kb.ingest.pipeline import IngestPipeline
-    
-    upload_path = settings.data_dir / 'uploads' / file.filename
-    upload_path.parent.mkdir(parents=True, exist_ok=True)
-    upload_path.write_bytes(await file.read())
-    
-    pipeline = IngestPipeline()
-    doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
-    
-    return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+    try:
+        from rag_kb.ingest.pipeline import IngestPipeline
+        
+        upload_path = settings.data_dir / 'uploads' / file.filename
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        upload_path.write_bytes(await file.read())
+        
+        pipeline = IngestPipeline()
+        doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+        
+        return {'doc_id': doc.doc_id, 'title': doc.title, 'pages': doc.metadata.get('pages', 0)}
+    except Exception as e:
+        return {'error': str(e), 'message': 'Document ingestion failed'}
 
 
 @app.post('/api/v1/search')

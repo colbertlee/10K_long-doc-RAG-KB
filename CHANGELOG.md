@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-08-24
+
+### Fixed
+- **Document Upload Error Handling**: Added try-catch error handling in ingest endpoint
+- **JSON Response Validation**: Added content-type checking in frontend to handle non-JSON responses
+- **Parser Registry**: Added TextParser and MarkdownParser to support more file formats
+- **Error Messages**: Improved error messages for better debugging
+
+### Added
+- **Enhanced Error Reporting**: Better error messages in upload interface
+- **File Format Support**: Added support for .txt and .md files
+
 ## [0.5.2] - 2026-08-24
 
 ### Added

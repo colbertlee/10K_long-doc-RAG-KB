@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.2 (Stable)  
+**Current Version**: v0.5.3 (Stable)  
 **Release Date**: 2026-08-24
 
-> **Version Note**: v0.5.2 introduces a unified main interface that integrates all features into a single page, eliminating the need for users to remember multiple URLs.
+> **Version Note**: v0.5.3 fixes document upload error handling and adds support for more file formats.
 
 ## Features
 
@@ -240,6 +240,13 @@ Specify your license here.
 For issues and questions, please refer to the project documentation or create an issue in the repository.
 
 ## Recent Fixes
+
+### v0.5.3 (2026-08-24) - Document Upload Error Fix
+- **Fixed**: Document upload error handling with try-catch in ingest endpoint
+- **Fixed**: JSON response validation in frontend to handle non-JSON responses
+- **Fixed**: Parser registry to support more file formats
+- **Added**: TextParser and MarkdownParser for .txt and .md files
+- **Improved**: Error messages for better debugging
 
 ### v0.5.2 (2026-08-24) - Unified Main Interface
 - **Added**: main_ui.html as single-page application for all features
