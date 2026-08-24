@@ -4,9 +4,10 @@ import hashlib
 from pathlib import Path
 import pdfplumber
 from rag_kb.models import Document
+from rag_kb.parsers.base import BaseParser
 
 
-class PDFPlumberParser:
+class PDFPlumberParser(BaseParser):
     """PDF parser using pdfplumber with table extraction support."""
     
     supported_ext = ('.pdf',)

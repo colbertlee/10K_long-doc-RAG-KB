@@ -27,7 +27,6 @@ class LightRAGAdapter:
             llm_model_func=ollama_llm,
             embedding_func=ollama_embed,
             chunk_token_size=settings.lightrag_chunk_token_size,
-            max_token=settings.lightrag_max_token,
         )
 
     def insert_chunks(self, chunks):

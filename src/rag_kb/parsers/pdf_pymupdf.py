@@ -4,9 +4,10 @@ import hashlib
 from pathlib import Path
 import fitz  # PyMuPDF
 from rag_kb.models import Document
+from rag_kb.parsers.base import BaseParser
 
 
-class PyMuPDFParser:
+class PyMuPDFParser(BaseParser):
     """PDF parser using PyMuPDF (fitz)."""
     
     supported_ext = ('.pdf',)

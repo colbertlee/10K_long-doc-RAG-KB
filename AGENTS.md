@@ -224,6 +224,7 @@ rag-kb/
 
 ### Core Endpoints
 - `POST /api/v1/ingest` - Document ingestion (with performance monitoring)
+- `POST /api/v1/import-folder` - Local folder batch import (NEW)
 - `POST /api/v1/search` - Knowledge base search (with ACL filtering)
 - `POST /api/v1/chat/completions` - OpenAI-compatible chat (with streaming)
 - `GET /health` - Health check with system metrics (ENHANCED)
