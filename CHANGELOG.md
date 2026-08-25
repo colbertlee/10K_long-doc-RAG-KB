@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.39] - 2026-08-25
+
+### Bug Fixes
+- **Route Conflict**: Removed duplicate search endpoints from main.py to fix 405 Method Not Allowed
+- **LLM Cache**: Cleared LLM response cache to prevent old cached responses from bypassing anti-hallucination
+- **GET Method**: Fixed GET method support by using routes.py endpoints instead of main.py
+- **Route Consistency**: Unified search endpoints in routes.py for both GET and POST methods
+
+### Technical
+- Removed duplicate @app.get('/api/v1/search') and @app.post('/api/v1/search') from main.py
+- Removed _search_impl and _stream_answer helper functions from main.py
+- Routes.py now handles all search endpoints with proper GET/POST support
+- Cleared kv_store_llm_response_cache.json to remove old cached responses
+- Routes.py search endpoints include anti-hallucination logic
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (LLM-level anti-hallucination) ✅
+- **GET method search API (fixed)** ✅
+- **POST method search API (fixed)** ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- LLM-level strict knowledge base constraints ✅
+- **Route conflict resolved** ✅
+
 ## [0.5.38] - 2026-08-25
 
 ### Frontend Fixes

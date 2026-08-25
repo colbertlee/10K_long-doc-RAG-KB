@@ -2,7 +2,7 @@
 
 import json
 import re
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from typing import List, Dict, Any
 
@@ -13,6 +13,55 @@ def get_rag():
     """Get LightRAG adapter instance (lazy initialization)."""
     from rag_kb.lightrag.adapter import LightRAGAdapter
     return LightRAGAdapter()
+
+
+@router.get("/search")
+async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: str = 'hybrid'):
+    """Search endpoint (GET method for backward compatibility)."""
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        rag = LightRAGAdapter()
+        answer = await rag.query(q, mode=query_mode)
+        
+        return {
+            'answer': answer,
+            'sources': [],
+            'mode': 'lightrag',
+            'query_mode': query_mode,
+            'category': 'all',
+            'intent_classification': None
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'error': str(e), 'answer': '搜索失败', 'sources': [], 'mode': 'lightrag'}
+
+
+@router.post("/search")
+async def search_endpoint_post(body: dict):
+    """Search endpoint (POST method)."""
+    try:
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        rag = LightRAGAdapter()
+        
+        q = body.get('q', '')
+        mode = body.get('mode', 'hybrid')
+        query_mode = body.get('query_mode', 'hybrid')
+        
+        answer = await rag.query(q, mode=query_mode)
+        
+        return {
+            'answer': answer,
+            'sources': [],
+            'mode': 'lightrag',
+            'query_mode': query_mode,
+            'category': 'all',
+            'intent_classification': None
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'error': str(e), 'answer': '搜索失败', 'sources': [], 'mode': 'lightrag'}
 
 
 @router.post("/chat/completions")
