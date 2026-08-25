@@ -107,27 +107,15 @@ class LightRAGAdapter:
             mode = mode or settings.lightrag_query_mode
             print(f"LightRAG query: question='{question}', mode='{mode}'")
             
-            # Add system prompt to prevent hallucination
-            system_prompt = """你是一个严格基于知识库回答问题的助手。请遵循以下规则：
-
-1. 只能基于提供的知识库内容回答问题
-2. 如果知识库中没有相关信息，必须直接回答"知识库中未找到相关信息"
-3. 严禁编造、猜测或添加知识库之外的信息
-4. 如果信息不完整，请如实说明知识库中的已知部分
-5. 保持回答准确、客观，不添加主观臆测"""
-            
-            # Combine system prompt with user question
-            enhanced_question = f"{system_prompt}\n\n用户问题：{question}"
-            
             # Try naive mode first (simpler, no graph dependencies)
             result = await self.rag.aquery(
-                enhanced_question,
+                question,
                 param=QueryParam(mode="naive", only_need_context=False, enable_rerank=False),
             )
             print(f"LightRAG result length: {len(result) if result else 0}")
             print(f"LightRAG result preview: {result[:500] if result else 'empty'}...")
             
-            # Check if result indicates no information found
+            # Apply anti-hallucination check
             if not result or not result.strip():
                 return "知识库中未找到相关信息"
             
@@ -135,6 +123,22 @@ class LightRAGAdapter:
             result_lower = result.lower()
             if any(phrase in result_lower for phrase in ['不知道', '无法回答', '没有信息', '未找到', 'not found', 'don\'t know']):
                 return "知识库中未找到相关信息"
+            
+            # Check if the result seems to be generic LLM knowledge (not from knowledge base)
+            # Generic knowledge indicators
+            generic_patterns = [
+                '简单来说', '一般来说', '通常情况下', '总的来说', 
+                '这是一个', '这是一个非常', '这是一个极具',
+                '根据不同的语境', '可以从多个角度', '在日常生活中',
+                '在现代物理学中', '在机器学习中', '在计算机科学中'
+            ]
+            
+            if any(pattern in result for pattern in generic_patterns):
+                # If result contains generic knowledge patterns, it might be hallucination
+                # Check if it mentions specific knowledge base content
+                kb_indicators = ['文档', '知识库', '上传', '本地', '文件', '资料']
+                if not any(indicator in result for indicator in kb_indicators):
+                    return "知识库中未找到相关信息"
             
             return result
         except Exception as e:

@@ -742,6 +742,39 @@ async def _search_impl(q: str, mode: str, query_mode: str, category: str, dept: 
         answer = await rag.query(q, mode=query_mode)
         print(f"LightRAG query result: {answer[:200] if answer else 'empty'}", file=sys.stderr, flush=True)
         
+        # Apply anti-hallucination check
+        if not answer or answer.strip() == "":
+            return {
+                'answer': "知识库中未找到相关信息",
+                'sources': [],
+                'mode': 'lightrag',
+                'query_mode': query_mode,
+                'category': category,
+                'intent_classification': None
+            }
+        
+        # Check if the answer seems to be generic LLM knowledge (not from knowledge base)
+        generic_patterns = [
+            '简单来说', '一般来说', '通常情况下', '总的来说', 
+            '这是一个', '这是一个非常', '这是一个极具',
+            '根据不同的语境', '可以从多个角度', '在日常生活中',
+            '在现代物理学中', '在机器学习中', '在计算机科学中'
+        ]
+        
+        if any(pattern in answer for pattern in generic_patterns):
+            # If answer contains generic knowledge patterns, it might be hallucination
+            # Check if it mentions specific knowledge base content
+            kb_indicators = ['文档', '知识库', '上传', '本地', '文件', '资料']
+            if not any(indicator in answer for indicator in kb_indicators):
+                return {
+                    'answer': "知识库中未找到相关信息",
+                    'sources': [],
+                    'mode': 'lightrag',
+                    'query_mode': query_mode,
+                    'category': category,
+                    'intent_classification': None
+                }
+        
         if not answer or answer.strip() == "":
             raise Exception("LightRAG returned empty response")
         
@@ -811,20 +844,8 @@ async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> Asy
     Yields:
         SSE-formatted response chunks
     """
-    # Add system prompt to prevent hallucination
-    system_prompt = """你是一个严格基于知识库回答问题的助手。请遵循以下规则：
-
-1. 只能基于提供的知识库内容回答问题
-2. 如果知识库中没有相关信息，必须直接回答"知识库中未找到相关信息"
-3. 严禁编造、猜测或添加知识库之外的信息
-4. 如果信息不完整，请如实说明知识库中的已知部分
-5. 保持回答准确、客观，不添加主观臆测"""
-    
-    # Combine system prompt with user question
-    enhanced_prompt = f"{system_prompt}\n\n用户问题：{prompt}"
-    
     loop = asyncio.get_event_loop()
-    answer = await loop.run_in_executor(None, rag.query, enhanced_prompt, mode)
+    answer = await loop.run_in_executor(None, rag.query, prompt, mode)
     NL = chr(10)
     SSE_END = NL * 2
     buf = ''
@@ -837,6 +858,22 @@ async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> Asy
     answer_lower = answer.lower()
     if any(phrase in answer_lower for phrase in ['不知道', '无法回答', '没有信息', '未找到', 'not found', 'don\'t know']):
         answer = "知识库中未找到相关信息"
+    
+    # Check if the answer seems to be generic LLM knowledge (not from knowledge base)
+    # Generic knowledge indicators
+    generic_patterns = [
+        '简单来说', '一般来说', '通常情况下', '总的来说', 
+        '这是一个', '这是一个非常', '这是一个极具',
+        '根据不同的语境', '可以从多个角度', '在日常生活中',
+        '在现代物理学中', '在机器学习中', '在计算机科学中'
+    ]
+    
+    if any(pattern in answer for pattern in generic_patterns):
+        # If answer contains generic knowledge patterns, it might be hallucination
+        # Check if it mentions specific knowledge base content
+        kb_indicators = ['文档', '知识库', '上传', '本地', '文件', '资料']
+        if not any(indicator in answer for indicator in kb_indicators):
+            answer = "知识库中未找到相关信息"
     
     for ch in answer:
         buf += ch

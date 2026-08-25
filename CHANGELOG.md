@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.36] - 2026-08-25
+
+### Security & Accuracy (LLM-Level)
+- **Strict System Prompt**: Added explicit system prompt at LLM function level
+- **Temperature Control**: Lowered temperature to 0.1 for deterministic responses
+- **Top-P Control**: Lowered top_p to 0.1 for focused responses
+- **Context Validation**: Added post-processing to detect context references
+- **Generic Knowledge Blocking**: Enhanced detection of general knowledge vs specific context
+
+### Technical
+- Modified ollama_llm function to use system/user message structure
+- Added strict system prompt about context-only responses
+- Lowered generation parameters for more controlled output
+- Added context reference validation in post-processing
+- Enhanced generic pattern detection with specific domain terms
+
+### Validation Logic
+- LLM receives explicit instruction to only use provided context
+- Lower temperature reduces creative/hallucinative responses
+- Post-processing checks for context references in responses
+- Blocks responses that don't reference provided context
+- Detects and blocks generic definitions and explanations
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (LLM-level anti-hallucination) ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- **LLM-level strict knowledge base constraints** ✅
+
+## [0.5.35] - 2026-08-25
+
+### Security & Accuracy (Enhanced)
+- **Pattern-Based Hallucination Detection**: Added generic knowledge pattern detection
+- **Knowledge Base Validation**: Enhanced detection of generic LLM responses vs knowledge base content
+- **Multi-Layer Validation**: Combined system prompt + pattern detection + content validation
+- **Smart Response Filtering**: Distinguishes between genuine knowledge base answers and generic LLM knowledge
+
+### Technical
+- Removed system prompt approach (ineffective with LightRAG)
+- Added pattern-based detection for generic knowledge indicators
+- Implemented knowledge base content indicators validation
+- Enhanced anti-hallucination logic in adapter, search, and streaming functions
+- Added detection for patterns like "简单来说", "一般来说", "在现代物理学中", etc.
+
+### Validation Logic
+- Detects generic knowledge patterns that indicate LLM's training data
+- Validates presence of knowledge base indicators (文档, 知识库, 上传, etc.)
+- Only returns answers that appear to be from actual uploaded documents
+- Falls back to "知识库中未找到相关信息" for generic knowledge
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced anti-hallucination) ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- **Enhanced pattern-based knowledge base constraints** ✅
+
 ## [0.5.34] - 2026-08-25
 
 ### Security & Accuracy
