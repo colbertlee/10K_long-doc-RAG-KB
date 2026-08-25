@@ -80,7 +80,7 @@ class LightRAGAdapter:
             # Ensure storages are initialized
             await self.ensure_initialized()
             
-            # Use synchronous insert method to avoid pipeline issues
+            # Use async insert method to avoid event loop conflicts
             for doc in documents:
                 content = doc.get('content', '')
                 doc_id = doc.get('doc_id', '')
@@ -89,9 +89,9 @@ class LightRAGAdapter:
                     print(f"Skipping empty document: {doc_id}")
                     continue
                 
-                # Use synchronous insert method directly
+                # Use async insert method directly
                 try:
-                    self.rag.insert(content)
+                    await self.rag.ainsert(content)
                     print(f"Successfully ingested document: {doc_id}")
                 except Exception as e:
                     print(f"Error ingesting document {doc_id}: {e}")

@@ -2313,7 +2313,6 @@ async def chat_ui():
         </body>
         </html>
         """)
-        """)
 
 
 @app.get('/graph-ui')

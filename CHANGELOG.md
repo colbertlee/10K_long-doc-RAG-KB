@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.44] - 2026-08-25
+
+### Bug Fixes
+- **Syntax Error Fix**: Fixed unterminated triple-quoted string literal in main.py
+- **Async Event Loop Fix**: Fixed LightRAG adapter to use async insert method instead of synchronous method
+- **Server Startup**: Resolved SyntaxError that prevented server from starting
+- **Document Ingestion**: Fixed RuntimeError when ingesting documents in async context
+
+### Technical Details
+- **Main.py Syntax**: Removed duplicate triple-quoted string that caused parsing error
+- **Adapter.py Async**: Changed from `self.rag.insert()` to `await self.rag.ainsert()` for proper async handling
+- **Event Loop Compatibility**: Ensured all async operations use proper async methods
+- **Error Handling**: Improved error messages for ingestion failures
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed with timeout handling) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- Comprehensive unit test coverage ✅
+- Knowledge graph generation (with fallback) ✅
+- Graph visualization interface ✅
+- Increased timeout configurations ✅
+- Document reindexing scripts ✅
+- Unified knowledge graph interface ✅
+- Duplicate file cleanup ✅
+- **Server startup fixed** ✅
+- **Async event loop compatibility** ✅
+
 ## [0.5.43] - 2026-08-25
 
 ### UI Optimization
