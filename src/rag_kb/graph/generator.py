@@ -36,21 +36,28 @@ class KnowledgeGraphGenerator:
         await self.initialize()
         
         try:
+            import sys
+            print(f"Starting graph generation from {len(documents)} documents", file=sys.stderr, flush=True)
+            
             # Ingest documents into LightRAG (this triggers graph extraction)
             success = await self.rag.ingest(documents)
             
+            print(f"Graph ingestion result: {success}", file=sys.stderr, flush=True)
+            
             if not success:
-                return {
-                    'success': False,
-                    'error': 'Document ingestion failed',
-                    'nodes': [],
-                    'edges': [],
-                    'node_count': 0,
-                    'edge_count': 0
-                }
+                print("Document ingestion failed, using fallback graph", file=sys.stderr, flush=True)
+                # Fallback to simple document-based graph
+                return await self._create_simple_graph(documents)
             
             # Extract graph data from LightRAG
             graph_data = await self._extract_graph_data()
+            
+            print(f"Graph extraction completed: {graph_data.get('node_count', 0)} nodes, {graph_data.get('edge_count', 0)} edges", file=sys.stderr, flush=True)
+            
+            # If no entities found, use fallback
+            if graph_data.get('node_count', 0) == 0:
+                print("No entities found, using fallback graph", file=sys.stderr, flush=True)
+                return await self._create_simple_graph(documents)
             
             return {
                 'success': True,
@@ -59,15 +66,10 @@ class KnowledgeGraphGenerator:
             
         except Exception as e:
             import traceback
-            traceback.print_exc()
-            return {
-                'success': False,
-                'error': str(e),
-                'nodes': [],
-                'edges': [],
-                'node_count': 0,
-                'edge_count': 0
-            }
+            print(f"Graph generation error: {e}", file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
+            # Fallback to simple document-based graph
+            return await self._create_simple_graph(documents)
     
     async def _extract_graph_data(self) -> Dict[str, Any]:
         """Extract graph data from LightRAG storage"""
@@ -122,36 +124,59 @@ class KnowledgeGraphGenerator:
             # Fallback to simple graph
             return await self._create_simple_graph()
     
-    async def _create_simple_graph(self) -> Dict[str, Any]:
-        """Create a simple document-based graph when LightRAG graph extraction fails"""
+    async def _create_simple_graph(self, documents: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Create a simple document-based graph when LightRAG graph extraction fails
+        
+        Args:
+            documents: List of document dictionaries (optional, will load from registry if not provided)
+            
+        Returns:
+            Simple graph data with document nodes
+        """
         try:
-            # Load document registry
-            registry_file = Path(settings.data_dir) / 'document_registry.json'
+            import sys
+            print("Creating simple document-based graph", file=sys.stderr, flush=True)
             
-            if not registry_file.exists():
-                return {
-                    'nodes': [],
-                    'edges': [],
-                    'node_count': 0,
-                    'edge_count': 0,
-                    'message': 'No documents found for graph generation'
-                }
-            
-            with open(registry_file, 'r', encoding='utf-8') as f:
-                registry = json.load(f)
+            # Use provided documents or load from registry
+            if documents is None:
+                registry_file = Path(settings.data_dir) / 'document_registry.json'
+                
+                if not registry_file.exists():
+                    return {
+                        'nodes': [],
+                        'edges': [],
+                        'node_count': 0,
+                        'edge_count': 0,
+                        'message': 'No documents found for graph generation'
+                    }
+                
+                with open(registry_file, 'r', encoding='utf-8') as f:
+                    registry = json.load(f)
+                
+                # Convert to document format
+                documents = []
+                for doc_id, doc_data in registry.items():
+                    documents.append({
+                        'doc_id': doc_id,
+                        'content': doc_data.get('content', ''),
+                        'metadata': doc_data.get('metadata', {})
+                    })
             
             # Create simple document nodes
             nodes = []
             edges = []
             
-            for doc_id, doc_data in registry.items():
-                title = doc_data.get('title', doc_id)
+            for doc in documents:
+                doc_id = doc.get('doc_id', '')
+                metadata = doc.get('metadata', {})
+                title = metadata.get('title', doc_id)
+                
                 nodes.append({
                     'id': doc_id,
                     'name': title,
                     'type': 'document',
                     'description': f'Document: {title}',
-                    'metadata': doc_data
+                    'metadata': metadata
                 })
             
             # Create simple edges between documents (if multiple)
@@ -166,7 +191,10 @@ class KnowledgeGraphGenerator:
                         'metadata': {}
                     })
             
+            print(f"Simple graph created with {len(nodes)} documents", file=sys.stderr, flush=True)
+            
             return {
+                'success': True,
                 'nodes': nodes,
                 'edges': edges,
                 'node_count': len(nodes),
@@ -176,8 +204,10 @@ class KnowledgeGraphGenerator:
             
         except Exception as e:
             import traceback
-            traceback.print_exc()
+            print(f"Simple graph creation failed: {e}", file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
             return {
+                'success': False,
                 'nodes': [],
                 'edges': [],
                 'node_count': 0,

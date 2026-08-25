@@ -137,8 +137,14 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
             rag = LightRAGAdapter()
             print("LightRAG adapter created for indexing", file=sys.stderr, flush=True)
             
+            # Ensure LightRAG is initialized
+            await rag.ensure_initialized()
+            print("LightRAG storages initialized", file=sys.stderr, flush=True)
+            
             # Insert document into LightRAG for indexing and graph generation
             print(f"Attempting to ingest document {doc.doc_id}", file=sys.stderr, flush=True)
+            print(f"Document content length: {len(doc.content)}", file=sys.stderr, flush=True)
+            
             ingest_success = await rag.ingest([{
                 'doc_id': doc.doc_id,
                 'content': doc.content,

@@ -21,6 +21,9 @@ async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: 
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter
         from rag_kb.config import settings
+        import sys
+        
+        print(f"GET search request: query='{q}', mode='{query_mode}'", file=sys.stderr, flush=True)
         
         rag = LightRAGAdapter()
         # Initialize with timeout handling
@@ -31,6 +34,7 @@ async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: 
                 timeout=settings.query_timeout
             )
         except asyncio.TimeoutError:
+            print("Query timeout", file=sys.stderr, flush=True)
             return {
                 'answer': '查询超时，请稍后重试',
                 'sources': [],
@@ -41,6 +45,8 @@ async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: 
                 'timeout': True
             }
         
+        print(f"GET search result: {len(answer) if answer else 0} chars", file=sys.stderr, flush=True)
+        
         return {
             'answer': answer,
             'sources': [],
@@ -51,7 +57,8 @@ async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: 
         }
     except Exception as e:
         import traceback
-        traceback.print_exc()
+        print(f"GET search error: {e}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
         return {'error': str(e), 'answer': '搜索失败', 'sources': [], 'mode': 'lightrag'}
 
 
@@ -60,13 +67,18 @@ async def search_endpoint_post(body: dict):
     """Search endpoint (POST method)."""
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter
-        rag = LightRAGAdapter()
+        import sys
         
         q = body.get('q', '')
         mode = body.get('mode', 'hybrid')
         query_mode = body.get('query_mode', 'hybrid')
         
+        print(f"POST search request: query='{q}', mode='{query_mode}'", file=sys.stderr, flush=True)
+        
+        rag = LightRAGAdapter()
         answer = await rag.query(q, mode=query_mode)
+        
+        print(f"POST search result: {len(answer) if answer else 0} chars", file=sys.stderr, flush=True)
         
         return {
             'answer': answer,
@@ -78,7 +90,8 @@ async def search_endpoint_post(body: dict):
         }
     except Exception as e:
         import traceback
-        traceback.print_exc()
+        print(f"POST search error: {e}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
         return {'error': str(e), 'answer': '搜索失败', 'sources': [], 'mode': 'lightrag'}
 
 

@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.45] - 2026-08-25
+
+### Critical Bug Fixes
+- **Document Ingestion Fix**: Fixed critical issue where newly uploaded documents were not being properly indexed
+- **LightRAG Pipeline Initialization**: Fixed LightRAG pipeline status initialization with fallback mechanisms
+- **Async Event Loop Compatibility**: Fixed async event loop conflicts in document ingestion using threading
+- **Query Functionality**: Fixed intelligent query to properly search both new and existing documents
+- **Knowledge Graph Generation**: Fixed knowledge graph generation for newly uploaded documents
+
+### Document Processing Improvements
+- **Immediate Processing**: New documents now trigger immediate parsing, cleaning, chunking, and vectorization
+- **Enhanced Logging**: Added comprehensive logging for document ingestion process
+- **Document Formatting**: Improved document formatting with metadata for better indexing
+- **Error Handling**: Enhanced error handling with graceful degradation
+- **Thread-based Ingestion**: Used threading to avoid async event loop conflicts
+
+### Query Enhancements
+- **Hybrid Query Mode**: Added fallback to hybrid mode when naive mode returns no results
+- **Better Error Messages**: Improved error messages for query failures
+- **Search Logging**: Added detailed logging for GET and POST search requests
+- **Timeout Handling**: Enhanced timeout handling for query operations
+
+### Knowledge Graph Improvements
+- **Fallback Graph Generation**: Added document-based graph generation when LightRAG extraction fails
+- **Enhanced Logging**: Added comprehensive logging for graph generation process
+- **Document Parameter**: Updated graph generator to accept document lists directly
+- **Error Recovery**: Improved error recovery with fallback mechanisms
+
+### Testing
+- **New Test Coverage**: Added test_document_ingestion_query.py for ingestion and query testing
+- **Integration Testing**: Enhanced integration testing for document processing pipeline
+- **Query Validation**: Added query validation tests for both GET and POST methods
+
+### Technical
+- **Adapter Improvements**: Enhanced LightRAG adapter with better initialization and error handling
+- **Pipeline Status**: Added multiple fallback methods for pipeline initialization
+- **Threading**: Used threading for synchronous operations in async context
+- **System Logging**: Added sys.stderr logging for better debugging
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed with timeout handling) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- Comprehensive unit test coverage ✅
+- Knowledge graph generation (with fallback) ✅
+- Graph visualization interface ✅
+- Increased timeout configurations ✅
+- Document reindexing scripts ✅
+- Unified knowledge graph interface ✅
+- Duplicate file cleanup ✅
+- Server startup fixed ✅
+- Async event loop compatibility ✅
+- **New document immediate processing** ✅
+- **Knowledge graph generation for new documents** ✅
+- **Intelligent query for all documents** ✅
+
 ## [0.5.44] - 2026-08-25
 
 ### Bug Fixes

@@ -1,5 +1,6 @@
 """LightRAG adapter for RAG KB integration."""
 
+import sys
 import asyncio
 import json
 from pathlib import Path
@@ -46,8 +47,16 @@ class LightRAGAdapter:
             try:
                 from lightrag.kg.shared_storage import initialize_pipeline_status
                 await initialize_pipeline_status()
+                print("Pipeline status initialized successfully", file=sys.stderr, flush=True)
             except Exception as e:
-                print(f"Warning: Could not initialize pipeline status: {e}")
+                print(f"Warning: Could not initialize pipeline status: {e}", file=sys.stderr, flush=True)
+                # Try alternative initialization
+                try:
+                    from lightrag.kg.shared_storage import initialize_chunk_entity_relation_graph
+                    await initialize_chunk_entity_relation_graph()
+                    print("Alternative graph initialization successful", file=sys.stderr, flush=True)
+                except Exception as e2:
+                    print(f"Alternative initialization also failed: {e2}", file=sys.stderr, flush=True)
                 # Continue anyway - basic functionality should still work
             self._initialized = True
 
@@ -80,30 +89,86 @@ class LightRAGAdapter:
             # Ensure storages are initialized
             await self.ensure_initialized()
             
-            # Use async insert method to avoid event loop conflicts
+            import sys
+            print(f"Starting ingestion of {len(documents)} documents", file=sys.stderr, flush=True)
+            
+            # Use synchronous insert method directly in new thread
+            import threading
+            import queue
+            
+            result_queue = queue.Queue()
+            
+            def ingest_sync(formatted_content, doc_id):
+                """Synchronous document ingestion in separate thread"""
+                try:
+                    self.rag.insert(formatted_content)
+                    result_queue.put((doc_id, True, None))
+                except Exception as e:
+                    result_queue.put((doc_id, False, str(e)))
+            
+            threads = []
             for doc in documents:
                 content = doc.get('content', '')
                 doc_id = doc.get('doc_id', '')
+                metadata = doc.get('metadata', {})
                 
                 if not content.strip():
-                    print(f"Skipping empty document: {doc_id}")
+                    print(f"Skipping empty document: {doc_id}", file=sys.stderr, flush=True)
                     continue
                 
-                # Use async insert method directly
-                try:
-                    await self.rag.ainsert(content)
-                    print(f"Successfully ingested document: {doc_id}")
-                except Exception as e:
-                    print(f"Error ingesting document {doc_id}: {e}")
-                    import traceback
-                    traceback.print_exc()
+                # Format document with metadata for better indexing
+                formatted_content = self._format_document(content, doc_id, metadata)
+                
+                # Start thread for synchronous insert
+                print(f"Ingesting document: {doc_id} (content length: {len(formatted_content)})", file=sys.stderr, flush=True)
+                thread = threading.Thread(target=ingest_sync, args=(formatted_content, doc_id))
+                thread.start()
+                threads.append(thread)
             
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
+            
+            # Collect results
+            while not result_queue.empty():
+                doc_id, success, error = result_queue.get()
+                if success:
+                    print(f"Successfully ingested document: {doc_id}", file=sys.stderr, flush=True)
+                else:
+                    print(f"Error ingesting document {doc_id}: {error}", file=sys.stderr, flush=True)
+            
+            print(f"Document ingestion completed", file=sys.stderr, flush=True)
             return True
         except Exception as e:
-            print(f"LightRAG ingestion error: {e}")
+            print(f"LightRAG ingestion error: {e}", file=sys.stderr, flush=True)
             import traceback
-            traceback.print_exc()
+            traceback.print_exc(file=sys.stderr)
             return False
+    
+    def _format_document(self, content, doc_id, metadata):
+        """Format document content with metadata for better indexing.
+        
+        Args:
+            content: Document content
+            doc_id: Document ID
+            metadata: Document metadata
+            
+        Returns:
+            Formatted document string
+        """
+        # Add document metadata as header
+        header = f"[doc_id={doc_id}"
+        if metadata:
+            if 'title' in metadata:
+                header += f";title={metadata['title']}"
+            if 'pages' in metadata:
+                header += f";pages={metadata['pages']}"
+            if 'source' in metadata:
+                header += f";source={metadata['source']}"
+        header += "]"
+        
+        # Combine header with content
+        return f"{header}\n\n{content}"
 
     async def query(self, question, mode=None):
         """Query LightRAG with a question (async).
@@ -120,19 +185,29 @@ class LightRAGAdapter:
             await self.ensure_initialized()
             
             mode = mode or settings.lightrag_query_mode
-            print(f"LightRAG query: question='{question}', mode='{mode}'")
+            print(f"LightRAG query: question='{question}', mode='{mode}'", file=sys.stderr, flush=True)
             
             # Try naive mode first (simpler, no graph dependencies)
             result = await self.rag.aquery(
                 question,
                 param=QueryParam(mode="naive", only_need_context=False, enable_rerank=False),
             )
-            print(f"LightRAG result length: {len(result) if result else 0}")
-            print(f"LightRAG result preview: {result[:500] if result else 'empty'}...")
+            print(f"LightRAG result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
+            print(f"LightRAG result preview: {result[:500] if result else 'empty'}...", file=sys.stderr, flush=True)
             
-            # Basic validation only - let LLM handle knowledge base recognition
+            # Check if we got any meaningful result
             if not result or not result.strip():
-                return "知识库中未找到相关信息"
+                print("Empty result from LightRAG, trying hybrid mode", file=sys.stderr, flush=True)
+                # Try hybrid mode as fallback
+                result = await self.rag.aquery(
+                    question,
+                    param=QueryParam(mode="hybrid", only_need_context=False, enable_rerank=False),
+                )
+                print(f"Hybrid mode result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
+            
+            # If still no result, return informative message
+            if not result or not result.strip():
+                return "知识库中未找到相关信息。请确保文档已正确上传和索引。"
             
             # Only filter obviously empty or error responses
             if "提供的上下文中没有相关信息" in result or "知识库中未找到相关信息" in result:
@@ -140,11 +215,11 @@ class LightRAGAdapter:
             
             return result
         except Exception as e:
-            print(f"LightRAG query error: {e}")
+            print(f"LightRAG query error: {e}", file=sys.stderr, flush=True)
             import traceback
-            traceback.print_exc()
+            traceback.print_exc(file=sys.stderr)
             # Return a more informative error message
-            return "知识库中未找到相关信息"
+            return f"查询出错: {str(e)}。请检查文档是否已正确索引。"
 
     async def stream_query(self, question, mode=None):
         """Stream query response in SSE format.
