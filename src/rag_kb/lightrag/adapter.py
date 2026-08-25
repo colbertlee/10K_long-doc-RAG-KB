@@ -42,6 +42,9 @@ class LightRAGAdapter:
         """Ensure LightRAG storages are initialized."""
         if not self._initialized:
             await self.rag.initialize_storages()
+            # Initialize pipeline status for LightRAG
+            from lightrag.kg.shared_storage import initialize_pipeline_status
+            await initialize_pipeline_status()
             self._initialized = True
 
     def insert_chunks(self, chunks):
@@ -115,30 +118,13 @@ class LightRAGAdapter:
             print(f"LightRAG result length: {len(result) if result else 0}")
             print(f"LightRAG result preview: {result[:500] if result else 'empty'}...")
             
-            # Apply anti-hallucination check
+            # Basic validation only - let LLM handle knowledge base recognition
             if not result or not result.strip():
                 return "知识库中未找到相关信息"
             
-            # Check if the result is trying to say it doesn't have information
-            result_lower = result.lower()
-            if any(phrase in result_lower for phrase in ['不知道', '无法回答', '没有信息', '未找到', 'not found', 'don\'t know']):
-                return "知识库中未找到相关信息"
-            
-            # Check if the result seems to be generic LLM knowledge (not from knowledge base)
-            # Generic knowledge indicators
-            generic_patterns = [
-                '简单来说', '一般来说', '通常情况下', '总的来说', 
-                '这是一个', '这是一个非常', '这是一个极具',
-                '根据不同的语境', '可以从多个角度', '在日常生活中',
-                '在现代物理学中', '在机器学习中', '在计算机科学中'
-            ]
-            
-            if any(pattern in result for pattern in generic_patterns):
-                # If result contains generic knowledge patterns, it might be hallucination
-                # Check if it mentions specific knowledge base content
-                kb_indicators = ['文档', '知识库', '上传', '本地', '文件', '资料']
-                if not any(indicator in result for indicator in kb_indicators):
-                    return "知识库中未找到相关信息"
+            # Only filter obviously empty or error responses
+            if "提供的上下文中没有相关信息" in result or "知识库中未找到相关信息" in result:
+                return result  # Let LLM's own judgment stand
             
             return result
         except Exception as e:

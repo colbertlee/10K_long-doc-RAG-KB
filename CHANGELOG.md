@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.40] - 2026-08-25
+
+### LLM Recognition Enhancement
+- **Balanced System Prompt**: Adjusted LLM system prompt for better knowledge base recognition
+- **Reduced Over-Filtering**: Removed overly strict anti-hallucination patterns that blocked valid content
+- **Moderate Parameters**: Increased temperature to 0.3 and top_p to 0.3 for balanced responses
+- **Pipeline Initialization**: Added proper LightRAG pipeline status initialization
+- **Knowledge Base Focus**: LLM now prioritizes knowledge base content while maintaining accuracy
+
+### Technical
+- Modified ollama_llm function with balanced system prompt
+- Reduced generic pattern filtering in adapter query method
+- Added initialize_pipeline_status() to LightRAG adapter
+- Adjusted LLM parameters for better content recognition
+- Simplified post-processing validation
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- **LLM-based response generation (enhanced recognition)** ✅
+- GET method search API (fixed) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- **Enhanced LLM knowledge base recognition** ✅
+- Route conflict resolved ✅
+
 ## [0.5.39] - 2026-08-25
 
 ### Bug Fixes
