@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.37] - 2026-08-25
+
+### New Features
+- **OCR Support**: Added OCR (Optical Character Recognition) for scanned PDF documents
+- **Auto-Detection**: Automatically detects scanned PDFs by analyzing text extraction results
+- **Multi-Language OCR**: Supports Chinese and English text recognition
+- **Fallback Mechanism**: Graceful fallback to basic extraction if OCR fails
+
+### Technical
+- Added pytesseract>=0.3.10 and Pillow>=10.0.0 dependencies
+- Enhanced PyMuPDF parser with OCR capabilities
+- Implemented smart detection for scanned vs digital PDFs
+- Added high-DPI rendering (300 DPI) for better OCR accuracy
+- Added metadata flag to track OCR usage
+
+### OCR Logic
+- Detects scanned PDFs when average text per page < 100 characters
+- Renders pages to high-resolution images for OCR processing
+- Uses Tesseract OCR with Chinese and English language support
+- Falls back to basic extraction if OCR libraries unavailable
+- Logs OCR processing status for debugging
+
+### Dependencies
+- pytesseract>=0.3.10 (OCR engine wrapper)
+- Pillow>=10.0.0 (Image processing)
+- **Tesseract OCR engine** (system requirement - needs separate installation)
+
+### Installation Requirements
+For OCR functionality, you need to install Tesseract OCR engine separately:
+
+**Windows:**
+1. Download Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki
+2. Install Tesseract and add it to system PATH
+3. Download Chinese language data: `chi_sim.traineddata`
+4. Place language data in Tesseract tessdata directory
+
+**Or use chocolatey:**
+```powershell
+choco install tesseract
+```
+
+**Linux:**
+```bash
+sudo apt-get install tesseract-ocr
+sudo apt-get install tesseract-ocr-chi-sim
+```
+
+**macOS:**
+```bash
+brew install tesseract
+brew install tesseract-lang
+```
+
+### Working Features
+- Document upload and parsing ✅
+- **OCR for scanned PDFs** ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (LLM-level anti-hallucination) ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- LLM-level strict knowledge base constraints ✅
+
 ## [0.5.36] - 2026-08-25
 
 ### Security & Accuracy (LLM-Level)
