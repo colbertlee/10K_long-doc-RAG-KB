@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.46] - 2026-08-25
+
+### Critical Event Loop Fix
+- **Event Loop Compatibility**: Fixed critical event loop conflict in document ingestion
+- **Async Method Usage**: Changed from threading to direct async `ainsert()` method
+- **Pipeline Initialization**: Added manual pipeline status initialization as fallback
+- **LightRAG Compatibility**: Ensured all LightRAG operations run on the same event loop
+- **Document Processing**: Fixed document ingestion to work properly in async context
+
+### Technical Details
+- **Removed Threading**: Eliminated threading approach that created new event loops
+- **Direct Async Calls**: Used `await self.rag.ainsert()` directly on the same event loop
+- **Enhanced Initialization**: Added manual namespace data initialization as ultimate fallback
+- **Error Recovery**: Improved error recovery with multiple initialization attempts
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed with timeout handling) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- Comprehensive unit test coverage ✅
+- Knowledge graph generation (with fallback) ✅
+- Graph visualization interface ✅
+- Increased timeout configurations ✅
+- Document reindexing scripts ✅
+- Unified knowledge graph interface ✅
+- Duplicate file cleanup ✅
+- Server startup fixed ✅
+- Async event loop compatibility ✅
+- New document immediate processing ✅
+- New document knowledge graph generation ✅
+- All documents intelligent query ✅
+- **Event loop conflict resolution** ✅
+- **Document ingestion in async context** ✅
+
 ## [0.5.45] - 2026-08-25
 
 ### Critical Bug Fixes

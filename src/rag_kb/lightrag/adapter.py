@@ -57,7 +57,14 @@ class LightRAGAdapter:
                     print("Alternative graph initialization successful", file=sys.stderr, flush=True)
                 except Exception as e2:
                     print(f"Alternative initialization also failed: {e2}", file=sys.stderr, flush=True)
-                # Continue anyway - basic functionality should still work
+                    # Try manual initialization
+                    try:
+                        from lightrag.kg.shared_storage import namespace_data
+                        await namespace_data("pipeline_status", {"status": "initialized"})
+                        print("Manual pipeline status initialization successful", file=sys.stderr, flush=True)
+                    except Exception as e3:
+                        print(f"Manual initialization also failed: {e3}", file=sys.stderr, flush=True)
+                        # Continue anyway - basic functionality should still work
             self._initialized = True
 
     def insert_chunks(self, chunks):
@@ -92,21 +99,7 @@ class LightRAGAdapter:
             import sys
             print(f"Starting ingestion of {len(documents)} documents", file=sys.stderr, flush=True)
             
-            # Use synchronous insert method directly in new thread
-            import threading
-            import queue
-            
-            result_queue = queue.Queue()
-            
-            def ingest_sync(formatted_content, doc_id):
-                """Synchronous document ingestion in separate thread"""
-                try:
-                    self.rag.insert(formatted_content)
-                    result_queue.put((doc_id, True, None))
-                except Exception as e:
-                    result_queue.put((doc_id, False, str(e)))
-            
-            threads = []
+            # Use async insert method directly on the same event loop
             for doc in documents:
                 content = doc.get('content', '')
                 doc_id = doc.get('doc_id', '')
@@ -119,23 +112,16 @@ class LightRAGAdapter:
                 # Format document with metadata for better indexing
                 formatted_content = self._format_document(content, doc_id, metadata)
                 
-                # Start thread for synchronous insert
-                print(f"Ingesting document: {doc_id} (content length: {len(formatted_content)})", file=sys.stderr, flush=True)
-                thread = threading.Thread(target=ingest_sync, args=(formatted_content, doc_id))
-                thread.start()
-                threads.append(thread)
-            
-            # Wait for all threads to complete
-            for thread in threads:
-                thread.join()
-            
-            # Collect results
-            while not result_queue.empty():
-                doc_id, success, error = result_queue.get()
-                if success:
+                # Use async insert method directly on the same event loop
+                try:
+                    print(f"Ingesting document: {doc_id} (content length: {len(formatted_content)})", file=sys.stderr, flush=True)
+                    await self.rag.ainsert(formatted_content)
                     print(f"Successfully ingested document: {doc_id}", file=sys.stderr, flush=True)
-                else:
-                    print(f"Error ingesting document {doc_id}: {error}", file=sys.stderr, flush=True)
+                except Exception as e:
+                    print(f"Error ingesting document {doc_id}: {e}", file=sys.stderr, flush=True)
+                    import traceback
+                    traceback.print_exc(file=sys.stderr)
+                    # Continue with other documents even if one fails
             
             print(f"Document ingestion completed", file=sys.stderr, flush=True)
             return True
