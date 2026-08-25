@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.30] - 2026-08-25
+
+### Fixed
+- **Browser Caching**: Added cache-control headers to all HTML files to force browser reload
+- **Simple UI**: Added no-cache meta tags to prevent browser caching
+- **Main UI**: Added no-cache meta tags to prevent browser caching
+- **Enhanced Search**: Added no-cache meta tags to prevent browser caching
+- **Multi KB Selector**: Added no-cache meta tags to prevent browser caching
+
+### Technical
+- Added Cache-Control, Pragma, and Expires meta headers to force browser cache invalidation
+- This ensures users get the latest frontend code with POST method fixes
+
 ## [0.5.29] - 2026-08-25
 
 ### Fixed
