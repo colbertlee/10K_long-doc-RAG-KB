@@ -679,8 +679,19 @@ async def get_documents():
         return {'error': str(e), 'message': 'Failed to get documents', 'documents': [], 'total': 0}
 
 
+@app.get('/api/v1/search')
+async def search_get(q: str = Query(''), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
+    """Search the RAG knowledge base (GET method for backward compatibility)."""
+    import sys
+    print(f"=== MAIN.PY SEARCH GET CALLED ===", file=sys.stderr, flush=True)
+    print(f"Query: {q}, mode: {mode}, query_mode: {query_mode}", file=sys.stderr, flush=True)
+    
+    # Call the POST search logic
+    return await _search_impl(q, mode, query_mode, category, dept, level, top_k, auto_classify)
+
+
 @app.post('/api/v1/search')
-async def search(body: dict = Body(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
+async def search_post(body: dict = Body(None), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
     """Search the RAG knowledge base with multi-knowledge base support and automatic intent classification.
 
     Args:
@@ -697,15 +708,24 @@ async def search(body: dict = Body(...), dept: str = '', level: str = 'Internal'
         Search results with answer and sources
     """
     import sys
-    print(f"=== MAIN.PY SEARCH CALLED ===", file=sys.stderr, flush=True)
+    print(f"=== MAIN.PY SEARCH POST CALLED ===", file=sys.stderr, flush=True)
     
     # Extract query from request body
-    q = body.get('q', '') if body else ''
-    mode = body.get('mode', mode) if body else mode
-    query_mode = body.get('query_mode', query_mode) if body else query_mode
-    category = body.get('category', category) if body else category
+    if body:
+        q = body.get('q', '')
+        mode = body.get('mode', mode)
+        query_mode = body.get('query_mode', query_mode)
+        category = body.get('category', category)
+    else:
+        q = ''
     
     print(f"Query: {q}, mode: {mode}, query_mode: {query_mode}", file=sys.stderr, flush=True)
+    
+    return await _search_impl(q, mode, query_mode, category, dept, level, top_k, auto_classify)
+
+
+async def _search_impl(q: str, mode: str, query_mode: str, category: str, dept: str, level: str, top_k: int, auto_classify: bool):
+    """Internal search implementation shared by GET and POST methods."""
     
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter

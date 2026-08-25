@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.32] - 2026-08-25
+
+### Fixed
+- **Search Endpoint**: Added both GET and POST method support for backward compatibility
+- **Body Parameters**: Fixed POST method to accept optional body with proper parsing
+- **API Compatibility**: POST method now works correctly with JSON body
+- **Dual Method Support**: Both GET and POST methods share same implementation
+
+### Engineering
+- Added internal _search_impl function to share logic between GET and POST
+- Fixed method naming conflicts (search_get, search_post)
+- POST method confirmed working with detailed responses
+- GET method added for backward compatibility
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation ✅
+- POST method search API ✅
+- GET method search API (backward compatibility) ✅
+- All frontend interfaces using correct HTTP methods ✅
+
 ## [0.5.31] - 2026-08-25
 
 ### Fixed
