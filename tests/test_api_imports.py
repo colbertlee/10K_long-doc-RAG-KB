@@ -59,8 +59,16 @@ def test_fastapi_app_structure():
     from rag_kb.api.main import app
     assert app.title == 'rag-kb', "App should have correct title"
     
-    # Check for expected routes
-    route_paths = [route.path for route in app.routes]
+    # Check for expected routes - handle different route types
+    route_paths = []
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            route_paths.append(route.path)
+        elif hasattr(route, 'routes'):  # Handle _IncludedRouter
+            for sub_route in route.routes:
+                if hasattr(sub_route, 'path'):
+                    route_paths.append(sub_route.path)
+    
     assert '/health' in route_paths, "Should have health check endpoint"
     # API v1 routes may not be present if import fails, but that's acceptable
 

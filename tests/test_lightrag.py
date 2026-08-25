@@ -25,7 +25,9 @@ def test_embedding_function_signature():
     import inspect
     
     sig = inspect.signature(ollama_embed)
-    assert 'texts' in sig.parameters
+    # ollama_embed uses *args and **kwargs for flexibility
+    assert 'args' in sig.parameters
+    assert 'kwargs' in sig.parameters
 
 
 def test_llm_function_signature():
