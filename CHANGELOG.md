@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.33] - 2026-08-25
+
+### Fixed
+- **Frontend API Calls**: Reverted to GET method for browser compatibility
+- **Backend Dual Support**: Backend now supports both GET and POST methods
+- **Browser Compatibility**: GET method works better with browser caching and history
+- **API Flexibility**: Both methods share same implementation via _search_impl
+
+### Technical
+- Reverted frontend files to use GET method (simple_ui.html, main_ui.html, enhanced_search.html, multi_kb_selector.html)
+- Backend maintains dual GET/POST support for future flexibility
+- Removed POST-specific body requirements from frontend
+- Cache-control headers remain for force refresh
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+
 ## [0.5.32] - 2026-08-25
 
 ### Fixed

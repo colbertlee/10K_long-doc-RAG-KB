@@ -331,16 +331,7 @@
             resultDiv.textContent = '搜索中...';
 
             try {
-                const response = await fetch(`${API_BASE}/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        q: searchInput.value,
-                        mode: searchMode.value
-                    })
-                });
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${searchMode.value}`);
                 const data = await response.json();
                 
                 if (data.error) {

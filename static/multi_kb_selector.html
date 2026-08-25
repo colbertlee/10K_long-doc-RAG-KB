@@ -162,18 +162,7 @@
                 if (currentQueryMode === 'global') mode = 'lightrag';
                 if (currentQueryMode === 'naive') mode = 'lightrag';
 
-                const response = await fetch(`${API_BASE}/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        q: searchInput.value,
-                        mode: mode,
-                        query_mode: currentQueryMode,
-                        category: currentProduct
-                    })
-                });
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}&query_mode=${currentQueryMode}&category=${currentProduct}`);
                 const data = await response.json();
                 
                 if (data.error) {
