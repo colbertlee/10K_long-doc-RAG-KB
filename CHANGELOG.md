@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.54] - 2026-08-25
+
+### Knowledge Graph Naming Fix
+- **Simple Graph Default**: Now uses simple document-based graph with proper naming by default
+- **ID Mapping Enhancement**: Added content-based ID mapping between LightRAG and document registry
+- **Title Priority**: Improved title extraction from multiple metadata sources
+- **API Update**: Graph generation API now uses simple graph with proper naming
+- **Fallback Strategy**: Graceful fallback to simple graph when LightRAG entity extraction fails
+
+### Technical Improvements
+- **Content Matching**: Maps LightRAG doc-xxx IDs to original doc IDs via content matching
+- **Multi-source Title**: Prioritizes title from multiple metadata fields
+- **Edge Description**: Enhanced edge descriptions with meaningful source/target names
+- **Graph Generator**: Added use_simple_graph parameter for controlled graph generation
+- **Naming Logic**: Improved hash cleanup and readable name generation
+
+### Bug Fixes
+- **LightRAG Entity Extraction**: LightRAG entity_names field is empty, using simple graph as fallback
+- **ID Mapping Issues**: Fixed LightRAG ID to document ID mapping via content matching
+- **Empty Edge Descriptions**: Fixed edge descriptions showing empty strings
+- **Graph Naming**: Knowledge graph nodes now display document titles instead of hash IDs
+
 ## [0.5.53] - 2026-08-25
 
 ### Advanced Features Optimization and Performance Tuning

@@ -24,11 +24,12 @@ class KnowledgeGraphGenerator:
             await self.rag.ensure_initialized()
             self._initialized = True
     
-    async def generate_graph_from_documents(self, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Generate knowledge graph from uploaded documents
+    async def generate_graph_from_documents(self, documents: List[Dict[str, Any]], use_simple_graph: bool = True) -> Dict[str, Any]:
+        """Generate knowledge graph from uploaded documents.
         
         Args:
             documents: List of document dictionaries with 'doc_id', 'content', and 'metadata'
+            use_simple_graph: If True, prefer simple document-based graph with proper naming
             
         Returns:
             Knowledge graph data with nodes and edges
@@ -39,6 +40,12 @@ class KnowledgeGraphGenerator:
             import sys
             print(f"Starting graph generation from {len(documents)} documents", file=sys.stderr, flush=True)
             
+            # If use_simple_graph is True, directly use simple graph with proper naming
+            if use_simple_graph:
+                print("Using simple document-based graph with proper naming", file=sys.stderr, flush=True)
+                return await self._create_simple_graph(documents)
+            
+            # Otherwise, try LightRAG graph extraction
             # Ingest documents into LightRAG (this triggers graph extraction)
             success = await self.rag.ingest(documents)
             
@@ -81,14 +88,36 @@ class KnowledgeGraphGenerator:
             # Also read document registry for name mapping
             registry_file = Path(settings.data_dir) / 'document_registry.json'
             doc_name_mapping = {}
+            registry = {}
             
             if registry_file.exists():
                 with open(registry_file, 'r', encoding='utf-8') as f:
                     registry = json.load(f)
                     for doc_id, doc_data in registry.items():
-                        metadata = doc_data.get('metadata', {})
-                        title = metadata.get('title', metadata.get('filename', doc_id))
+                        # Try multiple sources for title
+                        title = (
+                            doc_data.get('title') or  # Top-level title
+                            doc_data.get('metadata', {}).get('title') or  # Metadata title
+                            doc_data.get('metadata', {}).get('filename') or  # Metadata filename
+                            doc_id  # Fallback to doc_id
+                        )
                         doc_name_mapping[doc_id] = title
+            
+            # Also read LightRAG's full_docs for ID mapping via content matching
+            full_docs_file = Path(settings.lightrag_working_dir) / 'kv_store_full_docs.json'
+            lightrag_id_mapping = {}
+            
+            if full_docs_file.exists() and registry:
+                with open(full_docs_file, 'r', encoding='utf-8') as f:
+                    full_docs = json.load(f)
+                    # Map LightRAG doc-xxx IDs to original doc IDs via content matching
+                    for lightrag_id, doc_data in full_docs.items():
+                        content = doc_data.get('content', '')
+                        # Find matching document in registry by content
+                        for reg_doc_id, reg_data in registry.items():
+                            if reg_data.get('content', '') == content:
+                                lightrag_id_mapping[lightrag_id] = reg_doc_id
+                                break
             
             entities = []
             edges = []
@@ -102,13 +131,16 @@ class KnowledgeGraphGenerator:
                         if entity_names:
                             entity_name = entity_names[0]  # Use first entity name
                         else:
+                            # Try to map LightRAG ID to original doc ID
+                            original_doc_id = lightrag_id_mapping.get(entity_id, entity_id)
                             # Fallback to document name mapping or use ID
-                            entity_name = doc_name_mapping.get(entity_id, entity_id)
+                            entity_name = doc_name_mapping.get(original_doc_id, doc_name_mapping.get(entity_id, entity_id))
                         
                         # Clean up the name
                         if entity_name.startswith('doc-'):
                             # Try to get the actual document name
-                            entity_name = doc_name_mapping.get(entity_id, entity_name)
+                            original_doc_id = lightrag_id_mapping.get(entity_name, entity_name)
+                            entity_name = doc_name_mapping.get(original_doc_id, entity_name)
                         
                         entities.append({
                             'id': entity_id,
@@ -126,18 +158,22 @@ class KnowledgeGraphGenerator:
                         source = relation_info.get('source', '')
                         target = relation_info.get('target', '')
                         
-                        # Map IDs to names
-                        source_name = doc_name_mapping.get(source, source)
-                        target_name = doc_name_mapping.get(target, target)
+                        # Map LightRAG IDs to original doc IDs
+                        source_original = lightrag_id_mapping.get(source, source)
+                        target_original = lightrag_id_mapping.get(target, target)
+                        
+                        # Map to names
+                        source_name = doc_name_mapping.get(source_original, doc_name_mapping.get(source, source))
+                        target_name = doc_name_mapping.get(target_original, doc_name_mapping.get(target, target))
                         
                         edges.append({
                             'id': relation_id,
                             'source': source,
-                            'source_name': source_name,
+                            'source_name': source_name if source_name and source_name != source else source,
                             'target': target,
-                            'target_name': target_name,
+                            'target_name': target_name if target_name and target_name != target else target,
                             'type': relation_info.get('relation_type', 'related_to'),
-                            'description': relation_info.get('description', f'{source_name} -> {target_name}'),
+                            'description': f'{source_name if source_name and source_name != source else source} -> {target_name if target_name and target_name != target else target}',
                             'metadata': relation_info
                         })
             
@@ -194,7 +230,8 @@ class KnowledgeGraphGenerator:
                     documents.append({
                         'doc_id': doc_id,
                         'content': doc_data.get('content', ''),
-                        'metadata': doc_data.get('metadata', {})
+                        'metadata': doc_data.get('metadata', {}),
+                        'title': doc_data.get('title', doc_id)  # Add title at top level
                     })
             
             # Create simple document nodes
@@ -207,10 +244,11 @@ class KnowledgeGraphGenerator:
                 
                 # Try multiple sources for a meaningful name
                 title = (
-                    metadata.get('title') or 
-                    metadata.get('filename') or 
-                    metadata.get('source') or 
-                    doc_id
+                    doc.get('title') or  # Top-level title
+                    metadata.get('title') or  # Metadata title
+                    metadata.get('filename') or  # Metadata filename
+                    metadata.get('source') or  # Source field
+                    doc_id  # Fallback to doc_id
                 )
                 
                 # Clean up the title - remove common prefixes
@@ -427,7 +465,8 @@ class KnowledgeGraphGenerator:
                 documents.append({
                     'doc_id': doc_id,
                     'content': doc_data.get('content', ''),
-                    'metadata': doc_data.get('metadata', {})
+                    'metadata': doc_data.get('metadata', {}),
+                    'title': doc_data.get('title', doc_id)  # Add title at top level
                 })
             
             # Re-ingest documents

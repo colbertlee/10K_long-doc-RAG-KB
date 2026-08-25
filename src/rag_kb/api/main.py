@@ -437,11 +437,12 @@ async def generate_knowledge_graph(request: dict):
             documents.append({
                 'doc_id': doc_id,
                 'content': doc_data.get('content', ''),
-                'metadata': doc_data.get('metadata', {})
+                'metadata': doc_data.get('metadata', {}),
+                'title': doc_data.get('title', doc_id)  # Add title for proper naming
             })
         
-        # Generate graph
-        graph_data = await graph_generator.generate_graph_from_documents(documents)
+        # Generate graph (use simple graph with proper naming by default)
+        graph_data = await graph_generator.generate_graph_from_documents(documents, use_simple_graph=True)
         
         return graph_data
         

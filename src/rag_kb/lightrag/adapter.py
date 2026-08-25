@@ -122,6 +122,14 @@ class LightRAGAdapter:
                 try:
                     print(f"Ingesting document: {doc_id} (content length: {len(formatted_content)})", file=sys.stderr, flush=True)
                     await self.rag.ainsert(formatted_content)
+                    
+                    # Store LightRAG's internal doc_id mapping for graph naming
+                    # LightRAG creates doc-xxx format IDs internally
+                    if 'lightrag_doc_id' not in metadata:
+                        # We'll need to extract this from LightRAG's storage later
+                        # For now, store the original doc_id for mapping
+                        pass
+                    
                     print(f"Successfully ingested document: {doc_id}", file=sys.stderr, flush=True)
                     success_count += 1
                 except Exception as e:
