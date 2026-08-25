@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.31] - 2026-08-25
+
+### Fixed
+- **Search Endpoint**: Changed from Query parameters to Body parameters for POST method
+- **Request Handling**: Added Body import and proper request body parsing
+- **API Compatibility**: Fixed search endpoint to accept JSON body instead of query parameters
+
+### Engineering
+- Fixed test_fastapi_app_structure to handle _IncludedRouter
+- Fixed test_embedding_function_signature for *args/**kwargs signature
+- Added test_frontend_api.py with cache control and port consistency tests
+- Updated requirements.txt with current dependencies
+- All tests passing (29 passed, 2 skipped)
+- Created GitHub release v0.5.30
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation ✅
+- POST method search API ✅
+- All frontend interfaces using correct HTTP methods ✅
+
 ## [0.5.30] - 2026-08-25
 
 ### Fixed

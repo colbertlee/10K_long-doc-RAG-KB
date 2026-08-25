@@ -3,7 +3,7 @@
 import json
 import asyncio
 from typing import AsyncIterator, List, Dict, Any
-from fastapi import FastAPI, File, Query, UploadFile
+from fastapi import FastAPI, File, Query, UploadFile, Body
 from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -680,11 +680,11 @@ async def get_documents():
 
 
 @app.post('/api/v1/search')
-async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
+async def search(body: dict = Body(...), dept: str = '', level: str = 'Internal', top_k: int = 8, mode: str = 'hybrid', query_mode: str = 'hybrid', category: str = 'all', auto_classify: bool = True):
     """Search the RAG knowledge base with multi-knowledge base support and automatic intent classification.
 
     Args:
-        q: Search query
+        body: Request body with 'q' parameter and other optional parameters
         dept: Department filter
         level: Access level filter
         top_k: Number of results to return
@@ -698,6 +698,13 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
     """
     import sys
     print(f"=== MAIN.PY SEARCH CALLED ===", file=sys.stderr, flush=True)
+    
+    # Extract query from request body
+    q = body.get('q', '') if body else ''
+    mode = body.get('mode', mode) if body else mode
+    query_mode = body.get('query_mode', query_mode) if body else query_mode
+    category = body.get('category', category) if body else category
+    
     print(f"Query: {q}, mode: {mode}, query_mode: {query_mode}", file=sys.stderr, flush=True)
     
     try:
