@@ -1,0 +1,19 @@
+# Test Document for RAG System
+
+## Machine Learning Fundamentals
+
+Machine learning is a subset of artificial intelligence that enables systems to learn from data.
+
+### Key Concepts
+
+1. **Supervised Learning**: Learning with labeled data
+2. **Unsupervised Learning**: Finding patterns in unlabeled data  
+3. **Deep Learning**: Neural networks with multiple layers
+
+### Applications
+
+- Healthcare: Medical diagnosis
+- Finance: Fraud detection
+- Technology: Image recognition
+
+This document is specifically designed to test the RAG system's ability to ingest, index, and retrieve content accurately.

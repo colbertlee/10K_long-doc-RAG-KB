@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-kb"
-version = "0.5.40"
+version = "0.5.41"
 description = "10K long-document RAG knowledge base"
 requires-python = ">=3.11"
 dependencies = [
@@ -25,6 +25,7 @@ dependencies = [
     "sentence-transformers>=2.3",
     "numpy",
     "pytest>=8.0",
+    "pytest-asyncio>=1.0.0",
     "open-webui",
     "pytesseract>=0.3.10",
     "Pillow>=10.0.0",
@@ -35,3 +36,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

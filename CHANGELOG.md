@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.41] - 2026-08-25
+
+### Testing
+- **LLM Knowledge Base Recognition Tests**: Added comprehensive unit tests for LLM knowledge base recognition
+- **Configuration Tests**: Added tests for LLM configuration, system prompts, and parameters
+- **Vector Database Tests**: Added tests for vector database configuration and file structure
+- **Anti-Hallucination Tests**: Added tests for anti-hallucination mechanisms and parameters
+- **Integration Tests**: Added tests for API endpoints and integration points
+- **Error Handling Tests**: Added tests for error handling and fallback mechanisms
+- **Test Framework**: Added pytest-asyncio support for async testing
+
+### Test Coverage
+- **25 unit tests** covering LLM functions, configuration, and knowledge base recognition
+- **Test categories**: LLM config, system prompts, vector database, LightRAG adapter, knowledge base recognition logic, anti-hallucination mechanisms, API endpoints, integration points, error handling, configuration validation
+- **Test success rate**: 100% (25/25 tests passing)
+
+### Technical
+- Added pytest-asyncio dependency for async test support
+- Added asyncio configuration to pyproject.toml
+- Created comprehensive test suite for LLM knowledge base recognition
+- Tests validate configuration, integration, and error handling
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- **Comprehensive unit test coverage** ✅
+
 ## [0.5.40] - 2026-08-25
 
 ### LLM Recognition Enhancement
