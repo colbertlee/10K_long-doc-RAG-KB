@@ -151,14 +151,18 @@
                 const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${searchMode.value}`);
                 const data = await response.json();
                 
+                console.log('API Response:', data); // Debug log
+                
                 if (data.error) {
                     showResult(resultDiv, '❌ 搜索失败: ' + data.error, 'error');
                 } else {
                     const sources = data.sources || [];
                     const mode = data.mode || 'lightrag';
+                    const answer = data.answer || '无回答';
+                    
                     showResult(resultDiv, `
                         <strong>搜索结果 (${mode}模式):</strong><br>
-                        <p>答案: ${data.answer}</p>
+                        <p>答案: ${answer}</p>
                         <p>来源数量: ${sources.length}</p>
                         ${sources.length > 0 ? '<p>来源详情:</p><ul>' + sources.map(s => `<li>${s.id} (分数: ${s.score || s.rrf_score?.toFixed(2) || 'N/A'})</li>`).join('') + '</ul>' : ''}
                     `, 'success');

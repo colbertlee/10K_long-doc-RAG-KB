@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.38] - 2026-08-25
+
+### Frontend Fixes
+- **Response Parsing**: Added debug logging for API responses
+- **Undefined Handling**: Added fallback values for undefined answer fields
+- **Error Display**: Enhanced error handling in frontend interfaces
+- **Debug Mode**: Added console.log for troubleshooting API responses
+
+### Technical
+- Modified simple_ui.html to handle undefined answer values
+- Modified main_ui.html to handle undefined answer values
+- Added debug logging to track API response structure
+- Enhanced error handling with fallback display values
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (LLM-level anti-hallucination) ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- LLM-level strict knowledge base constraints ✅
+- **Enhanced frontend response handling** ✅
+
 ## [0.5.37] - 2026-08-25
 
 ### New Features
