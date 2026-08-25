@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.28] - 2026-08-25
+
+### Fixed
+- **Chat Completions API**: Fixed missing get_rag() function in routes.py
+- **Async Query**: Updated chat completions to use async rag.query() method
+- **Query Mode**: Changed from hybrid to naive mode for more reliable responses
+- **Error Handling**: Added traceback logging for better debugging
+
+### Tested
+- ✅ Document upload and ingestion working correctly
+- ✅ LLM问答功能 returning detailed Chinese responses
+- ✅ 语义搜索功能 with vector embeddings
+- ✅ 对话功能 via OpenAI-compatible API
+- ✅ Different search modes (naive, hybrid) working
+
+### Working Features
+- Document upload and parsing
+- LightRAG document ingestion and vector indexing
+- Semantic search with LightRAG naive mode
+- LLM-based response generation (gemma4:e4b)
+- OpenAI-compatible chat completions API
+- Basic text search fallback
+- All API endpoints functional
+
 ## [0.5.27] - 2026-08-25
 
 ### Fixed

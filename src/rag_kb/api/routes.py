@@ -9,6 +9,12 @@ from typing import List, Dict, Any
 router = APIRouter()
 
 
+def get_rag():
+    """Get LightRAG adapter instance (lazy initialization)."""
+    from rag_kb.lightrag.adapter import LightRAGAdapter
+    return LightRAGAdapter()
+
+
 @router.post("/chat/completions")
 async def chat_completions_endpoint(body: dict):
     """OpenAI-compatible chat completions endpoint.
@@ -36,8 +42,8 @@ async def chat_completions_endpoint(body: dict):
         
         rag = get_rag()
         
-        # Generate response using LightRAG
-        answer = rag.query(user_message, mode="hybrid")
+        # Generate response using LightRAG (async)
+        answer = await rag.query(user_message, mode="naive")
         
         # Return in OpenAI-compatible format
         return {
@@ -60,6 +66,8 @@ async def chat_completions_endpoint(body: dict):
             }
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

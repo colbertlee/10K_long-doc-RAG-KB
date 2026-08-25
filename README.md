@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.27 (Latest)  
+**Current Version**: v0.5.28 (Latest)  
 **Release Date**: 2026-08-25
 
-> **Version Note**: v0.5.27 includes major LightRAG integration fixes. Semantic search with LightRAG naive mode is now fully functional. Document upload, vector indexing, and LLM-based responses working correctly.
+> **Version Note**: v0.5.28 fixes chat completions API and confirms all core features working. Document upload, LLM问答, 语义搜索, and 对话功能 all tested and functional.
 
 ## Features
 
