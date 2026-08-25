@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.34] - 2026-08-25
+
+### Security & Accuracy
+- **Anti-Hallucination**: Added strict system prompt to prevent LLM from generating fabricated answers
+- **Knowledge Base Constraint**: LLM now only answers based on uploaded documents and local folders
+- **No Information Response**: When knowledge base lacks relevant information, returns "知识库中未找到相关信息"
+- **Answer Validation**: Added post-processing to detect and replace uncertain responses with standard message
+
+### Technical
+- Modified LightRAG adapter query method to include system prompt
+- Updated chat completions streaming function with anti-hallucination logic
+- Added detection for uncertain response patterns
+- Standardized "no information found" response across all endpoints
+
+### Compliance
+- Ensures LLM responses are strictly based on provided knowledge base
+- Prevents model from fabricating information outside of uploaded documents
+- Maintains accuracy and reliability of RAG system
+
+### Working Features
+- Document upload and parsing ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (anti-hallucination) ✅
+- GET method search API (primary) ✅
+- POST method search API (alternative) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Strict knowledge base constraints ✅
+
 ## [0.5.33] - 2026-08-25
 
 ### Fixed

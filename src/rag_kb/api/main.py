@@ -811,11 +811,32 @@ async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> Asy
     Yields:
         SSE-formatted response chunks
     """
+    # Add system prompt to prevent hallucination
+    system_prompt = """你是一个严格基于知识库回答问题的助手。请遵循以下规则：
+
+1. 只能基于提供的知识库内容回答问题
+2. 如果知识库中没有相关信息，必须直接回答"知识库中未找到相关信息"
+3. 严禁编造、猜测或添加知识库之外的信息
+4. 如果信息不完整，请如实说明知识库中的已知部分
+5. 保持回答准确、客观，不添加主观臆测"""
+    
+    # Combine system prompt with user question
+    enhanced_prompt = f"{system_prompt}\n\n用户问题：{prompt}"
+    
     loop = asyncio.get_event_loop()
-    answer = await loop.run_in_executor(None, rag.query, prompt, mode)
+    answer = await loop.run_in_executor(None, rag.query, enhanced_prompt, mode)
     NL = chr(10)
     SSE_END = NL * 2
     buf = ''
+    
+    # Check if answer indicates no information found
+    if not answer or not answer.strip():
+        answer = "知识库中未找到相关信息"
+    
+    # Check if the answer is trying to say it doesn't have information
+    answer_lower = answer.lower()
+    if any(phrase in answer_lower for phrase in ['不知道', '无法回答', '没有信息', '未找到', 'not found', 'don\'t know']):
+        answer = "知识库中未找到相关信息"
     
     for ch in answer:
         buf += ch
