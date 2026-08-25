@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG知识库 - 知识图谱</title>
+    <title>RAG知识库 - 统一知识图谱</title>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +17,7 @@
         
         .main-container { flex: 1; display: flex; overflow: hidden; }
         
-        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .sidebar { width: 320px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
         .sidebar h2 { font-size: 1.2em; color: #333; margin-bottom: 15px; }
         
         .control-group { margin-bottom: 20px; }
@@ -25,10 +25,14 @@
         .control-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
         .control-select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
         
-        .btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; width: 100%; }
+        .btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; width: 100%; margin-bottom: 10px; }
         .btn:hover { background: #5568d3; }
         .btn-secondary { background: #6c757d; }
         .btn-secondary:hover { background: #5a6268; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; }
         
         .graph-container { flex: 1; position: relative; background: white; }
         #cy { width: 100%; height: 100%; }
@@ -38,7 +42,7 @@
         .stat-label { font-size: 0.9em; color: #666; }
         .stat-value { font-size: 1.2em; font-weight: 600; color: #333; }
         
-        .node-info { position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 300px; display: none; }
+        .node-info { position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 350px; display: none; }
         .node-info.active { display: block; }
         .node-info h3 { color: #333; margin-bottom: 10px; }
         .node-info p { color: #666; font-size: 0.9em; margin-bottom: 5px; }
@@ -49,11 +53,21 @@
         
         .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #666; }
         .empty-state h3 { margin-bottom: 10px; }
+        
+        .message { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 25px; border-radius: 8px; display: none; z-index: 1000; }
+        .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .message.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .stats-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-card h3 { color: #333; margin-bottom: 5px; font-size: 0.9em; }
+        .stat-card .value { color: #667eea; font-size: 1.5em; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🕸️ RAG知识库 - 知识图谱</h1>
+        <h1>🕸️ RAG知识库 - 统一知识图谱</h1>
         <div class="header-actions">
             <button class="header-btn" onclick="refreshGraph()">🔄 刷新图谱</button>
             <button class="header-btn" onclick="exportGraph()">📥 导出图谱</button>
@@ -64,19 +78,45 @@
         <div class="sidebar">
             <h2>🎛️ 图谱控制</h2>
             
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>节点</h3>
+                    <div class="value" id="nodeCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>边</h3>
+                    <div class="value" id="edgeCount">0</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">图谱操作</label>
+                <button class="btn btn-success" onclick="generateGraph()">🔄 生成知识图谱</button>
+                <button class="btn btn-warning" onclick="rebuildGraph()">🔨 重建图谱</button>
+                <button class="btn btn-secondary" onclick="getStatistics()">📊 获取统计</button>
+            </div>
+            
             <div class="control-group">
                 <label class="control-label">实体搜索</label>
                 <input type="text" class="control-input" id="entitySearch" placeholder="搜索实体...">
             </div>
             
             <div class="control-group">
+                <label class="control-label">实体子图查询</label>
+                <input type="text" class="control-input" id="entityName" placeholder="输入实体名称...">
+                <button class="btn" onclick="getEntitySubgraph()">🔍 查询实体子图</button>
+            </div>
+            
+            <div class="control-group">
                 <label class="control-label">实体类型过滤</label>
                 <select class="control-select" id="entityTypeFilter">
                     <option value="">全部类型</option>
+                    <option value="document">文档</option>
                     <option value="PERSON">人物</option>
                     <option value="ORGANIZATION">组织</option>
                     <option value="LOCATION">地点</option>
                     <option value="CONCEPT">概念</option>
+                    <option value="unknown">未知</option>
                 </select>
             </div>
             
@@ -84,6 +124,7 @@
                 <label class="control-label">关系类型过滤</label>
                 <select class="control-select" id="relationTypeFilter">
                     <option value="">全部关系</option>
+                    <option value="related">相关</option>
                     <option value="RELATED_TO">相关</option>
                     <option value="PART_OF">属于</option>
                     <option value="LOCATED_IN">位于</option>
@@ -98,12 +139,13 @@
                     <option value="circle">环形布局</option>
                     <option value="grid">网格布局</option>
                     <option value="concentric">同心圆布局</option>
+                    <option value="breadthfirst">层次布局</option>
                 </select>
             </div>
             
             <div class="control-group">
                 <button class="btn" onclick="applyFilters()">应用过滤</button>
-                <button class="btn btn-secondary" onclick="resetFilters()" style="margin-top: 10px;">重置过滤</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">重置过滤</button>
             </div>
             
             <div class="control-group">
@@ -122,16 +164,12 @@
             
             <div class="graph-stats" id="graphStats" style="display: none;">
                 <div class="stat-item">
-                    <div class="stat-label">节点数量</div>
-                    <div class="stat-value" id="nodeCount">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">边数量</div>
-                    <div class="stat-value" id="edgeCount">0</div>
-                </div>
-                <div class="stat-item">
                     <div class="stat-label">网络密度</div>
                     <div class="stat-value" id="networkDensity">0.00</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">平均度数</div>
+                    <div class="stat-value" id="avgDegree">0.00</div>
                 </div>
             </div>
             
@@ -149,8 +187,10 @@
             
             <div class="empty-state" id="emptyState" style="display: none;">
                 <h3>📭 暂无图谱数据</h3>
-                <p>请先上传文档以生成知识图谱</p>
+                <p>请先上传文档并生成知识图谱</p>
             </div>
+            
+            <div class="message" id="message"></div>
         </div>
     </div>
 
@@ -189,8 +229,16 @@
                             'color': '#fff',
                             'text-outline-color': '#667eea',
                             'text-outline-width': '2px',
-                            'width': '30px',
-                            'height': '30px'
+                            'width': '40px',
+                            'height': '40px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="document"]',
+                        style: {
+                            'background-color': '#3498db',
+                            'width': '50px',
+                            'height': '50px'
                         }
                     },
                     {
@@ -202,7 +250,7 @@
                     {
                         selector: 'node[type="ORGANIZATION"]',
                         style: {
-                            'background-color': '#3498db'
+                            'background-color': '#9b59b6'
                         }
                     },
                     {
@@ -218,9 +266,15 @@
                         }
                     },
                     {
+                        selector: 'node[type="unknown"]',
+                        style: {
+                            'background-color': '#95a5a6'
+                        }
+                    },
+                    {
                         selector: 'node:selected',
                         style: {
-                            'border-width': '3px',
+                            'border-width': '4px',
                             'border-color': '#ff0000'
                         }
                     },
@@ -238,14 +292,18 @@
                         selector: 'edge:selected',
                         style: {
                             'line-color': '#ff0000',
-                            'target-arrow-color': '#ff0000'
+                            'target-arrow-color': '#ff0000',
+                            'width': 3
                         }
                     }
                 ],
                 layout: {
                     name: 'cose',
                     animate: true,
-                    animationDuration: 500
+                    animationDuration: 500,
+                    nodeRepulsion: 100000,
+                    idealEdgeLength: 100,
+                    nodeOverlap: 20
                 }
             });
             
@@ -267,19 +325,147 @@
             showLoading(true);
             
             try {
-                const response = await fetch(`${API_BASE}/users/default/kbs/default/graph`);
+                // 尝试从新的API获取图谱数据
+                const response = await fetch(`${API_BASE}/graph/statistics`);
                 const data = await response.json();
                 
-                if (response.ok && data.graph) {
-                    graphData = data.graph;
-                    renderGraph(graphData);
-                    updateGraphStats(graphData);
+                if (data.success && data.node_count > 0) {
+                    // 获取完整图谱数据
+                    const graphResponse = await fetch(`${API_BASE}/graph/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    const graphDataFull = await graphResponse.json();
+                    
+                    if (graphDataFull.success) {
+                        graphData = {
+                            nodes: graphDataFull.nodes,
+                            edges: graphDataFull.edges
+                        };
+                        renderGraph(graphData);
+                        updateGraphStats(graphData);
+                        updateSidebarStats(graphData);
+                    }
                 } else {
                     showEmptyState(true);
                 }
             } catch (error) {
                 console.error('Failed to load graph data:', error);
                 showEmptyState(true);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function generateGraph() {
+            showLoading(true);
+            showMessage('正在生成知识图谱，请稍候...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/graph/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    graphData = {
+                        nodes: data.nodes,
+                        edges: data.edges
+                    };
+                    renderGraph(graphData);
+                    updateGraphStats(graphData);
+                    updateSidebarStats(graphData);
+                    showMessage('✅ 知识图谱生成成功！', 'success');
+                } else {
+                    showMessage(`❌ 生成失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/graph/statistics`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateSidebarStats(data);
+                    showMessage('📊 统计信息已更新', 'success');
+                } else {
+                    showMessage(`❌ 获取统计失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function rebuildGraph() {
+            if (!confirm('确定要重建知识图谱吗？这可能需要一些时间。')) {
+                return;
+            }
+            
+            showLoading(true);
+            showMessage('正在重建知识图谱，请稍候...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/graph/rebuild`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    graphData = {
+                        nodes: data.nodes,
+                        edges: data.edges
+                    };
+                    renderGraph(graphData);
+                    updateGraphStats(graphData);
+                    updateSidebarStats(graphData);
+                    showMessage('✅ 知识图谱重建成功！', 'success');
+                } else {
+                    showMessage(`❌ 重建失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getEntitySubgraph() {
+            const entityName = document.getElementById('entityName').value.trim();
+            if (!entityName) {
+                showMessage('⚠️ 请输入实体名称', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            showMessage(`正在查询实体 "${entityName}" 的子图...`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/graph/entity/${encodeURIComponent(entityName)}?depth=2`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    graphData = {
+                        nodes: data.nodes,
+                        edges: data.edges
+                    };
+                    renderGraph(graphData);
+                    updateGraphStats(graphData);
+                    updateSidebarStats(graphData);
+                    showMessage(`✅ 实体 "${entityName}" 的子图已加载`, 'success');
+                } else {
+                    showMessage(`❌ 查询失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
             } finally {
                 showLoading(false);
             }
@@ -302,7 +488,7 @@
                         data: {
                             id: node.id,
                             label: node.name || node.id,
-                            type: node.type || 'CONCEPT',
+                            type: node.type || 'unknown',
                             description: node.description || ''
                         }
                     });
@@ -317,8 +503,8 @@
                             id: edge.id || `${edge.source}-${edge.target}`,
                             source: edge.source,
                             target: edge.target,
-                            label: edge.label || edge.relation || '',
-                            relation: edge.relation || 'RELATED_TO'
+                            label: edge.type || edge.relation || '',
+                            relation: edge.type || edge.relation || 'related'
                         }
                     });
                 });
@@ -356,7 +542,9 @@
             
             // 按关系类型过滤边
             if (relationType) {
-                filteredEdges = filteredEdges.filter(edge => edge.relation === relationType);
+                filteredEdges = filteredEdges.filter(edge => 
+                    (edge.type === relationType) || (edge.relation === relationType)
+                );
             }
             
             // 只保留连接到过滤后节点的边
@@ -435,11 +623,21 @@
                 density = edgeCount / maxEdges;
             }
             
-            document.getElementById('nodeCount').textContent = nodeCount;
-            document.getElementById('edgeCount').textContent = edgeCount;
+            // 计算平均度数
+            let avgDegree = 0;
+            if (nodeCount > 0) {
+                avgDegree = (2 * edgeCount) / nodeCount;
+            }
+            
             document.getElementById('networkDensity').textContent = density.toFixed(3);
+            document.getElementById('avgDegree').textContent = avgDegree.toFixed(2);
             
             stats.style.display = nodeCount > 0 ? 'block' : 'none';
+        }
+        
+        function updateSidebarStats(data) {
+            document.getElementById('nodeCount').textContent = data.node_count || (data.nodes || []).length;
+            document.getElementById('edgeCount').textContent = data.edge_count || (data.edges || []).length;
         }
         
         function showLoading(show) {
@@ -471,6 +669,17 @@
             link.click();
             
             URL.revokeObjectURL(url);
+        }
+        
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
         }
         
         function debounce(func, wait) {

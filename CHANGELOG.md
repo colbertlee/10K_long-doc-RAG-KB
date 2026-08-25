@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.43] - 2026-08-25
+
+### UI Optimization
+- **Unified Knowledge Graph Interface**: Merged duplicate knowledge graph pages into single unified interface
+- **Removed Redundant Files**: Deleted graph_ui.html and knowledge_graph.html, replaced with unified_knowledge_graph.html
+- **Enhanced Graph Features**: Combined features from both previous interfaces
+  - Graph generation and rebuilding
+  - Entity search and subgraph queries
+  - Advanced filtering (entity type, relation type)
+  - Multiple layout algorithms
+  - Real-time statistics display
+  - Node information display
+  - Graph export functionality
+- **API Redirects**: Added redirect from /graph-ui to /knowledge-graph for backward compatibility
+- **Improved UX**: Better sidebar layout, statistics cards, and message notifications
+
+### Knowledge Graph Features
+- **Complete Graph Operations**: Generate, rebuild, statistics, and entity subgraph queries
+- **Advanced Filtering**: Entity type filtering, relation type filtering, search functionality
+- **Multiple Layouts**: Force-directed, circle, grid, concentric, and breadth-first layouts
+- **Interactive Visualization**: Node selection, information display, edge labels
+- **Statistics Dashboard**: Network density, average degree, node/edge counts
+- **Export Functionality**: JSON export of graph data
+- **Real-time Updates**: Auto-refresh and manual refresh capabilities
+
+### Technical
+- **File Cleanup**: Removed duplicate graph UI files
+- **API Consolidation**: Unified graph API endpoints
+- **Route Optimization**: Added redirect for backward compatibility
+- **Import Updates**: Added RedirectResponse to FastAPI imports
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed with timeout handling) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- Comprehensive unit test coverage ✅
+- Knowledge graph generation (with fallback) ✅
+- Graph visualization interface ✅
+- Increased timeout configurations ✅
+- Document reindexing scripts ✅
+- **Unified knowledge graph interface** ✅
+- **Duplicate file cleanup** ✅
+
 ## [0.5.42] - 2026-08-25
 
 ### Performance & Timeout Improvements

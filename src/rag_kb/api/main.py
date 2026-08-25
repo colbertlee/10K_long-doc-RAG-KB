@@ -4,7 +4,7 @@ import json
 import asyncio
 from typing import AsyncIterator, List, Dict, Any
 from fastapi import FastAPI, File, Query, UploadFile, Body
-from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse, RedirectResponse, RedirectResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from rag_kb.config import settings
@@ -51,7 +51,7 @@ def root():
                         'health': '/health',
                         'api_docs': '/docs',
                         'chat_ui': '/chat-ui',
-                        'graph_ui': '/graph-ui',
+                        'knowledge_graph': '/knowledge-graph',
                         'knowledge_manager': '/knowledge-manager'
                     }
                 }
@@ -64,7 +64,7 @@ def root():
                 'health': '/health',
                 'api_docs': '/docs',
                 'chat_ui': '/chat-ui',
-                'graph_ui': '/graph-ui',
+                'knowledge_graph': '/knowledge-graph',
                 'knowledge_manager': '/knowledge-manager'
             }
         }
@@ -72,9 +72,9 @@ def root():
 
 @app.get("/knowledge-graph")
 async def knowledge_graph_ui():
-    """Knowledge graph visualization interface."""
+    """Unified knowledge graph visualization interface."""
     static_dir = Path(__file__).parent.parent.parent.parent / "static"
-    graph_file = static_dir / "knowledge_graph.html"
+    graph_file = static_dir / "unified_knowledge_graph.html"
     
     if graph_file.exists():
         return FileResponse(graph_file)
@@ -2313,26 +2313,13 @@ async def chat_ui():
         </body>
         </html>
         """)
+        """)
 
 
 @app.get('/graph-ui')
 async def graph_ui():
-    """Knowledge graph visualization interface."""
-    graph_file = static_dir / "graph_ui.html"
-    if graph_file.exists():
-        return HTMLResponse(content=graph_file.read_text(encoding='utf-8'))
-    else:
-        return HTMLResponse(content="""
-        <html>
-        <head><title>Knowledge Graph Visualization</title></head>
-        <body>
-        <h1>Knowledge Graph Visualization</h1>
-        <p>Graph visualization interface not found. Please ensure static files are properly configured.</p>
-        <p>Available endpoints: <a href="/docs">API Documentation</a></p>
-        <p>Or use: <a href="/static/graph_ui.html">Direct Graph UI</a></p>
-        </body>
-        </html>
-        """)
+    """Redirect to unified knowledge graph interface."""
+    return RedirectResponse(url='/knowledge-graph')
 
 
 @app.get('/knowledge-manager')
