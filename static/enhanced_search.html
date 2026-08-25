@@ -227,7 +227,17 @@
                 if (currentSearchMode === 'semantic') mode = 'lightrag';
                 if (currentSearchMode === 'keyword') mode = 'bm25';
 
-                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}&query_mode=${currentQueryMode}`);
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        q: searchInput.value,
+                        mode: mode,
+                        query_mode: currentQueryMode
+                    })
+                });
                 const data = await response.json();
                 
                 if (data.error) {
@@ -389,7 +399,17 @@
                 if (currentSearchMode === 'semantic') mode = 'lightrag';
                 if (currentSearchMode === 'keyword') mode = 'bm25';
 
-                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(searchInput.value)}&mode=${mode}&query_mode=${currentQueryMode}`);
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        q: searchInput.value,
+                        mode: mode,
+                        query_mode: currentQueryMode
+                    })
+                });
                 const data = await response.json();
                 
                 if (data.error) {

@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.29] - 2026-08-25
+
+### Fixed
+- **Frontend API Calls**: Changed all search API calls from GET to POST method
+- **Chat UI Port**: Corrected API_BASE from port 8001 to 8000 to match server
+- **Response Handling**: Fixed chat UI to handle JSON responses instead of SSE streaming
+- **Search Interfaces**: Updated simple_ui.html, main_ui.html, enhanced_search.html, multi_kb_selector.html
+
+### Fixed Files
+- static/chat_ui.html - Port correction and response handling
+- static/simple_ui.html - GET to POST conversion
+- static/main_ui.html - GET to POST conversion  
+- static/enhanced_search.html - GET to POST conversion
+- static/multi_kb_selector.html - GET to POST conversion
+
+### Working Features
+- All frontend interfaces now correctly use POST method for search API
+- Chat completions API working with proper JSON response handling
+- Port configuration consistent across all interfaces
+
 ## [0.5.28] - 2026-08-25
 
 ### Fixed
