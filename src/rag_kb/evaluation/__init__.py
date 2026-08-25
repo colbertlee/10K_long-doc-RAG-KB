@@ -1,5 +1,15 @@
-"""Evaluation module for RAG KB."""
+"""Evaluation module for RAG quality assessment."""
 
-from .ragas_eval import RAGASEvaluator, EvaluationResult
+from rag_kb.evaluation.ragas_evaluator import (
+    RAGASEvaluator,
+    EvaluationCase,
+    EvaluationResult,
+    RAGQualityMonitor
+)
 
-__all__ = ['RAGASEvaluator', 'EvaluationResult']
+__all__ = [
+    'RAGASEvaluator',
+    'EvaluationCase',
+    'EvaluationResult',
+    'RAGQualityMonitor'
+]

@@ -12,6 +12,34 @@ from rag_kb import __version__
 
 app = FastAPI(title=settings.app_name)
 
+# Try to import async context manager, fallback if not available
+async_context = None
+try:
+    from rag_kb.utils.async_context import get_async_context
+    async_context = get_async_context()
+    print("Async context manager loaded successfully", flush=True)
+except ImportError as e:
+    print(f"Warning: Could not load async context manager: {e}", flush=True)
+    print("Continuing without async context management", flush=True)
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize async context on startup."""
+    if async_context:
+        await async_context.initialize()
+        print("Application started with async context management", flush=True)
+    else:
+        print("Application started without async context management", flush=True)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup async context on shutdown."""
+    if async_context:
+        await async_context.cleanup()
+        print("Application shutdown completed", flush=True)
+    else:
+        print("Application shutdown completed (no async context)", flush=True)
+
 # Include API routes - using direct import to avoid importlib issues
 try:
     from rag_kb.api.routes import router as api_router

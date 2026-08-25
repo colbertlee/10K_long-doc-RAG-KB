@@ -33,7 +33,7 @@ async def ollama_llm(prompt: str, **kwargs):
         def sync_chat():
             print(f"LLM Request: {prompt[:100]}...", flush=True)
             try:
-                # Try chat API with stream=False
+                # Try chat API with stream=False (timeout not supported in ollama client)
                 resp = client.chat(
                     model=settings.llm_model,
                     messages=[
@@ -44,6 +44,7 @@ async def ollama_llm(prompt: str, **kwargs):
                         'temperature': 0.3,  # Moderate temperature for balanced responses
                         'top_p': 0.3,        # Moderate top_p for focused but creative responses
                         'num_predict': settings.llm_max_tokens,
+                        'num_ctx': 4096,     # Increased context window
                     },
                     stream=False
                 )

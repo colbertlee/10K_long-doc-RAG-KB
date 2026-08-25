@@ -1,6 +1,7 @@
 """LightRAG adapter for RAG KB integration."""
 
 import sys
+import os
 import asyncio
 import json
 from pathlib import Path
@@ -8,6 +9,11 @@ from lightrag import LightRAG, QueryParam
 from rag_kb.lightrag.llm_funcs import ollama_llm
 from rag_kb.lightrag.embedding_funcs import EmbeddingFunc
 from rag_kb.config import settings
+
+# Set LightRAG worker timeout environment variables before importing
+# This prevents the 480s timeout error during entity extraction
+os.environ.setdefault('LIGHTRAG_LLM_WORKER_TIMEOUT', str(settings.lightrag_llm_worker_timeout))
+os.environ.setdefault('LIGHTRAG_EMBEDDING_WORKER_TIMEOUT', str(settings.lightrag_embedding_worker_timeout))
 
 NL = chr(10)
 
@@ -40,31 +46,25 @@ class LightRAGAdapter:
         self._initialized = False
     
     async def ensure_initialized(self):
-        """Ensure LightRAG storages are initialized."""
+        """Ensure LightRAG storages are initialized with proper pipeline setup."""
         if not self._initialized:
             await self.rag.initialize_storages()
-            # Try to initialize pipeline status but don't fail if it doesn't work
+            
+            # Try to initialize pipeline status properly
             try:
                 from lightrag.kg.shared_storage import initialize_pipeline_status
                 await initialize_pipeline_status()
                 print("Pipeline status initialized successfully", file=sys.stderr, flush=True)
             except Exception as e:
                 print(f"Warning: Could not initialize pipeline status: {e}", file=sys.stderr, flush=True)
-                # Try alternative initialization
+                # Try manual initialization
                 try:
-                    from lightrag.kg.shared_storage import initialize_chunk_entity_relation_graph
-                    await initialize_chunk_entity_relation_graph()
-                    print("Alternative graph initialization successful", file=sys.stderr, flush=True)
+                    from lightrag.kg.shared_storage import namespace_data
+                    await namespace_data("pipeline_status", {"status": "initialized", "mode": "default"})
+                    print("Manual pipeline status initialization successful", file=sys.stderr, flush=True)
                 except Exception as e2:
-                    print(f"Alternative initialization also failed: {e2}", file=sys.stderr, flush=True)
-                    # Try manual initialization
-                    try:
-                        from lightrag.kg.shared_storage import namespace_data
-                        await namespace_data("pipeline_status", {"status": "initialized"})
-                        print("Manual pipeline status initialization successful", file=sys.stderr, flush=True)
-                    except Exception as e3:
-                        print(f"Manual initialization also failed: {e3}", file=sys.stderr, flush=True)
-                        # Continue anyway - basic functionality should still work
+                    print(f"Manual initialization also failed: {e2}", file=sys.stderr, flush=True)
+            
             self._initialized = True
 
     def insert_chunks(self, chunks):
@@ -99,7 +99,13 @@ class LightRAGAdapter:
             import sys
             print(f"Starting ingestion of {len(documents)} documents", file=sys.stderr, flush=True)
             
-            # Use async insert method directly on the same event loop
+            # Use synchronous insert in thread pool to avoid pipeline issues
+            import asyncio
+            loop = asyncio.get_event_loop()
+            
+            success_count = 0
+            failure_count = 0
+            
             for doc in documents:
                 content = doc.get('content', '')
                 doc_id = doc.get('doc_id', '')
@@ -112,19 +118,21 @@ class LightRAGAdapter:
                 # Format document with metadata for better indexing
                 formatted_content = self._format_document(content, doc_id, metadata)
                 
-                # Use async insert method directly on the same event loop
+                # Use async insert on the same event loop to avoid event loop conflicts
                 try:
                     print(f"Ingesting document: {doc_id} (content length: {len(formatted_content)})", file=sys.stderr, flush=True)
                     await self.rag.ainsert(formatted_content)
                     print(f"Successfully ingested document: {doc_id}", file=sys.stderr, flush=True)
+                    success_count += 1
                 except Exception as e:
                     print(f"Error ingesting document {doc_id}: {e}", file=sys.stderr, flush=True)
                     import traceback
                     traceback.print_exc(file=sys.stderr)
+                    failure_count += 1
                     # Continue with other documents even if one fails
             
-            print(f"Document ingestion completed", file=sys.stderr, flush=True)
-            return True
+            print(f"Document ingestion completed: {success_count} succeeded, {failure_count} failed", file=sys.stderr, flush=True)
+            return success_count > 0  # Return True if at least one document succeeded
         except Exception as e:
             print(f"LightRAG ingestion error: {e}", file=sys.stderr, flush=True)
             import traceback
@@ -132,7 +140,7 @@ class LightRAGAdapter:
             return False
     
     def _format_document(self, content, doc_id, metadata):
-        """Format document content with metadata for better indexing.
+        """Format document content with metadata for better indexing and entity extraction.
         
         Args:
             content: Document content
@@ -142,15 +150,26 @@ class LightRAGAdapter:
         Returns:
             Formatted document string
         """
-        # Add document metadata as header
+        # Add comprehensive document metadata as header for better entity extraction
         header = f"[doc_id={doc_id}"
         if metadata:
+            # Title is most important for entity extraction
             if 'title' in metadata:
                 header += f";title={metadata['title']}"
+            elif 'filename' in metadata:
+                header += f";title={metadata['filename']}"
+            
+            # Additional metadata for context
             if 'pages' in metadata:
                 header += f";pages={metadata['pages']}"
             if 'source' in metadata:
                 header += f";source={metadata['source']}"
+            if 'category' in metadata:
+                header += f";category={metadata['category']}"
+            if 'author' in metadata:
+                header += f";author={metadata['author']}"
+            if 'created' in metadata:
+                header += f";created={metadata['created']}"
         header += "]"
         
         # Combine header with content
@@ -173,33 +192,46 @@ class LightRAGAdapter:
             mode = mode or settings.lightrag_query_mode
             print(f"LightRAG query: question='{question}', mode='{mode}'", file=sys.stderr, flush=True)
             
-            # Try naive mode first (simpler, no graph dependencies)
-            result = await self.rag.aquery(
-                question,
-                param=QueryParam(mode="naive", only_need_context=False, enable_rerank=False),
-            )
-            print(f"LightRAG result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
-            print(f"LightRAG result preview: {result[:500] if result else 'empty'}...", file=sys.stderr, flush=True)
-            
-            # Check if we got any meaningful result
-            if not result or not result.strip():
-                print("Empty result from LightRAG, trying hybrid mode", file=sys.stderr, flush=True)
-                # Try hybrid mode as fallback
-                result = await self.rag.aquery(
-                    question,
-                    param=QueryParam(mode="hybrid", only_need_context=False, enable_rerank=False),
+            # Add timeout to prevent hanging
+            import asyncio
+            try:
+                # Try naive mode first (simpler, no graph dependencies)
+                result = await asyncio.wait_for(
+                    self.rag.aquery(
+                        question,
+                        param=QueryParam(mode="naive", only_need_context=False, enable_rerank=False),
+                    ),
+                    timeout=settings.query_timeout
                 )
-                print(f"Hybrid mode result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
+                print(f"LightRAG result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
+                print(f"LightRAG result preview: {result[:500] if result else 'empty'}...", file=sys.stderr, flush=True)
+                
+                # Check if we got any meaningful result
+                if not result or not result.strip():
+                    print("Empty result from LightRAG, trying hybrid mode", file=sys.stderr, flush=True)
+                    # Try hybrid mode as fallback
+                    result = await asyncio.wait_for(
+                        self.rag.aquery(
+                            question,
+                            param=QueryParam(mode="hybrid", only_need_context=False, enable_rerank=False),
+                        ),
+                        timeout=settings.query_timeout
+                    )
+                    print(f"Hybrid mode result length: {len(result) if result else 0}", file=sys.stderr, flush=True)
+                
+                # If still no result, return informative message
+                if not result or not result.strip():
+                    return "知识库中未找到相关信息。请确保文档已正确上传和索引。"
+                
+                # Only filter obviously empty or error responses
+                if "提供的上下文中没有相关信息" in result or "知识库中未找到相关信息" in result:
+                    return result  # Let LLM's own judgment stand
+                
+                return result
+            except asyncio.TimeoutError:
+                print(f"Query timeout after {settings.query_timeout} seconds", file=sys.stderr, flush=True)
+                return f"查询超时。请稍后重试或简化查询内容。"
             
-            # If still no result, return informative message
-            if not result or not result.strip():
-                return "知识库中未找到相关信息。请确保文档已正确上传和索引。"
-            
-            # Only filter obviously empty or error responses
-            if "提供的上下文中没有相关信息" in result or "知识库中未找到相关信息" in result:
-                return result  # Let LLM's own judgment stand
-            
-            return result
         except Exception as e:
             print(f"LightRAG query error: {e}", file=sys.stderr, flush=True)
             import traceback

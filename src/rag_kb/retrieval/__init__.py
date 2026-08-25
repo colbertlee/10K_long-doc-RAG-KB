@@ -1,6 +1,21 @@
-"""Retrieval module for RAG KB."""
+"""Retrieval module for advanced search capabilities."""
 
-from .bm25_search import BM25Search
-from .hybrid_search import HybridSearch
+from rag_kb.retrieval.hybrid_search import (
+    HybridSearchEngine,
+    SearchResult,
+    QueryParam
+)
+from rag_kb.retrieval.reranker import (
+    BGEReranker,
+    RuleBasedReranker,
+    RerankerFactory
+)
 
-__all__ = ['BM25Search', 'HybridSearch']
+__all__ = [
+    'HybridSearchEngine',
+    'SearchResult',
+    'QueryParam',
+    'BGEReranker',
+    'RuleBasedReranker',
+    'RerankerFactory'
+]

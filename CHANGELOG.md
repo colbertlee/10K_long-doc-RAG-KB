@@ -5,6 +5,191 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.53] - 2026-08-25
+
+### Advanced Features Optimization and Performance Tuning
+- **BM25 Index Builder**: Complete BM25 indexing system for hybrid search functionality
+- **BGE-Reranker Integration**: sentence-transformers installed and integrated for advanced reranking
+- **RAGAS Evaluation Framework**: RAGAS package installed for comprehensive quality assessment
+- **Performance Tuning System**: Complete performance tuning framework with configurable parameters
+- **RRF Weighted Fusion**: Weighted Reciprocal Rank Fusion for optimal result combination
+- **Configuration Management**: YAML-based performance configuration with preset profiles
+
+### Performance Optimizations
+- **BM25 Integration**: Full BM25 sparse search with index building and persistence
+- **Weighted RRF Fusion**: Configurable BM25 and vector weights (default: 0.4/0.6)
+- **Tunable Parameters**: RRF k constant, BM25 k1/b parameters, reranking thresholds
+- **Performance Profiles**: Speed-optimized, accuracy-optimized, and balanced presets
+- **Cache Management**: Result caching with configurable TTL for repeated queries
+
+### Dependency Updates
+- **sentence-transformers**: v5.5.1 installed for BGE-Reranker functionality
+- **ragas**: v0.4.3 installed for advanced RAG quality evaluation
+- **torch**: v2.13.0 for GPU-accelerated reranking
+- **datasets**: v5.0.1 for RAGAS evaluation datasets
+- **rank-bm25**: Added as dependency for BM25 sparse search
+
+### New Performance Features
+- **BM25IndexBuilder**: Automatic BM25 index building from document registry
+- **PerformanceTuner**: Centralized performance configuration management
+- **Hybrid Search Enhancement**: Integrated BM25 with weighted RRF fusion
+- **Quality Thresholds**: Configurable quality monitoring thresholds
+- **Performance Profiles**: Pre-configured optimization profiles for different use cases
+
+### Technical Implementation
+- **Weighted RRF Formula**: `score = (1/(k+rank)) * weight` for each source
+- **Index Persistence**: BM25 index saved to disk for fast loading
+- **Configuration Profiles**: Speed/Accuracy/Balance optimization presets
+- **Dynamic Tuning**: Runtime parameter adjustment without restart
+- **Fallback Mechanisms**: Graceful degradation when advanced features unavailable
+
+## [0.5.52] - 2026-08-25
+
+### Knowledge Graph Naming Improvements
+- **Node Naming**: Fixed knowledge graph nodes to display meaningful names instead of hash IDs
+- **Document Registry Integration**: Added document registry mapping for proper name resolution
+- **Metadata Enhancement**: Improved document formatting with comprehensive metadata headers
+- **Entity Extraction**: Enhanced document formatting to improve LightRAG entity extraction
+- **Fallback Naming**: Implemented intelligent fallback naming for hash-based IDs
+- **Edge Description**: Added source_name and target_name to edges for better readability
+
+### Technical Improvements
+- **Name Mapping**: Integrated document registry to map doc IDs to readable filenames
+- **Title Priority**: Prioritized title/filename over hash IDs for node names
+- **Hash Cleanup**: Implemented hash ID cleanup (doc- prefix, 32-char hashes)
+- **Metadata Headers**: Enhanced document headers with author, created, category fields
+- **Edge Enhancement**: Added human-readable source and target names to edge descriptions
+
+### Graph Visualization
+- **Readable Nodes**: Graph nodes now display document titles or filenames instead of hash IDs
+- **Meaningful Edges**: Edge descriptions show actual document names instead of IDs
+- **Better Context**: Enhanced metadata provides better context for graph exploration
+- **User Experience**: Improved graph readability and navigation
+
+## [0.5.51] - 2026-08-25
+
+### Critical Event Loop and Timeout Fixes
+- **Event Loop Consistency**: Fixed LightRAG event loop conflict by using async `ainsert()` instead of sync `insert()` in thread pool
+- **LLM Timeout Parameter**: Removed unsupported `timeout` parameter from Ollama client calls
+- **Initialization Simplification**: Removed complex synchronous initialization from `__init__` to prevent event loop conflicts
+- **Pipeline Status**: Maintained pipeline status initialization in async context
+- **Document Ingestion**: Fixed document ingestion to work properly with LightRAG's event loop requirements
+
+### Technical Corrections
+- **Async Consistency**: All LightRAG operations now run on the same event loop as required
+- **Ollama Client**: Removed unsupported timeout parameter from client.chat() calls
+- **Adapter Lifecycle**: Simplified LightRAGAdapter initialization to avoid event loop conflicts
+- **Error Handling**: Improved error messages for event loop conflicts
+
+### Production Stability
+- **Document Ingestion**: Now works correctly without event loop errors
+- **LLM Integration**: Fixed Ollama client compatibility issues
+- **System Startup**: Cleaner initialization process without conflicts
+- **API Functionality**: Document upload and ingestion now work properly
+
+## [0.5.50] - 2026-08-25
+
+### Advanced RAG Features Implementation
+- **Hybrid Search Engine**: Implemented BM25 + Vector search with RRF (Reciprocal Rank Fusion)
+- **BGE-Reranker Integration**: Added cross-encoder reranking with fallback to rule-based approach
+- **RAGAS Evaluation Framework**: Complete quality assessment system with fallback evaluation
+- **Advanced Retrieval Module**: New retrieval module with hybrid search and reranking capabilities
+- **Quality Monitoring**: Continuous RAG quality monitoring with threshold-based alerts
+
+### Technical Implementation
+- **Hybrid Search**: Combined BM25 sparse search and LightRAG vector search with intelligent fusion
+- **RRF Fusion**: Reciprocal Rank Fusion algorithm for optimal result combination
+- **Cross-Encoder Reranking**: BGE-Reranker integration with GPU support and fallback mechanisms
+- **Rule-Based Reranking**: Intelligent fallback when BGE models are not available
+- **RAGAS Integration**: Full RAGAS framework support with fallback evaluation heuristics
+- **Quality Metrics**: Faithfulness, answer relevancy, context precision, and overall scoring
+
+### New Modules
+- **src/rag_kb/retrieval/**: Advanced retrieval capabilities
+  - `hybrid_search.py`: Hybrid search engine with RRF fusion
+  - `reranker.py`: BGE-Reranker and rule-based reranking
+  - `bm25_search.py`: BM25 sparse search (existing)
+- **src/rag_kb/evaluation/**: Quality assessment framework
+  - `ragas_evaluator.py`: RAGAS-based evaluation with fallback
+- **scripts/**: Testing scripts for advanced features
+  - `test_basic_advanced_features.py`: Basic functionality testing
+  - `test_advanced_rag_features.py`: Comprehensive feature testing
+
+### Performance Improvements
+- **Search Accuracy**: Hybrid search improves retrieval precision through multi-source fusion
+- **Result Quality**: Reranking significantly improves result relevance and ordering
+- **Quality Control**: Continuous monitoring ensures consistent RAG performance
+- **Fallback Mechanisms**: System remains functional even without advanced dependencies
+
+### Dependencies
+- **Optional**: sentence-transformers (for BGE-Reranker)
+- **Optional**: ragas (for advanced evaluation)
+- **Fallback**: System works without optional dependencies using rule-based approaches
+
+## [0.5.49] - 2026-08-25
+
+### Critical Bug Fixes
+- **LightRAG Parameter Error**: Removed unsupported `llm_response_max_length` parameter that caused TypeError
+- **Event Loop Management**: Fixed event loop closing logic to prevent "Cannot close a running event loop" error
+- **Optional Dependencies**: Made performance monitoring imports optional to prevent psutil import failures
+- **Import Fallback**: Enhanced import fallback mechanisms for better compatibility
+
+### Technical Corrections
+- **LightRAG Compatibility**: Removed unsupported LightRAG initialization parameters
+- **Async Cleanup**: Only close event loop if it's not running to prevent shutdown errors
+- **Module Loading**: Added try/except for optional utility imports to prevent startup failures
+- **Graceful Shutdown**: Improved shutdown sequence to handle running event loops properly
+
+### Production Stability
+- **Startup Reliability**: System now starts successfully even without optional dependencies
+- **Shutdown Stability**: Graceful shutdown works correctly without event loop errors
+- **API Functionality**: Chat and graph statistics endpoints now work correctly
+- **Error Handling**: Better error messages and fallback mechanisms
+
+## [0.5.48] - 2026-08-25
+
+### Emergency Fixes for Production Issues
+- **LLM Worker Timeout**: Increased LightRAG LLM worker timeout from 480s to 600s to prevent entity extraction failures
+- **Environment Configuration**: Added LIGHTRAG_LLM_WORKER_TIMEOUT and LIGHTRAG_EMBEDDING_WORKER_TIMEOUT environment variables
+- **Worker Concurrency**: Added configurable worker concurrency and queue size settings
+- **Event Loop Management**: Implemented AsyncContextManager for graceful shutdown and task cleanup
+- **Document Deduplication**: Added multi-dimensional document deduplication system with content hash, metadata fingerprint, and filename matching
+- **Pipeline Integration**: Integrated deduplication into ingestion pipeline with skip status tracking
+
+### Technical Improvements
+- **Async Context Manager**: Created utility for managing async lifecycle and preventing event loop closure errors
+- **Deduplication Cache**: Implemented persistent cache for deduplication fingerprints
+- **Graceful Shutdown**: Added proper signal handling and task cancellation on shutdown
+- **Import Fallback**: Added fallback mechanisms for optional utilities to prevent startup failures
+
+### Production Stability
+- **Timeout Configuration**: 
+  - LLM worker timeout: 480s → 600s
+  - Embedding worker timeout: 300s
+  - Max concurrent workers: 4
+  - Worker queue size: 100
+- **Error Recovery**: Improved error handling for duplicate detection and async context management
+- **Monitoring**: Added detailed logging for deduplication and async context operations
+
+## [0.5.47] - 2026-08-25
+
+### System Audit and Performance Improvements
+- **Comprehensive Audit**: Completed full RAG system pipeline audit from document upload to LLM interaction
+- **Timeout Configuration**: Increased timeout settings for better local model performance (LLM: 10min, Query: 10min, Ingestion: 15min)
+- **Error Handling**: Enhanced error handling with success/failure counting for document ingestion
+- **Query Timeout**: Added timeout protection for LightRAG queries to prevent hanging
+- **LLM Configuration**: Improved LLM function with increased context window and better timeout handling
+
+### Technical Improvements
+- **Pipeline Initialization**: Enhanced pipeline status initialization with multiple fallback mechanisms
+- **Synchronous Insert**: Implemented synchronous insert method as primary approach to avoid pipeline issues
+- **Monitoring**: Added detailed logging and performance tracking for ingestion operations
+- **Module Caching**: Resolved Python module caching issues for reliable code updates
+
+### Known Issues
+- **LightRAG Pipeline**: Pipeline initialization issues persist in some environments, requiring synchronous insert fallback
+- **Module Caching**: Python bytecode caching may require manual clearing for code changes to take effect
+
 ## [0.5.46] - 2026-08-25
 
 ### Critical Event Loop Fix

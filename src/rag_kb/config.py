@@ -40,11 +40,17 @@ class Settings(BaseSettings):
     lightrag_query_mode: str = 'hybrid'
     lightrag_enable_llm_cache: bool = True
     
+    # LightRAG worker timeout settings (critical for entity extraction)
+    lightrag_llm_worker_timeout: int = 600  # 10 minutes for LLM workers (increased from 480s)
+    lightrag_embedding_worker_timeout: int = 300  # 5 minutes for embedding workers
+    lightrag_max_concurrent_workers: int = 4  # Control concurrent worker count
+    lightrag_worker_queue_size: int = 100  # Worker queue size
+    
     # Timeout settings (increased for local model performance)
-    request_timeout: int = 300  # 5 minutes for LLM requests
-    embedding_timeout: int = 120  # 2 minutes for embedding
-    query_timeout: int = 300  # 5 minutes for queries
-    ingestion_timeout: int = 600  # 10 minutes for document ingestion
+    request_timeout: int = 600  # 10 minutes for LLM requests
+    embedding_timeout: int = 180  # 3 minutes for embedding
+    query_timeout: int = 600  # 10 minutes for queries
+    ingestion_timeout: int = 900  # 15 minutes for document ingestion
 
     # OpenAI-compatible remote LLM (optional)
     openai_api_key: str | None = Field(default=None)

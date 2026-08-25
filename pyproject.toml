@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-kb"
-version = "0.5.46"
+version = "0.5.53"
 description = "10K long-document RAG knowledge base"
 requires-python = ">=3.11"
 dependencies = [
@@ -28,6 +28,25 @@ dependencies = [
     "pytest-asyncio>=1.0.0",
     "open-webui",
     "pytesseract>=0.3.10",
+    "ragas>=0.1",  # For advanced RAG evaluation
+    "rank-bm25>=0.2",  # For BM25 sparse search
+]
+
+[project.optional-dependencies]
+all = [
+    "rag-kb[evaluation]",
+    "rag-kb[reranking]",
+]
+
+evaluation = [
+    "ragas>=0.1",
+    "datasets>=2.0",
+]
+
+reranking = [
+    "sentence-transformers>=2.3",
+    "torch>=2.0",
+]
     "Pillow>=10.0.0",
 ]
 

@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.28 (Latest)  
+**Current Version**: v0.5.53 (Latest)  
 **Release Date**: 2026-08-25
 
-> **Version Note**: v0.5.28 fixes chat completions API and confirms all core features working. Document upload, LLM问答, 语义搜索, and 对话功能 all tested and functional.
+> **Version Note**: v0.5.53 implements enterprise-level RAG optimization with hybrid search, BGE-Reranker, RAGAS evaluation, and performance tuning system.
 
 ## Features
 
@@ -30,6 +30,16 @@ An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system d
 - **Intent Classification**: Automatic query mode selection based on intent
 - **Document Processing Tracking**: Real-time progress tracking for document ingestion
 - **Enhanced Citations**: Page numbers, chunk IDs, and entity information in citations
+
+### Enterprise RAG Optimization (v0.5.53)
+- **Hybrid Search Engine**: BM25 sparse search + LightRAG vector search with weighted RRF fusion
+- **BGE-Reranker Integration**: Cross-encoder reranking with GPU support and rule-based fallback
+- **RAGAS Evaluation Framework**: Comprehensive quality assessment with faithfulness, relevancy, and precision metrics
+- **Performance Tuning System**: Dynamic parameter adjustment with speed/accuracy/balance optimization profiles
+- **BM25 Index Builder**: Automatic BM25 index construction from document registry with persistence
+- **Knowledge Graph Naming**: Improved node naming with document titles instead of hash IDs
+- **Event Loop Management**: Robust async context management for stable LightRAG operations
+- **Quality Monitoring**: Continuous RAG quality monitoring with threshold-based alerts
 
 ## Architecture
 
@@ -66,7 +76,14 @@ The system follows a layered pipeline architecture:
 
 3. **Install dependencies**:
    ```bash
+   # Core installation
    pip install -e .
+   
+   # Full installation with advanced features (recommended)
+   pip install -e .[all]
+   
+   # Development installation
+   pip install -e .[dev]
    ```
 
 4. **Install Ollama models**:
@@ -136,6 +153,73 @@ Edit `configs/config.yaml` to customize:
 - **LLM settings**: Local Ollama vs remote OpenAI-compatible APIs
 - **LightRAG settings**: Chunk size, query mode, caching
 - **Security settings**: Default ACL policies
+
+### Advanced Features Usage
+
+#### Hybrid Search with BM25
+```python
+from rag_kb.retrieval import HybridSearchEngine
+
+# Initialize hybrid search engine
+hybrid_engine = HybridSearchEngine()
+await hybrid_engine.initialize()
+
+# Build BM25 index from documents
+await hybrid_engine.build_bm25_index()
+
+# Perform hybrid search
+results = await hybrid_engine.search("Dell server", mode="hybrid", top_k=10)
+```
+
+#### BGE-Reranker Integration
+```python
+from rag_kb.retrieval import RerankerFactory
+
+# Create BGE reranker (requires sentence-transformers)
+reranker = RerankerFactory.create_reranker(use_bge=True)
+await reranker.initialize()
+
+# Apply reranking to search results
+reranked_results = await reranker.rerank(query, search_results, top_k=10)
+```
+
+#### RAGAS Quality Evaluation
+```python
+from rag_kb.evaluation import RAGASEvaluator
+
+# Initialize RAGAS evaluator (requires ragas package)
+evaluator = RAGASEvaluator(use_ragas=True)
+await evaluator.initialize()
+
+# Add evaluation cases
+evaluator.add_evaluation_case(
+    question="What is Dell?",
+    contexts=["Dell is a technology company"],
+    answer="Dell is a technology company",
+    ground_truth="Dell is a computer technology company"
+)
+
+# Run evaluation
+results = await evaluator.evaluate()
+print(f"Overall score: {results['overall_score']}")
+```
+
+#### Performance Tuning
+```python
+from rag_kb.utils.performance_tuning import performance_tuner
+
+# Apply performance profiles
+speed_config = performance_tuner.optimize_for_speed()
+accuracy_config = performance_tuner.optimize_for_accuracy()
+balanced_config = performance_tuner.optimize_for_balance()
+
+# Dynamic parameter adjustment
+performance_tuner.update_rrf_k(80)
+performance_tuner.update_rrf_weights(0.3, 0.7)
+
+# Save configuration
+performance_tuner.save_config()
+```
 
 ## Project Structure
 

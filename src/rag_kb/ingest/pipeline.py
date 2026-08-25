@@ -6,18 +6,22 @@ from rag_kb.models import Document
 from rag_kb.ingest.cleaner import mask_pii_placeholder
 from rag_kb.parsers.registry import PARSER_REGISTRY
 from rag_kb.processing import processing_tracker, ProcessingStatus
+from rag_kb.utils.deduplication import get_deduplicator
 
 
 class IngestPipeline:
     """Pipeline for ingesting and processing documents."""
     
-    def __init__(self, enable_tracking: bool = True):
+    def __init__(self, enable_tracking: bool = True, enable_deduplication: bool = True):
         """Initialize ingestion pipeline.
         
         Args:
             enable_tracking: Whether to enable processing tracking
+            enable_deduplication: Whether to enable document deduplication
         """
         self.enable_tracking = enable_tracking
+        self.enable_deduplication = enable_deduplication
+        self.deduplicator = get_deduplicator() if enable_deduplication else None
     
     def run(self, file: Path, acl: Optional[dict] = None, task_id: str = None) -> Document:
         """Process a file through the ingestion pipeline.
@@ -40,6 +44,24 @@ class IngestPipeline:
             raise ValueError(f'No parser registered for {file.suffix}')
         
         doc = parser.parse(file)
+        
+        # Check for duplicates using multi-dimensional analysis
+        if self.enable_deduplication and self.deduplicator:
+            is_duplicate, reason = self.deduplicator.is_duplicate(
+                doc.doc_id, 
+                doc.content, 
+                doc.metadata
+            )
+            if is_duplicate:
+                if self.enable_tracking and task_id:
+                    processing_tracker.update_task(
+                        task_id, 
+                        ProcessingStatus.SKIPPED, 
+                        100, 
+                        f"Skipped duplicate: {reason}"
+                    )
+                print(f"Skipping duplicate document {file.name}: {reason}", flush=True)
+                return doc  # Return the document but marked as skipped
         
         if self.enable_tracking and task_id:
             processing_tracker.update_task(task_id, progress=30, current_stage="Applying ACL and cleaning")

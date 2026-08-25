@@ -78,6 +78,18 @@ class KnowledgeGraphGenerator:
             entities_file = Path(settings.lightrag_working_dir) / 'kv_store_full_entities.json'
             relations_file = Path(settings.lightrag_working_dir) / 'kv_store_full_relations.json'
             
+            # Also read document registry for name mapping
+            registry_file = Path(settings.data_dir) / 'document_registry.json'
+            doc_name_mapping = {}
+            
+            if registry_file.exists():
+                with open(registry_file, 'r', encoding='utf-8') as f:
+                    registry = json.load(f)
+                    for doc_id, doc_data in registry.items():
+                        metadata = doc_data.get('metadata', {})
+                        title = metadata.get('title', metadata.get('filename', doc_id))
+                        doc_name_mapping[doc_id] = title
+            
             entities = []
             edges = []
             
@@ -85,11 +97,24 @@ class KnowledgeGraphGenerator:
                 with open(entities_file, 'r', encoding='utf-8') as f:
                     entity_data = json.load(f)
                     for entity_id, entity_info in entity_data.items():
+                        # Try to get meaningful name
+                        entity_names = entity_info.get('entity_names', [])
+                        if entity_names:
+                            entity_name = entity_names[0]  # Use first entity name
+                        else:
+                            # Fallback to document name mapping or use ID
+                            entity_name = doc_name_mapping.get(entity_id, entity_id)
+                        
+                        # Clean up the name
+                        if entity_name.startswith('doc-'):
+                            # Try to get the actual document name
+                            entity_name = doc_name_mapping.get(entity_id, entity_name)
+                        
                         entities.append({
                             'id': entity_id,
-                            'name': entity_info.get('entity_name', entity_id),
-                            'type': entity_info.get('entity_type', 'unknown'),
-                            'description': entity_info.get('description', ''),
+                            'name': entity_name,
+                            'type': entity_info.get('entity_type', 'document'),
+                            'description': entity_info.get('description', f'Document: {entity_name}'),
                             'metadata': entity_info
                         })
             
@@ -97,12 +122,22 @@ class KnowledgeGraphGenerator:
                 with open(relations_file, 'r', encoding='utf-8') as f:
                     relation_data = json.load(f)
                     for relation_id, relation_info in relation_data.items():
+                        # Get meaningful names for source and target
+                        source = relation_info.get('source', '')
+                        target = relation_info.get('target', '')
+                        
+                        # Map IDs to names
+                        source_name = doc_name_mapping.get(source, source)
+                        target_name = doc_name_mapping.get(target, target)
+                        
                         edges.append({
                             'id': relation_id,
-                            'source': relation_info.get('source', ''),
-                            'target': relation_info.get('target', ''),
+                            'source': source,
+                            'source_name': source_name,
+                            'target': target,
+                            'target_name': target_name,
                             'type': relation_info.get('relation_type', 'related_to'),
-                            'description': relation_info.get('description', ''),
+                            'description': relation_info.get('description', f'{source_name} -> {target_name}'),
                             'metadata': relation_info
                         })
             
@@ -169,7 +204,22 @@ class KnowledgeGraphGenerator:
             for doc in documents:
                 doc_id = doc.get('doc_id', '')
                 metadata = doc.get('metadata', {})
-                title = metadata.get('title', doc_id)
+                
+                # Try multiple sources for a meaningful name
+                title = (
+                    metadata.get('title') or 
+                    metadata.get('filename') or 
+                    metadata.get('source') or 
+                    doc_id
+                )
+                
+                # Clean up the title - remove common prefixes
+                if title.startswith('doc-'):
+                    title = title[4:]  # Remove 'doc-' prefix
+                
+                # If still looks like a hash, use a more readable format
+                if len(title) == 32 and all(c in '0123456789abcdef' for c in title.lower()):
+                    title = f"Document_{title[:8]}"  # Use first 8 chars of hash
                 
                 nodes.append({
                     'id': doc_id,
@@ -182,12 +232,16 @@ class KnowledgeGraphGenerator:
             # Create simple edges between documents (if multiple)
             if len(nodes) > 1:
                 for i in range(len(nodes) - 1):
+                    source_node = nodes[i]
+                    target_node = nodes[i + 1]
                     edges.append({
                         'id': f"edge_{i}",
-                        'source': nodes[i]['id'],
-                        'target': nodes[i + 1]['id'],
+                        'source': source_node['id'],
+                        'source_name': source_node['name'],
+                        'target': target_node['id'],
+                        'target_name': target_node['name'],
                         'type': 'related',
-                        'description': 'Document relationship',
+                        'description': f'{source_node["name"]} -> {target_node["name"]}',
                         'metadata': {}
                     })
             
