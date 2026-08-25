@@ -4,7 +4,7 @@ import json
 import asyncio
 from typing import AsyncIterator, List, Dict, Any
 from fastapi import FastAPI, File, Query, UploadFile
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from rag_kb.config import settings
@@ -116,10 +116,37 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 metadata=doc.metadata
             ))
         
-        # Step 3: LightRAG indexing and knowledge graph generation (temporarily disabled)
+        # Step 3: LightRAG indexing and knowledge graph generation
         graph_generated = False
-        indexing_error = "LightRAG indexing temporarily disabled due to embedding function compatibility issues. Advanced features will be restored in future update."
-        print("LightRAG indexing skipped - document available for basic search")
+        indexing_error = None
+        try:
+            import sys
+            print("Starting LightRAG indexing...", file=sys.stderr, flush=True)
+            rag = LightRAGAdapter()
+            print("LightRAG adapter created for indexing", file=sys.stderr, flush=True)
+            
+            # Insert document into LightRAG for indexing and graph generation
+            print(f"Attempting to ingest document {doc.doc_id}", file=sys.stderr, flush=True)
+            ingest_success = await rag.ingest([{
+                'doc_id': doc.doc_id,
+                'content': doc.content,
+                'metadata': doc.metadata
+            }])
+            
+            print(f"Ingest result: {ingest_success}", file=sys.stderr, flush=True)
+            
+            if not ingest_success:
+                raise Exception("LightRAG ingestion returned False")
+                
+            graph_generated = True
+            print("LightRAG indexing completed successfully", file=sys.stderr, flush=True)
+        except Exception as e:
+            # LightRAG indexing failed, but document was parsed
+            print(f"LightRAG indexing failed: {e}", file=sys.stderr, flush=True)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
+            graph_generated = False
+            indexing_error = str(e)
         
         # Save document to registry
         registry_file = settings.data_dir / 'document_registry.json'
@@ -669,8 +696,43 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
     Returns:
         Search results with answer and sources
     """
+    import sys
+    print(f"=== MAIN.PY SEARCH CALLED ===", file=sys.stderr, flush=True)
+    print(f"Query: {q}, mode: {mode}, query_mode: {query_mode}", file=sys.stderr, flush=True)
+    
     try:
-        # Use document registry search (LightRAG temporarily disabled due to compatibility issues)
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        
+        print("Attempting LightRAG search...", file=sys.stderr, flush=True)
+        
+        rag = LightRAGAdapter()
+        print("LightRAG adapter created", file=sys.stderr, flush=True)
+        
+        await rag.ensure_initialized()
+        print("LightRAG initialized", file=sys.stderr, flush=True)
+        
+        print("Performing query...", file=sys.stderr, flush=True)
+        answer = await rag.query(q, mode=query_mode)
+        print(f"LightRAG query result: {answer[:200] if answer else 'empty'}", file=sys.stderr, flush=True)
+        
+        if not answer or answer.strip() == "":
+            raise Exception("LightRAG returned empty response")
+        
+        return {
+            'answer': answer,
+            'sources': [],
+            'mode': 'lightrag',
+            'query_mode': query_mode,
+            'category': category,
+            'intent_classification': None
+        }
+    except Exception as e:
+        print(f"LightRAG search failed: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        print("Falling back to document registry search", file=sys.stderr, flush=True)
+        
+        # Fallback to document registry search
         import json
         from pathlib import Path
         registry_file = settings.data_dir / 'document_registry.json'
@@ -691,7 +753,7 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
                     })
             
             return {
-                'answer': f"Found {len(results)} documents matching '{q}'. Note: Advanced LightRAG semantic search temporarily disabled due to embedding compatibility. Using basic text search.",
+                'answer': f"LightRAG unavailable, using document search. Found {len(results)} documents matching '{q}'.",
                 'sources': results[:top_k],
                 'mode': 'basic',
                 'query_mode': query_mode,
@@ -708,83 +770,6 @@ async def search(q: str = Query(...), dept: str = '', level: str = 'Internal', t
                 'category': category,
                 'intent_classification': None
             }
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {
-            'error': str(e),
-            'answer': f'搜索失败: {str(e)}',
-            'sources': [],
-            'mode': 'basic',
-            'query_mode': query_mode,
-            'category': category,
-            'intent_classification': None
-        }
-    """Search the RAG knowledge base with multiple modes.
-    
-    Args:
-        q: Search query
-        dept: Department filter
-        level: Access level filter
-        top_k: Number of results to return
-        mode: Search mode ('lightrag', 'bm25', 'hybrid')
-        
-    Returns:
-        Search results with answer and sources
-    """
-    try:
-        from rag_kb.lightrag.adapter import LightRAGAdapter
-        from rag_kb.retrieval import BM25Search, HybridSearch
-        
-        user_acl = {'dept': [dept], 'level': [level]}
-        bm25_index_path = settings.data_dir / 'bm25_index.json'
-        
-        if mode == 'bm25':
-            # BM25-only search
-            bm25 = BM25Search()
-            # Load BM25 index if available
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
-            
-            results = bm25.search(q, top_k=top_k)
-            answer = f"Found {len(results)} relevant documents using BM25 search."
-            return {'answer': answer, 'sources': results, 'mode': 'bm25'}
-            
-        elif mode == 'hybrid':
-            # Hybrid search (BM25 + LightRAG)
-            rag = LightRAGAdapter()
-            bm25 = BM25Search()
-            
-            if bm25_index_path.exists():
-                bm25.load_index(bm25_index_path)
-            
-            hybrid = HybridSearch(bm25_search=bm25, lightrag_adapter=rag)
-            results = hybrid.search(q, top_k=top_k, use_bm25=True, use_lightrag=True)
-            
-            # Generate answer using LightRAG with specified query mode
-            try:
-                lightrag_answer = rag.query(q, mode=query_mode)
-                if not lightrag_answer or lightrag_answer == "":
-                    lightrag_answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。"
-            except Exception as e:
-                lightrag_answer = f"LightRAG查询失败: {str(e)}"
-            
-            return {'answer': lightrag_answer, 'sources': results, 'mode': 'hybrid', 'query_mode': query_mode}
-            
-        else:  # lightrag mode (default)
-            rag = LightRAGAdapter()
-            try:
-                answer = rag.query(q, mode=query_mode)
-                if not answer or answer == "":
-                    answer = "抱歉，当前知识库中没有相关文档或LightRAG未正确配置。请先上传文档并确保LightRAG已正确设置。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'status': 'no_documents'}
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode}
-            except Exception as e:
-                answer = f"搜索失败: {str(e)}。请确保LightRAG已正确配置且有文档已索引。"
-                return {'answer': answer, 'sources': [], 'mode': 'lightrag', 'query_mode': query_mode, 'error': str(e)}
-            
-    except Exception as e:
-        return {'error': str(e), 'message': 'Search failed', 'answer': f'搜索失败: {str(e)}', 'sources': [], 'mode': mode, 'query_mode': query_mode}
 
 
 async def _stream_answer(rag, prompt, mode='hybrid', with_citations=True) -> AsyncIterator[str]:

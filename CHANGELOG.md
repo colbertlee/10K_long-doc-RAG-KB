@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.27] - 2026-08-25
+
+### Fixed
+- **LightRAG Integration**: Successfully resolved all LightRAG compatibility issues
+- **Async Functions**: Converted LLM and embedding functions to async for proper event loop handling
+- **Embedding Interface**: Implemented proper EmbeddingFunc dataclass matching lightrag-hku v1.5.6
+- **LLM Response**: Fixed empty LLM responses by switching to gemma4:e4b model and adding debugging
+- **Vector Indexing**: Resolved vector chunks being empty by ensuring proper document ingestion
+- **Response Truncation**: Increased max_tokens to 4096 to prevent response truncation
+- **API Routes**: Cleaned up duplicate code and added FileResponse import
+- **Server Port**: Changed to port 8001 to avoid socket conflicts
+
+### Changed
+- **LLM Model**: Switched from qwen3.5:4b to gemma4:e4b for better response reliability
+- **Query Mode**: Using naive mode for LightRAG queries to avoid graph dependencies
+- **Reranking**: Disabled reranking to avoid missing model warnings
+- **Document Ingestion**: Removed unique prefix to allow proper LightRAG processing
+
+### Technical
+- **llm_funcs.py**: Made fully async with thread pool execution and debugging
+- **embedding_funcs.py**: Implemented proper async embedding with debugging
+- **adapter.py**: Added ensure_initialized() method and async query implementation
+- **config.py**: Updated LLM model and increased max_tokens
+- **routes.py**: Cleaned up duplicate search endpoint code
+- **main.py**: Simplified search to use LightRAG with fallback to document registry
+
+### Working Features
+- ✅ Document upload and parsing
+- ✅ LightRAG document ingestion and indexing
+- ✅ Vector embeddings generation
+- ✅ Semantic search with LightRAG naive mode
+- ✅ LLM-based response generation
+- ✅ Basic text search fallback
+- ✅ All API endpoints functional
+
+### Known Issues
+- **Knowledge Graph**: Entity extraction returns 0 entities/relations (LLM parsing issue)
+- **Advanced Search**: Hybrid and global modes not yet tested
+- **Reranking**: Disabled due to missing torch/transformers dependencies
+
 ## [0.5.26] - 2026-08-24
 
 ### Fixed

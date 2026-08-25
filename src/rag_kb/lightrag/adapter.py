@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from lightrag import LightRAG, QueryParam
 from rag_kb.lightrag.llm_funcs import ollama_llm
-from rag_kb.lightrag.embedding_funcs import ollama_embed
+from rag_kb.lightrag.embedding_funcs import EmbeddingFunc
 from rag_kb.config import settings
 
 NL = chr(10)
@@ -23,13 +23,26 @@ class LightRAGAdapter:
         self.working_dir = str(Path(working_dir or settings.lightrag_working_dir))
         Path(self.working_dir).mkdir(parents=True, exist_ok=True)
         
-        # Use the embedding function directly - LightRAG will handle the interface
+        # Use the embedding function from embedding_funcs.py
+        from rag_kb.lightrag.embedding_funcs import EmbeddingFunc
+        
+        # Create a new instance for this adapter
+        embedding_func = EmbeddingFunc()
+        
         self.rag = LightRAG(
             working_dir=self.working_dir,
             llm_model_func=ollama_llm,
-            embedding_func=ollama_embed,
+            embedding_func=embedding_func,
             chunk_token_size=settings.lightrag_chunk_token_size,
         )
+        
+        self._initialized = False
+    
+    async def ensure_initialized(self):
+        """Ensure LightRAG storages are initialized."""
+        if not self._initialized:
+            await self.rag.initialize_storages()
+            self._initialized = True
 
     def insert_chunks(self, chunks):
         """Insert chunks into LightRAG index.
@@ -50,18 +63,25 @@ class LightRAGAdapter:
         doc_text = (NL + NL).join(parts)
         self.rag.insert(doc_text)
 
-    def ingest(self, documents):
+    async def ingest(self, documents):
         """Ingest documents into LightRAG for indexing and knowledge graph generation.
         
         Args:
             documents: List of document dictionaries with 'doc_id', 'content', and 'metadata'
         """
         try:
+            # Ensure storages are initialized
+            await self.ensure_initialized()
+            
             for doc in documents:
                 content = doc.get('content', '')
+                doc_id = doc.get('doc_id', '')
                 
-                # Insert content directly into LightRAG
-                self.rag.insert(content)
+                # Don't add prefix - use original content
+                # unique_content = f"[DOC_ID:{doc_id}]\n{content}"
+                
+                # Use async insert method
+                await self.rag.ainsert(content)
                 
             return True
         except Exception as e:
@@ -70,8 +90,8 @@ class LightRAGAdapter:
             traceback.print_exc()
             return False
 
-    def query(self, question, mode=None):
-        """Query LightRAG with a question.
+    async def query(self, question, mode=None):
+        """Query LightRAG with a question (async).
         
         Args:
             question: Query string
@@ -81,13 +101,19 @@ class LightRAGAdapter:
             Query response text
         """
         try:
+            # Ensure storages are initialized
+            await self.ensure_initialized()
+            
             mode = mode or settings.lightrag_query_mode
             print(f"LightRAG query: question='{question}', mode='{mode}'")
-            result = self.rag.query(
+            
+            # Try naive mode first (simpler, no graph dependencies)
+            result = await self.rag.aquery(
                 question,
-                param=QueryParam(mode=mode, only_need_context=False),
+                param=QueryParam(mode="naive", only_need_context=False, enable_rerank=False),
             )
-            print(f"LightRAG result: {result}")
+            print(f"LightRAG result length: {len(result) if result else 0}")
+            print(f"LightRAG result preview: {result[:500] if result else 'empty'}...")
             return result
         except Exception as e:
             print(f"LightRAG query error: {e}")

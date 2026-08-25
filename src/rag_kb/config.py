@@ -29,10 +29,10 @@ class Settings(BaseSettings):
     # LLM settings
     llm_provider: str = 'ollama'
     llm_base_url: str = 'http://localhost:11434'
-    llm_model: str = 'qwen3.5:4b'
+    llm_model: str = 'gemma4:e4b'  # Changed from qwen3.5:4b due to response issues
     llm_temperature: float = 0.3
     llm_top_p: float = 0.9
-    llm_max_tokens: int = 2048
+    llm_max_tokens: int = 4096  # Increased from 2048 to avoid truncation
 
     # LightRAG settings
     lightrag_chunk_token_size: int = 1200
