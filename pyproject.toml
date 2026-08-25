@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-kb"
-version = "0.5.41"
+version = "0.5.42"
 description = "10K long-document RAG knowledge base"
 requires-python = ">=3.11"
 dependencies = [

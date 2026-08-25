@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识图谱可视化 - RAG KB</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-card .value {
+            color: #667eea;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        #cy {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #cfc;
+        }
+
+        .entity-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .entity-search input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .entity-search input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .info-panel {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .info-panel h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-panel p {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 知识图谱可视化</h1>
+        <p class="subtitle">基于上传文档自动生成的知识图谱</p>
+
+        <div id="message"></div>
+
+        <div class="controls">
+            <button onclick="generateGraph()">🔄 生成知识图谱</button>
+            <button onclick="getStatistics()">📊 获取统计信息</button>
+            <button onclick="rebuildGraph()">🔨 重建图谱</button>
+        </div>
+
+        <div class="entity-search">
+            <input type="text" id="entityName" placeholder="输入实体名称查询子图...">
+            <button onclick="getEntitySubgraph()">🔍 查询实体</button>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3>节点数量</h3>
+                <div class="value" id="nodeCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>边数量</h3>
+                <div class="value" id="edgeCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>文档数量</h3>
+                <div class="value" id="docCount">0</div>
+            </div>
+        </div>
+
+        <div id="cy"></div>
+
+        <div class="info-panel">
+            <h3>💡 使用说明</h3>
+            <p>
+                1. <strong>生成知识图谱</strong>: 从已上传的文档中提取实体和关系，生成知识图谱<br>
+                2. <strong>获取统计信息</strong>: 查看图谱的统计数据，包括节点和边的数量<br>
+                3. <strong>重建图谱</strong>: 重新从所有文档生成知识图谱<br>
+                4. <strong>查询实体</strong>: 输入实体名称，查看该实体及其关系的子图
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let cy = null;
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading() {
+            document.getElementById('cy').innerHTML = '<div class="loading">⏳ 正在处理，请稍候...</div>';
+        }
+
+        function initializeCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#667eea',
+                            'label': 'data(label)',
+                            'font-size': '12px',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'color': '#fff',
+                            'text-outline-color': '#667eea',
+                            'text-outline-width': '2px',
+                            'width': '60px',
+                            'height': '60px'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#ccc',
+                            'target-arrow-color': '#ccc',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'background-color': '#764ba2',
+                            'border-width': 3,
+                            'border-color': '#333'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000,
+                    nodeRepulsion: 100000,
+                    idealEdgeLength: 100,
+                    nodeOverlap: 20
+                }
+            });
+        }
+
+        async function generateGraph() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/graph/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayGraph(data);
+                    updateStats(data);
+                    showMessage('✅ 知识图谱生成成功！', 'success');
+                } else {
+                    showMessage(`❌ 生成失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function getStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/graph/statistics`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('nodeCount').textContent = data.node_count;
+                    document.getElementById('edgeCount').textContent = data.edge_count;
+                    showMessage('📊 统计信息已更新', 'success');
+                } else {
+                    showMessage(`❌ 获取统计失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function rebuildGraph() {
+            if (!confirm('确定要重建知识图谱吗？这可能需要一些时间。')) {
+                return;
+            }
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/graph/rebuild`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayGraph(data);
+                    updateStats(data);
+                    showMessage('✅ 知识图谱重建成功！', 'success');
+                } else {
+                    showMessage(`❌ 重建失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function getEntitySubgraph() {
+            const entityName = document.getElementById('entityName').value.trim();
+            if (!entityName) {
+                showMessage('⚠️ 请输入实体名称', 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/graph/entity/${encodeURIComponent(entityName)}?depth=2`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayGraph(data);
+                    showMessage(`✅ 实体 "${entityName}" 的子图已加载`, 'success');
+                } else {
+                    showMessage(`❌ 查询失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+
+        function displayGraph(data) {
+            if (!cy) {
+                initializeCytoscape();
+            }
+
+            const elements = {
+                nodes: data.nodes.map(node => ({
+                    data: {
+                        id: node.id,
+                        label: node.name || node.id,
+                        type: node.type || 'unknown'
+                    }
+                })),
+                edges: data.edges.map(edge => ({
+                    data: {
+                        id: edge.id,
+                        source: edge.source,
+                        target: edge.target,
+                        label: edge.type || 'related'
+                    }
+                }))
+            };
+
+            cy.json({ elements });
+            cy.layout({
+                name: 'cose',
+                animate: true,
+                animationDuration: 1000
+            }).run();
+        }
+
+        function updateStats(data) {
+            document.getElementById('nodeCount').textContent = data.node_count || 0;
+            document.getElementById('edgeCount').textContent = data.edge_count || 0;
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            initializeCytoscape();
+            getStatistics();
+        };
+    </script>
+</body>
+</html>

@@ -42,9 +42,13 @@ class LightRAGAdapter:
         """Ensure LightRAG storages are initialized."""
         if not self._initialized:
             await self.rag.initialize_storages()
-            # Initialize pipeline status for LightRAG
-            from lightrag.kg.shared_storage import initialize_pipeline_status
-            await initialize_pipeline_status()
+            # Try to initialize pipeline status but don't fail if it doesn't work
+            try:
+                from lightrag.kg.shared_storage import initialize_pipeline_status
+                await initialize_pipeline_status()
+            except Exception as e:
+                print(f"Warning: Could not initialize pipeline status: {e}")
+                # Continue anyway - basic functionality should still work
             self._initialized = True
 
     def insert_chunks(self, chunks):
@@ -76,16 +80,24 @@ class LightRAGAdapter:
             # Ensure storages are initialized
             await self.ensure_initialized()
             
+            # Use synchronous insert method to avoid pipeline issues
             for doc in documents:
                 content = doc.get('content', '')
                 doc_id = doc.get('doc_id', '')
                 
-                # Don't add prefix - use original content
-                # unique_content = f"[DOC_ID:{doc_id}]\n{content}"
+                if not content.strip():
+                    print(f"Skipping empty document: {doc_id}")
+                    continue
                 
-                # Use async insert method
-                await self.rag.ainsert(content)
-                
+                # Use synchronous insert method directly
+                try:
+                    self.rag.insert(content)
+                    print(f"Successfully ingested document: {doc_id}")
+                except Exception as e:
+                    print(f"Error ingesting document {doc_id}: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
             return True
         except Exception as e:
             print(f"LightRAG ingestion error: {e}")

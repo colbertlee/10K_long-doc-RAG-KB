@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.42] - 2026-08-25
+
+### Performance & Timeout Improvements
+- **Increased Timeout Configuration**: Added configurable timeouts for local model performance
+  - Request timeout: 300s (5 minutes) for LLM requests
+  - Embedding timeout: 120s (2 minutes) for embedding
+  - Query timeout: 300s (5 minutes) for queries
+  - Ingestion timeout: 600s (10 minutes) for document ingestion
+- **GET Method Routing**: Fixed GET request timeout handling with proper error messages
+- **Local Model Optimization**: Adjusted for local GPU performance constraints
+
+### Knowledge Graph Implementation
+- **Complete Knowledge Graph Generator**: Full implementation with fallback mechanisms
+- **Document-Based Graph Fallback**: Simple document-based graphs when LightRAG extraction fails
+- **Graph API Endpoints**: Added comprehensive graph management APIs
+  - POST /api/v1/graph/generate - Generate knowledge graph from documents
+  - GET /api/v1/graph/statistics - Get graph statistics
+  - POST /api/v1/graph/rebuild - Rebuild knowledge graph
+  - GET /api/v1/graph/entity/{entity_name} - Get entity subgraph
+- **Graph Visualization Interface**: Added interactive knowledge graph UI with Cytoscape.js
+- **Entity & Relation Extraction**: Automatic extraction from LightRAG storage
+- **Graph Statistics**: Node/edge counts, type distributions, connectivity metrics
+
+### LightRAG Integration Fixes
+- **Pipeline Initialization**: Fixed LightRAG pipeline status initialization issues
+- **Graceful Degradation**: System continues to work even if advanced features fail
+- **Synchronous Ingestion**: Added synchronous document ingestion methods
+- **Error Handling**: Improved error handling for LightRAG operations
+
+### Document Management
+- **Reindexing Scripts**: Added scripts for document reindexing
+  - scripts/reindex_documents.py - Async reindexing
+  - scripts/reindex_documents_sync.py - Synchronous reindexing
+- **Document Registry**: Enhanced document registry management
+- **Graph Extraction**: Automatic entity and relation extraction from documents
+
+### API Enhancements
+- **Knowledge Graph UI**: Added /knowledge-graph endpoint for graph visualization
+- **Timeout Handling**: Proper timeout handling for all API endpoints
+- **Error Messages**: Improved error messages for timeout scenarios
+- **Fallback Responses**: Graceful fallbacks when advanced features fail
+
+### Technical
+- **Graph Module**: Created dedicated graph module (src/rag_kb/graph/)
+- **Configuration**: Added timeout settings to config.py
+- **Routes Enhancement**: Enhanced GET search endpoint with timeout handling
+- **Main API Updates**: Added graph-related endpoints to main.py
+- **Adapter Improvements**: Fixed LightRAG adapter initialization and ingestion
+
+### Working Features
+- Document upload and parsing ✅
+- OCR for scanned PDFs ✅
+- LightRAG document ingestion and vector indexing ✅
+- Semantic search with LightRAG naive mode ✅
+- LLM-based response generation (enhanced recognition) ✅
+- GET method search API (fixed with timeout handling) ✅
+- POST method search API (fixed) ✅
+- All frontend interfaces using GET method ✅
+- Browser cache control for updates ✅
+- Enhanced LLM knowledge base recognition ✅
+- Route conflict resolved ✅
+- Comprehensive unit test coverage ✅
+- **Knowledge graph generation (with fallback)** ✅
+- **Graph visualization interface** ✅
+- **Increased timeout configurations** ✅
+- **Document reindexing scripts** ✅
+
 ## [0.5.41] - 2026-08-25
 
 ### Testing

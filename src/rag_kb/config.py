@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     lightrag_max_token: int = 4096
     lightrag_query_mode: str = 'hybrid'
     lightrag_enable_llm_cache: bool = True
+    
+    # Timeout settings (increased for local model performance)
+    request_timeout: int = 300  # 5 minutes for LLM requests
+    embedding_timeout: int = 120  # 2 minutes for embedding
+    query_timeout: int = 300  # 5 minutes for queries
+    ingestion_timeout: int = 600  # 10 minutes for document ingestion
 
     # OpenAI-compatible remote LLM (optional)
     openai_api_key: str | None = Field(default=None)

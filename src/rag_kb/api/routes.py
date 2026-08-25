@@ -20,8 +20,26 @@ async def search_endpoint(q: str = Query(''), mode: str = 'hybrid', query_mode: 
     """Search endpoint (GET method for backward compatibility)."""
     try:
         from rag_kb.lightrag.adapter import LightRAGAdapter
+        from rag_kb.config import settings
+        
         rag = LightRAGAdapter()
-        answer = await rag.query(q, mode=query_mode)
+        # Initialize with timeout handling
+        import asyncio
+        try:
+            answer = await asyncio.wait_for(
+                rag.query(q, mode=query_mode),
+                timeout=settings.query_timeout
+            )
+        except asyncio.TimeoutError:
+            return {
+                'answer': '查询超时，请稍后重试',
+                'sources': [],
+                'mode': 'lightrag',
+                'query_mode': query_mode,
+                'category': 'all',
+                'intent_classification': None,
+                'timeout': True
+            }
         
         return {
             'answer': answer,

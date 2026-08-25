@@ -70,6 +70,18 @@ def root():
         }
 
 
+@app.get("/knowledge-graph")
+async def knowledge_graph_ui():
+    """Knowledge graph visualization interface."""
+    static_dir = Path(__file__).parent.parent.parent.parent / "static"
+    graph_file = static_dir / "knowledge_graph.html"
+    
+    if graph_file.exists():
+        return FileResponse(graph_file)
+    else:
+        return HTMLResponse("<h1>Knowledge graph interface not found</h1>")
+
+
 @app.get('/health')
 def health():
     """Health check endpoint."""
@@ -353,82 +365,183 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         return {'error': str(e), 'message': 'Folder import failed'}
 
 
+@app.post('/api/v1/graph/generate')
+async def generate_knowledge_graph(request: dict):
+    """Generate knowledge graph from uploaded documents.
+    
+    Args:
+        request: Request with document information
+        
+    Returns:
+        Knowledge graph data with nodes and edges
+    """
+    try:
+        from rag_kb.graph.generator import graph_generator
+        from rag_kb.config import settings
+        import json
+        from pathlib import Path
+        
+        # Load documents from registry
+        registry_file = settings.data_dir / 'document_registry.json'
+        
+        if not registry_file.exists():
+            return {
+                'success': False,
+                'error': 'No documents found in registry',
+                'nodes': [],
+                'edges': [],
+                'node_count': 0,
+                'edge_count': 0
+            }
+        
+        with open(registry_file, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        
+        # Convert to document format
+        documents = []
+        for doc_id, doc_data in registry.items():
+            documents.append({
+                'doc_id': doc_id,
+                'content': doc_data.get('content', ''),
+                'metadata': doc_data.get('metadata', {})
+            })
+        
+        # Generate graph
+        graph_data = await graph_generator.generate_graph_from_documents(documents)
+        
+        return graph_data
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'nodes': [],
+            'edges': [],
+            'node_count': 0,
+            'edge_count': 0
+        }
+
+
+@app.get('/api/v1/graph/statistics')
+async def get_graph_statistics():
+    """Get statistics about the knowledge graph.
+    
+    Returns:
+        Graph statistics including node count, edge count, and type distributions
+    """
+    try:
+        from rag_kb.graph.generator import graph_generator
+        
+        stats = await graph_generator.get_graph_statistics()
+        return stats
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'node_count': 0,
+            'edge_count': 0,
+            'node_types': {},
+            'edge_types': {}
+        }
+
+
+@app.post('/api/v1/graph/rebuild')
+async def rebuild_knowledge_graph():
+    """Rebuild the knowledge graph from all documents.
+    
+    Returns:
+        Rebuilt graph data
+    """
+    try:
+        from rag_kb.graph.generator import graph_generator
+        
+        graph_data = await graph_generator.rebuild_graph()
+        return graph_data
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'nodes': [],
+            'edges': [],
+            'node_count': 0,
+            'edge_count': 0
+        }
+
+
+@app.get('/api/v1/graph/entity/{entity_name}')
+async def get_entity_subgraph_api(entity_name: str, depth: int = 2):
+    """Get subgraph centered around a specific entity.
+    
+    Args:
+        entity_name: Name of the entity
+        depth: Depth of the subgraph
+        
+    Returns:
+        Subgraph data
+    """
+    try:
+        from rag_kb.graph.generator import graph_generator
+        
+        subgraph = await graph_generator.get_entity_subgraph(entity_name, depth)
+        return subgraph
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'center_entity': entity_name,
+            'nodes': [],
+            'edges': [],
+            'depth': depth,
+            'node_count': 0,
+            'edge_count': 0
+        }
+
+
 @app.get('/api/v1/users/{user_id}/kbs/{kb_name}/entity-subgraph')
-async def get_entity_subgraph(user_id: str, kb_name: str, entity: str):
+async def get_entity_subgraph(user_id: str, kb_name: str, entity: str, depth: int = 2):
     """Get subgraph centered around a specific entity.
     
     Args:
         user_id: User ID
         kb_name: Knowledge base name
         entity: Entity name to center subgraph around
+        depth: Depth of the subgraph
         
     Returns:
         Subgraph data with entity and its neighbors
     """
     try:
-        from rag_kb.lightrag.adapter import LightRAGAdapter
-        import json
-        from pathlib import Path
+        from rag_kb.graph.generator import graph_generator
         
-        rag = LightRAGAdapter()
+        # Use the new graph generator
+        subgraph = await graph_generator.get_entity_subgraph(entity, depth)
         
-        # Try to get entity-specific subgraph from LightRAG
-        subgraph_data = {
-            'nodes': [],
-            'edges': []
-        }
+        return subgraph
         
-        # Check if LightRAG graph data exists
-        lightrag_dir = settings.data_dir / 'lightrag_output'
-        if lightrag_dir.exists():
-            graph_file = lightrag_dir / 'graph_index.json'
-            if graph_file.exists():
-                try:
-                    with open(graph_file, 'r', encoding='utf-8') as f:
-                        lightrag_graph = json.load(f)
-                        
-                        # Find entity and its neighbors
-                        entity_node = None
-                        for node in lightrag_graph.get('nodes', []):
-                            if entity.lower() in node.get('label', '').lower():
-                                entity_node = node
-                                break
-                        
-                        if entity_node:
-                            subgraph_data['nodes'].append(entity_node)
-                            
-                            # Find connected nodes
-                            node_id = entity_node.get('id', '')
-                            for edge in lightrag_graph.get('edges', []):
-                                if edge.get('source') == node_id or edge.get('target') == node_id:
-                                    subgraph_data['edges'].append(edge)
-                                    
-                                    # Add connected nodes
-                                    connected_id = edge.get('target') if edge.get('source') == node_id else edge.get('source')
-                                    for node in lightrag_graph.get('nodes', []):
-                                        if node.get('id') == connected_id:
-                                            subgraph_data['nodes'].append(node)
-                                            break
-                except Exception as e:
-                    print(f"Error reading LightRAG graph: {e}")
-        
-        # If no subgraph data, create a synthetic one
-        if not subgraph_data['nodes']:
-            subgraph_data['nodes'] = [
-                {'id': f'entity_{entity}', 'label': entity, 'type': 'entity'}
-            ]
-            subgraph_data['edges'] = []
-        
-        return {
-            'success': True,
-            'entity': entity,
-            'nodes': subgraph_data['nodes'],
-            'edges': subgraph_data['edges'],
-            'node_count': len(subgraph_data['nodes']),
-            'edge_count': len(subgraph_data['edges'])
-        }
     except Exception as e:
-        return {'error': str(e), 'message': 'Failed to get entity subgraph', 'nodes': [], 'edges': [], 'node_count': 0, 'edge_count': 0}
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'center_entity': entity,
+            'nodes': [],
+            'edges': [],
+            'depth': depth,
+            'node_count': 0,
+            'edge_count': 0
+        }
 
 
 @app.get('/api/v1/users/{user_id}/kbs/{kb_name}/node-source')
