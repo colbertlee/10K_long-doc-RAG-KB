@@ -2,9 +2,9 @@
 
 import re
 import uuid
-from typing import List
-from rag_kb.models import Document, Chunk
+
 from rag_kb.chunkers.base import BaseChunker
+from rag_kb.models import Chunk
 
 
 class StructuredChunker(BaseChunker):
@@ -20,7 +20,7 @@ class StructuredChunker(BaseChunker):
         m = re.match(r'^(#{1,6})\s+', line)
         return len(m.group(1)) if m else 0
 
-    def chunk(self, doc, metadata=None) -> List[Chunk]:
+    def chunk(self, doc, metadata=None) -> list[Chunk]:
         """Split document into semantic chunks based on structure.
         
         Args:
@@ -40,8 +40,8 @@ class StructuredChunker(BaseChunker):
             doc_metadata = doc.metadata
             doc_id = doc.doc_id
         
-        chunks: List[Chunk] = []
-        section_path: List[str] = []
+        chunks: list[Chunk] = []
+        section_path: list[str] = []
         buffer = ''
         current_title = ''
         current_level = 0
@@ -63,7 +63,20 @@ class StructuredChunker(BaseChunker):
         return chunks
 
     def _make_chunk(self, doc_id, text, title, path, level, metadata):
-        """Create a Chunk object from the given parameters."""
+        """Create a Chunk object from the given parameters with enhanced citation metadata."""
+        # Enhanced metadata for citation tracking
+        enhanced_metadata = {
+            **metadata,
+            'title': title,
+            'chapter': title if title else metadata.get('chapter', '未知章节'),
+            'section': ' > '.join(path) if path else metadata.get('section', '未知章节'),
+            'section_path': path,
+            'level': level,
+            'page': metadata.get('page', metadata.get('pages', '未知页码')),
+            'source': metadata.get('source', '未知来源'),
+            'filename': metadata.get('filename', metadata.get('title', '未知文档')),
+        }
+        
         return Chunk(
             chunk_id=str(uuid.uuid4()),
             doc_id=doc_id,
@@ -71,5 +84,5 @@ class StructuredChunker(BaseChunker):
             level=level,
             section_path=path,
             token_count=len(text) // 4,
-            metadata={**metadata, 'title': title},
+            metadata=enhanced_metadata,
         )

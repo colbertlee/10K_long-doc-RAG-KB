@@ -1,11 +1,10 @@
 """Basic RLHF (Reinforcement Learning from Human Feedback) system."""
 
-from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import json
-from pathlib import Path
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class FeedbackLabel(Enum):
@@ -22,12 +21,12 @@ class RLHFTrainingExample:
     query: str
     response: str
     label: FeedbackLabel
-    feedback_reason: Optional[str] = None
+    feedback_reason: str | None = None
     user_id: str = "anonymous"
     timestamp: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'example_id': self.example_id,
@@ -54,7 +53,7 @@ class RewardModel:
         }
     
     def calculate_reward(self, query: str, response: str, 
-                        context: Dict[str, Any] = None) -> float:
+                        context: dict[str, Any] = None) -> float:
         """Calculate reward score for a response.
         
         Args:
@@ -103,7 +102,7 @@ class RewardModel:
         overlap = len(query_terms & response_terms)
         return overlap / len(query_terms)
     
-    def _calculate_accuracy(self, response: str, context: Dict[str, Any]) -> float:
+    def _calculate_accuracy(self, response: str, context: dict[str, Any]) -> float:
         """Calculate accuracy score based on context.
         
         Args:
@@ -175,7 +174,7 @@ class RLHFManager:
         from rag_kb.config import settings
         self.dataset_file = settings.data_dir / 'rlhf_dataset.json'
         self.reward_model = RewardModel()
-        self.training_examples: List[RLHFTrainingExample] = []
+        self.training_examples: list[RLHFTrainingExample] = []
         self._load_dataset()
     
     def _load_dataset(self):
@@ -202,7 +201,7 @@ class RLHFManager:
         except Exception as e:
             print(f"Error saving RLHF dataset: {e}")
     
-    def _dict_to_example(self, data: Dict[str, Any]) -> RLHFTrainingExample:
+    def _dict_to_example(self, data: dict[str, Any]) -> RLHFTrainingExample:
         """Convert dictionary to training example."""
         return RLHFTrainingExample(
             example_id=data['example_id'],
@@ -217,7 +216,7 @@ class RLHFManager:
     
     def add_training_example(self, query: str, response: str, 
                            label: FeedbackLabel, feedback_reason: str = None,
-                           user_id: str = "anonymous") -> Dict[str, Any]:
+                           user_id: str = "anonymous") -> dict[str, Any]:
         """Add a training example from user feedback.
         
         Args:
@@ -254,7 +253,7 @@ class RLHFManager:
             'message': 'Training example added successfully'
         }
     
-    def get_dataset_statistics(self) -> Dict[str, Any]:
+    def get_dataset_statistics(self) -> dict[str, Any]:
         """Get dataset statistics.
         
         Returns:
@@ -285,7 +284,7 @@ class RLHFManager:
         }
     
     def calculate_response_reward(self, query: str, response: str, 
-                                 context: Dict[str, Any] = None) -> float:
+                                 context: dict[str, Any] = None) -> float:
         """Calculate reward score for a response.
         
         Args:
@@ -298,7 +297,7 @@ class RLHFManager:
         """
         return self.reward_model.calculate_reward(query, response, context)
     
-    def get_training_batch(self, batch_size: int = 10) -> List[Dict[str, Any]]:
+    def get_training_batch(self, batch_size: int = 10) -> list[dict[str, Any]]:
         """Get a batch of training examples.
         
         Args:
@@ -315,7 +314,7 @@ class RLHFManager:
         
         return [example.to_dict() for example in recent_examples]
     
-    def filter_by_label(self, label: FeedbackLabel) -> List[Dict[str, Any]]:
+    def filter_by_label(self, label: FeedbackLabel) -> list[dict[str, Any]]:
         """Filter training examples by label.
         
         Args:

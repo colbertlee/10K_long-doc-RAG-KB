@@ -1,8 +1,8 @@
 """Multi-knowledge base manager for product-specific isolation."""
 
 import json
-from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 from rag_kb.config import settings
 from rag_kb.lightrag.adapter import LightRAGAdapter
 
@@ -72,7 +72,7 @@ class MultiKnowledgeBaseManager:
             'working_dir': str(kb_working_dir)
         }
     
-    def get_kb_adapter(self, product_id: str) -> Optional[LightRAGAdapter]:
+    def get_kb_adapter(self, product_id: str) -> LightRAGAdapter | None:
         """Get LightRAG adapter for a specific product knowledge base.
         
         Args:
@@ -105,7 +105,7 @@ class MultiKnowledgeBaseManager:
             return None
     
     def search_product_kb(self, product_id: str, query: str, 
-                         query_mode: str = 'hybrid', top_k: int = 8) -> Dict[str, Any]:
+                         query_mode: str = 'hybrid', top_k: int = 8) -> dict[str, Any]:
         """Search within a specific product knowledge base.
         
         Args:
@@ -144,7 +144,7 @@ class MultiKnowledgeBaseManager:
                 'message': 'Search failed'
             }
     
-    def update_product_kb(self, product_id: str, source_folder: str = None) -> Dict[str, Any]:
+    def update_product_kb(self, product_id: str, source_folder: str = None) -> dict[str, Any]:
         """Update a product knowledge base with new documents.
         
         Args:
@@ -176,7 +176,7 @@ class MultiKnowledgeBaseManager:
             'message': f'Knowledge base for {product_id} cleared for re-indexing'
         }
     
-    def get_available_products(self) -> List[Dict[str, Any]]:
+    def get_available_products(self) -> list[dict[str, Any]]:
         """Get list of available product knowledge bases.
         
         Returns:
@@ -197,7 +197,7 @@ class MultiKnowledgeBaseManager:
         
         return products
     
-    def delete_product_kb(self, product_id: str) -> Dict[str, Any]:
+    def delete_product_kb(self, product_id: str) -> dict[str, Any]:
         """Delete a product knowledge base.
         
         Args:

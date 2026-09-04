@@ -1,12 +1,12 @@
 """BM25 index builder for hybrid search functionality."""
 
-import sys
-import asyncio
 import json
+import sys
 from pathlib import Path
-from typing import List, Dict, Any
-from rag_kb.retrieval.bm25_search import BM25Search
+from typing import Any
+
 from rag_kb.config import settings
+from rag_kb.retrieval.bm25_search import BM25Search
 
 
 class BM25IndexBuilder:
@@ -23,7 +23,7 @@ class BM25IndexBuilder:
         self.bm25_search = BM25Search()
         self.index_file = self.working_dir / 'bm25_index.json'
     
-    async def build_index_from_documents(self, documents: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def build_index_from_documents(self, documents: list[dict[str, Any]]) -> dict[str, Any]:
         """Build BM25 index from documents.
         
         Args:
@@ -76,10 +76,10 @@ class BM25IndexBuilder:
                 'success': False,
                 'error': str(e),
                 'documents_indexed': 0,
-                'message': f'BM25 index building failed: {str(e)}'
+                'message': f'BM25 index building failed: {e!s}'
             }
     
-    async def build_index_from_registry(self) -> Dict[str, Any]:
+    async def build_index_from_registry(self) -> dict[str, Any]:
         """Build BM25 index from document registry.
         
         Returns:
@@ -118,7 +118,7 @@ class BM25IndexBuilder:
                 'success': False,
                 'error': str(e),
                 'documents_indexed': 0,
-                'message': f'BM25 index building from registry failed: {str(e)}'
+                'message': f'BM25 index building from registry failed: {e!s}'
             }
     
     async def load_index(self) -> bool:
@@ -139,7 +139,7 @@ class BM25IndexBuilder:
             print(f"Failed to load BM25 index: {e}", file=sys.stderr, flush=True)
             return False
     
-    async def search(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
+    async def search(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
         """Search using BM25 index.
         
         Args:
@@ -160,7 +160,7 @@ class BM25IndexBuilder:
             print(f"BM25 search failed: {e}", file=sys.stderr, flush=True)
             return []
     
-    def get_index_stats(self) -> Dict[str, Any]:
+    def get_index_stats(self) -> dict[str, Any]:
         """Get BM25 index statistics.
         
         Returns:

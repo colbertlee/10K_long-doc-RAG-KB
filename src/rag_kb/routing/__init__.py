@@ -2,14 +2,14 @@
 
 from .optimized import (
     OptimizedRouter,
-    WorkingDirectory,
     RoutingStrategy,
-    optimized_router
+    WorkingDirectory,
+    optimized_router,
 )
 
 __all__ = [
     'OptimizedRouter',
-    'WorkingDirectory',
     'RoutingStrategy',
+    'WorkingDirectory',
     'optimized_router'
 ]

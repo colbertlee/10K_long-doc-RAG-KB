@@ -1,11 +1,9 @@
 """RAG workflow manager for complete three-stage implementation."""
 
-from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
-import json
-from pathlib import Path
+from enum import Enum
+from typing import Any
 
 
 class WorkflowStage(Enum):
@@ -31,12 +29,12 @@ class StageResult:
     stage: WorkflowStage
     status: WorkflowStatus
     start_time: datetime
-    end_time: Optional[datetime] = None
-    data: Dict[str, Any] = field(default_factory=dict)
-    errors: List[str] = field(default_factory=list)
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    end_time: datetime | None = None
+    data: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'stage': self.stage.value,
@@ -55,11 +53,11 @@ class WorkflowContext:
     query: str
     user_id: str
     kb_name: str
-    product_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    stage_results: Dict[WorkflowStage, StageResult] = field(default_factory=dict)
+    product_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    stage_results: dict[WorkflowStage, StageResult] = field(default_factory=dict)
     
-    def get_stage_result(self, stage: WorkflowStage) -> Optional[StageResult]:
+    def get_stage_result(self, stage: WorkflowStage) -> StageResult | None:
         """Get result for a specific stage."""
         return self.stage_results.get(stage)
     
@@ -87,7 +85,7 @@ class RAGWorkflowManager:
         }
     
     async def execute_workflow(self, context: WorkflowContext, 
-                             stages: List[WorkflowStage] = None) -> Dict[str, Any]:
+                             stages: list[WorkflowStage] = None) -> dict[str, Any]:
         """Execute complete RAG workflow.
         
         Args:
@@ -177,7 +175,7 @@ class RAGWorkflowManager:
         
         return result
     
-    async def _handle_ingestion(self, context: WorkflowContext) -> Dict[str, Any]:
+    async def _handle_ingestion(self, context: WorkflowContext) -> dict[str, Any]:
         """Handle ingestion stage.
         
         Args:
@@ -187,7 +185,6 @@ class RAGWorkflowManager:
             Ingestion stage data
         """
         from rag_kb.ingest.pipeline import IngestionPipeline
-        from rag_kb.config import settings
         
         # Ingestion stage logic
         pipeline = IngestionPipeline()
@@ -218,7 +215,7 @@ class RAGWorkflowManager:
             'processing_time': ingestion_result.get('processing_time', 0)
         }
     
-    async def _handle_retrieval(self, context: WorkflowContext) -> Dict[str, Any]:
+    async def _handle_retrieval(self, context: WorkflowContext) -> dict[str, Any]:
         """Handle retrieval stage.
         
         Args:
@@ -227,10 +224,10 @@ class RAGWorkflowManager:
         Returns:
             Retrieval stage data
         """
-        from rag_kb.retrieval import BM25Search, HybridSearch
+        from rag_kb.config import settings
         from rag_kb.lightrag.adapter import LightRAGAdapter
         from rag_kb.multi_kb import multi_kb_manager
-        from rag_kb.config import settings
+        from rag_kb.retrieval import BM25Search, HybridSearch
         
         retrieval_mode = context.metadata.get('retrieval_mode', 'hybrid')
         query_mode = context.metadata.get('query_mode', 'hybrid')
@@ -303,7 +300,7 @@ class RAGWorkflowManager:
                 'query': context.query
             }
     
-    async def _handle_generation(self, context: WorkflowContext) -> Dict[str, Any]:
+    async def _handle_generation(self, context: WorkflowContext) -> dict[str, Any]:
         """Handle generation stage.
         
         Args:
@@ -321,7 +318,7 @@ class RAGWorkflowManager:
         retrieval_data = retrieval_result.data
         
         # If answer already generated in retrieval stage, use it
-        if 'answer' in retrieval_data and retrieval_data['answer']:
+        if retrieval_data.get('answer'):
             return {
                 'answer': retrieval_data['answer'],
                 'answer_length': len(retrieval_data['answer']),
@@ -342,7 +339,7 @@ class RAGWorkflowManager:
             'query_mode': query_mode
         }
     
-    async def _handle_citation(self, context: WorkflowContext) -> Dict[str, Any]:
+    async def _handle_citation(self, context: WorkflowContext) -> dict[str, Any]:
         """Handle citation stage.
         
         Args:
@@ -396,8 +393,8 @@ class RAGWorkflowManager:
             )
         }
     
-    def _check_ingestion_quality(self, data: Dict[str, Any], 
-                                 context: WorkflowContext) -> Dict[str, Any]:
+    def _check_ingestion_quality(self, data: dict[str, Any], 
+                                 context: WorkflowContext) -> dict[str, Any]:
         """Check ingestion quality.
         
         Args:
@@ -444,8 +441,8 @@ class RAGWorkflowManager:
         
         return quality_metrics
     
-    def _check_retrieval_quality(self, data: Dict[str, Any], 
-                                context: WorkflowContext) -> Dict[str, Any]:
+    def _check_retrieval_quality(self, data: dict[str, Any], 
+                                context: WorkflowContext) -> dict[str, Any]:
         """Check retrieval quality.
         
         Args:
@@ -482,8 +479,8 @@ class RAGWorkflowManager:
         
         return quality_metrics
     
-    def _check_generation_quality(self, data: Dict[str, Any], 
-                                 context: WorkflowContext) -> Dict[str, Any]:
+    def _check_generation_quality(self, data: dict[str, Any], 
+                                 context: WorkflowContext) -> dict[str, Any]:
         """Check generation quality.
         
         Args:
@@ -522,8 +519,8 @@ class RAGWorkflowManager:
         
         return quality_metrics
     
-    def _check_citation_quality(self, data: Dict[str, Any], 
-                               context: WorkflowContext) -> Dict[str, Any]:
+    def _check_citation_quality(self, data: dict[str, Any], 
+                               context: WorkflowContext) -> dict[str, Any]:
         """Check citation quality.
         
         Args:
@@ -606,7 +603,7 @@ class RAGWorkflowManager:
         return overlap / len(query_terms)
     
     def _format_answer_with_citations(self, answer: str, 
-                                      citations: List[Dict[str, Any]]) -> str:
+                                      citations: list[dict[str, Any]]) -> str:
         """Format answer with citations.
         
         Args:

@@ -2,6 +2,7 @@
 
 import hashlib
 from pathlib import Path
+
 from rag_kb.models import Document
 from rag_kb.parsers.base import BaseParser
 

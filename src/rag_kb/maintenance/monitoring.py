@@ -1,11 +1,9 @@
 """Monitoring and metrics collection for knowledge base performance."""
 
 import json
-import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
-from collections import defaultdict
+from typing import Any
+
 from rag_kb.config import settings
 
 
@@ -19,7 +17,7 @@ class PerformanceMonitor:
         self.metrics_history = []
         self.alerts = []
         
-    def record_metric(self, metric_name: str, value: float, metadata: Optional[Dict[str, Any]] = None):
+    def record_metric(self, metric_name: str, value: float, metadata: dict[str, Any] | None = None):
         """Record a performance metric.
         
         Args:
@@ -47,7 +45,7 @@ class PerformanceMonitor:
         with open(self.metrics_file, 'w', encoding='utf-8') as f:
             json.dump(self.metrics_history, f, indent=2, ensure_ascii=False)
     
-    def get_metrics(self, metric_name: str, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_metrics(self, metric_name: str, hours: int = 24) -> list[dict[str, Any]]:
         """Get metrics for a specific name within time range.
         
         Args:
@@ -65,7 +63,7 @@ class PerformanceMonitor:
             datetime.fromisoformat(metric['timestamp']) >= cutoff_time
         ]
     
-    def calculate_average(self, metric_name: str, hours: int = 24) -> Optional[float]:
+    def calculate_average(self, metric_name: str, hours: int = 24) -> float | None:
         """Calculate average value for a metric.
         
         Args:
@@ -81,7 +79,7 @@ class PerformanceMonitor:
         
         return sum(m['value'] for m in metrics) / len(metrics)
     
-    def check_thresholds(self, thresholds: Dict[str, Dict[str, float]]) -> List[Dict[str, Any]]:
+    def check_thresholds(self, thresholds: dict[str, dict[str, float]]) -> list[dict[str, Any]]:
         """Check if metrics exceed thresholds and generate alerts.
         
         Args:
@@ -132,7 +130,7 @@ class PerformanceMonitor:
         with open(self.alerts_file, 'w', encoding='utf-8') as f:
             json.dump(self.alerts, f, indent=2, ensure_ascii=False)
     
-    def get_alerts(self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_alerts(self, hours: int = 24) -> list[dict[str, Any]]:
         """Get recent alerts.
         
         Args:
@@ -148,7 +146,7 @@ class PerformanceMonitor:
             if datetime.fromisoformat(alert['timestamp']) >= cutoff_time
         ]
     
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get overall performance summary.
         
         Returns:
@@ -176,7 +174,7 @@ class QualityMetrics:
         self.quality_file = self.data_dir / 'quality_metrics.json'
         self.quality_history = []
         
-    def record_quality(self, query: str, metrics: Dict[str, float], context: Optional[Dict[str, Any]] = None):
+    def record_quality(self, query: str, metrics: dict[str, float], context: dict[str, Any] | None = None):
         """Record quality metrics for a query.
         
         Args:
@@ -204,7 +202,7 @@ class QualityMetrics:
         with open(self.quality_file, 'w', encoding='utf-8') as f:
             json.dump(self.quality_history, f, indent=2, ensure_ascii=False)
     
-    def get_quality_trends(self, metric_name: str, days: int = 7) -> Dict[str, Any]:
+    def get_quality_trends(self, metric_name: str, days: int = 7) -> dict[str, Any]:
         """Get quality trends for a specific metric.
         
         Args:
@@ -249,7 +247,7 @@ class QualityMetrics:
             'count': len(values)
         }
     
-    def get_overall_quality_score(self) -> Dict[str, Any]:
+    def get_overall_quality_score(self) -> dict[str, Any]:
         """Get overall quality score across all metrics.
         
         Returns:

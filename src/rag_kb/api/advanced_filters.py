@@ -1,9 +1,9 @@
 """Advanced filtering capabilities for RAG KB."""
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from rag_kb.models import SearchResult, Document
-import re
+from datetime import datetime
+from typing import Any
+
+from rag_kb.models import SearchResult
 
 
 class AdvancedFilter:
@@ -20,7 +20,7 @@ class AdvancedFilter:
             'tags': self.filter_by_tags
         }
     
-    def apply_filters(self, results: List[SearchResult], filters: Dict[str, Any]) -> List[SearchResult]:
+    def apply_filters(self, results: list[SearchResult], filters: dict[str, Any]) -> list[SearchResult]:
         """Apply multiple filters to search results.
         
         Args:
@@ -39,7 +39,7 @@ class AdvancedFilter:
         
         return filtered
     
-    def filter_by_time_range(self, results: List[SearchResult], time_range: Dict[str, str]) -> List[SearchResult]:
+    def filter_by_time_range(self, results: list[SearchResult], time_range: dict[str, str]) -> list[SearchResult]:
         """Filter results by time range.
         
         Args:
@@ -77,7 +77,7 @@ class AdvancedFilter:
             print(f"Error parsing time range: {e}")
             return results
     
-    def filter_by_document_type(self, results: List[SearchResult], doc_types: List[str]) -> List[SearchResult]:
+    def filter_by_document_type(self, results: list[SearchResult], doc_types: list[str]) -> list[SearchResult]:
         """Filter results by document type.
         
         Args:
@@ -109,7 +109,7 @@ class AdvancedFilter:
         
         return filtered
     
-    def filter_by_custom_metadata(self, results: List[SearchResult], metadata_filters: Dict[str, Any]) -> List[SearchResult]:
+    def filter_by_custom_metadata(self, results: list[SearchResult], metadata_filters: dict[str, Any]) -> list[SearchResult]:
         """Filter results by custom metadata.
         
         Args:
@@ -137,7 +137,7 @@ class AdvancedFilter:
         
         return filtered
     
-    def filter_by_content_length(self, results: List[SearchResult], length_range: Dict[str, int]) -> List[SearchResult]:
+    def filter_by_content_length(self, results: list[SearchResult], length_range: dict[str, int]) -> list[SearchResult]:
         """Filter results by content length.
         
         Args:
@@ -161,7 +161,7 @@ class AdvancedFilter:
         
         return filtered
     
-    def filter_by_author(self, results: List[SearchResult], authors: List[str]) -> List[SearchResult]:
+    def filter_by_author(self, results: list[SearchResult], authors: list[str]) -> list[SearchResult]:
         """Filter results by author.
         
         Args:
@@ -184,7 +184,7 @@ class AdvancedFilter:
         
         return filtered
     
-    def filter_by_tags(self, results: List[SearchResult], tags: List[str]) -> List[SearchResult]:
+    def filter_by_tags(self, results: list[SearchResult], tags: list[str]) -> list[SearchResult]:
         """Filter results by tags.
         
         Args:
@@ -218,7 +218,7 @@ class FilterBuilder:
         """Initialize filter builder."""
         self.filters = {}
     
-    def add_time_range(self, start_date: str, end_date: Optional[str] = None) -> 'FilterBuilder':
+    def add_time_range(self, start_date: str, end_date: str | None = None) -> 'FilterBuilder':
         """Add time range filter.
         
         Args:
@@ -234,7 +234,7 @@ class FilterBuilder:
         }
         return self
     
-    def add_document_type(self, doc_types: List[str]) -> 'FilterBuilder':
+    def add_document_type(self, doc_types: list[str]) -> 'FilterBuilder':
         """Add document type filter.
         
         Args:
@@ -246,7 +246,7 @@ class FilterBuilder:
         self.filters['document_type'] = doc_types
         return self
     
-    def add_custom_metadata(self, metadata: Dict[str, Any]) -> 'FilterBuilder':
+    def add_custom_metadata(self, metadata: dict[str, Any]) -> 'FilterBuilder':
         """Add custom metadata filter.
         
         Args:
@@ -274,7 +274,7 @@ class FilterBuilder:
         }
         return self
     
-    def add_author(self, authors: List[str]) -> 'FilterBuilder':
+    def add_author(self, authors: list[str]) -> 'FilterBuilder':
         """Add author filter.
         
         Args:
@@ -286,7 +286,7 @@ class FilterBuilder:
         self.filters['author'] = authors
         return self
     
-    def add_tags(self, tags: List[str]) -> 'FilterBuilder':
+    def add_tags(self, tags: list[str]) -> 'FilterBuilder':
         """Add tags filter.
         
         Args:
@@ -298,7 +298,7 @@ class FilterBuilder:
         self.filters['tags'] = tags
         return self
     
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """Build the final filter dictionary.
         
         Returns:

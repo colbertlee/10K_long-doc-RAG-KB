@@ -1,11 +1,10 @@
 """User feedback system for RAG quality improvement."""
 
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import json
-from pathlib import Path
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class FeedbackType(Enum):
@@ -33,12 +32,12 @@ class UserFeedback:
     query: str
     answer: str
     feedback_type: FeedbackType
-    feedback_reason: Optional[FeedbackReason] = None
-    feedback_comment: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    feedback_reason: FeedbackReason | None = None
+    feedback_comment: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'feedback_id': self.feedback_id,
@@ -62,7 +61,7 @@ class FeedbackManager:
         self.feedback_file = settings.data_dir / 'user_feedback.json'
         self.feedback_data = self._load_feedback_data()
     
-    def _load_feedback_data(self) -> Dict[str, Any]:
+    def _load_feedback_data(self) -> dict[str, Any]:
         """Load feedback data from file."""
         if self.feedback_file.exists():
             with open(self.feedback_file, 'r', encoding='utf-8') as f:
@@ -83,7 +82,7 @@ class FeedbackManager:
         with open(self.feedback_file, 'w', encoding='utf-8') as f:
             json.dump(self.feedback_data, f, indent=2, ensure_ascii=False)
     
-    def add_feedback(self, feedback: UserFeedback) -> Dict[str, Any]:
+    def add_feedback(self, feedback: UserFeedback) -> dict[str, Any]:
         """Add user feedback.
         
         Args:
@@ -122,7 +121,7 @@ class FeedbackManager:
                 'message': 'Failed to record feedback'
             }
     
-    def get_feedback_statistics(self) -> Dict[str, Any]:
+    def get_feedback_statistics(self) -> dict[str, Any]:
         """Get feedback statistics.
         
         Returns:
@@ -130,7 +129,7 @@ class FeedbackManager:
         """
         return self.feedback_data['statistics']
     
-    def get_feedback_by_type(self, feedback_type: FeedbackType) -> List[Dict[str, Any]]:
+    def get_feedback_by_type(self, feedback_type: FeedbackType) -> list[dict[str, Any]]:
         """Get feedback by type.
         
         Args:
@@ -144,7 +143,7 @@ class FeedbackManager:
             if f['feedback_type'] == feedback_type.value
         ]
     
-    def get_negative_feedback_reasons(self) -> Dict[str, int]:
+    def get_negative_feedback_reasons(self) -> dict[str, int]:
         """Get statistics of negative feedback reasons.
         
         Returns:
@@ -159,7 +158,7 @@ class FeedbackManager:
         
         return reasons
     
-    def get_feedback_by_user(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_feedback_by_user(self, user_id: str) -> list[dict[str, Any]]:
         """Get feedback by user.
         
         Args:
@@ -187,7 +186,7 @@ class FeedbackManager:
         
         return stats['thumbs_up'] / total
     
-    def get_recent_feedback(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_feedback(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent feedback.
         
         Args:

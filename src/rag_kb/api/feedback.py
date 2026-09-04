@@ -1,10 +1,9 @@
 """User feedback collection and analysis system."""
 
-from typing import Dict, List, Optional, Any
+import json
 from datetime import datetime
 from pathlib import Path
-import json
-import asyncio
+from typing import Any
 
 
 class FeedbackCollector:
@@ -21,7 +20,7 @@ class FeedbackCollector:
         self.feedback_file = self.feedback_dir / "feedback.json"
         self.feedback_data = self._load_feedback()
     
-    def _load_feedback(self) -> Dict[str, Any]:
+    def _load_feedback(self) -> dict[str, Any]:
         """Load feedback data from file.
         
         Returns:
@@ -37,7 +36,7 @@ class FeedbackCollector:
         else:
             return self._init_feedback_data()
     
-    def _init_feedback_data(self) -> Dict[str, Any]:
+    def _init_feedback_data(self) -> dict[str, Any]:
         """Initialize empty feedback data structure.
         
         Returns:
@@ -63,7 +62,7 @@ class FeedbackCollector:
         except Exception as e:
             print(f"Error saving feedback data: {e}")
     
-    def add_feedback(self, feedback: Dict[str, Any]) -> bool:
+    def add_feedback(self, feedback: dict[str, Any]) -> bool:
         """Add user feedback.
         
         Args:
@@ -132,7 +131,7 @@ class FeedbackCollector:
             "positive_rate": positive_count / total if total > 0 else 0.0
         }
     
-    def get_feedback(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_feedback(self, limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
         """Get feedback entries.
         
         Args:
@@ -147,7 +146,7 @@ class FeedbackCollector:
         feedbacks_sorted = sorted(feedbacks, key=lambda x: x["timestamp"], reverse=True)
         return feedbacks_sorted[offset:offset + limit]
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get feedback statistics.
         
         Returns:
@@ -155,7 +154,7 @@ class FeedbackCollector:
         """
         return self.feedback_data["statistics"]
     
-    def get_feedback_by_query(self, query: str) -> List[Dict[str, Any]]:
+    def get_feedback_by_query(self, query: str) -> list[dict[str, Any]]:
         """Get feedback for specific query patterns.
         
         Args:
@@ -174,7 +173,7 @@ class FeedbackCollector:
         
         return matching
     
-    def get_low_quality_queries(self, threshold: float = 2.0) -> List[Dict[str, Any]]:
+    def get_low_quality_queries(self, threshold: float = 2.0) -> list[dict[str, Any]]:
         """Get queries with low user ratings.
         
         Args:
@@ -197,7 +196,7 @@ class FeedbackCollector:
         
         return sorted(low_quality, key=lambda x: x["timestamp"], reverse=True)
     
-    def analyze_feedback_trends(self, days: int = 7) -> Dict[str, Any]:
+    def analyze_feedback_trends(self, days: int = 7) -> dict[str, Any]:
         """Analyze feedback trends over time.
         
         Args:
@@ -252,7 +251,7 @@ class FeedbackAnalyzer:
         """
         self.collector = feedback_collector
     
-    def identify_common_issues(self) -> List[Dict[str, Any]]:
+    def identify_common_issues(self) -> list[dict[str, Any]]:
         """Identify common issues from negative feedback.
         
         Returns:
@@ -287,7 +286,7 @@ class FeedbackAnalyzer:
         
         return [{"issue": issue, "frequency": freq} for issue, freq in sorted_issues]
     
-    def suggest_improvements(self) -> List[str]:
+    def suggest_improvements(self) -> list[str]:
         """Suggest system improvements based on feedback.
         
         Returns:

@@ -1,17 +1,17 @@
 """RLHF (Reinforcement Learning from Human Feedback) module."""
 
 from .manager import (
+    FeedbackLabel,
+    RewardModel,
     RLHFManager,
     RLHFTrainingExample,
-    RewardModel,
-    FeedbackLabel,
-    rlhf_manager
+    rlhf_manager,
 )
 
 __all__ = [
+    'FeedbackLabel',
     'RLHFManager',
     'RLHFTrainingExample',
     'RewardModel',
-    'FeedbackLabel',
     'rlhf_manager'
 ]

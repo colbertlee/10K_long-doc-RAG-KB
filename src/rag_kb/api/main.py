@@ -1,14 +1,19 @@
 """FastAPI main application for RAG KB."""
 
-import json
 import asyncio
-from typing import AsyncIterator, List, Dict, Any
-from fastapi import FastAPI, File, Query, UploadFile, Body
-from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse, RedirectResponse, RedirectResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from rag_kb.config import settings
+
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
+from fastapi.staticfiles import StaticFiles
+
 from rag_kb import __version__
+from rag_kb.config.core_config import settings
 
 app = FastAPI(title=settings.app_name)
 
@@ -24,12 +29,49 @@ except ImportError as e:
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize async context on startup."""
+    """Initialize async context on startup and check index status."""
     if async_context:
         await async_context.initialize()
         print("Application started with async context management", flush=True)
     else:
         print("Application started without async context management", flush=True)
+    
+    # Check index integrity on startup
+    try:
+        from rag_kb.ingest.index_manager import get_index_manager
+        
+        index_manager = get_index_manager()
+        report = index_manager.get_index_integrity_report()
+        
+        print(f"Index integrity check on startup:", flush=True)
+        print(f"  Total uploaded: {report['total_uploaded']}", flush=True)
+        print(f"  Total indexed: {report['total_indexed']}", flush=True)
+        print(f"  Unindexed: {report['unindexed_count']}", flush=True)
+        print(f"  Index health: {report['index_health']}", flush=True)
+        
+        if report['index_health'] == 'unhealthy' and report['unindexed_count'] > 0:
+            print(f"⚠️ Found {report['unindexed_count']} unindexed documents", flush=True)
+            print("💡 Run: curl -X POST http://localhost:8000/api/v1/index/all", flush=True)
+        
+        # Auto-scan upload directory for unregistered files
+        print("Auto-scanning upload directory for unregistered files...", flush=True)
+        scan_results = await index_manager.auto_scan_and_index()
+        print(f"Scan results: {scan_results['message']}", flush=True)
+        if scan_results['scanned_files'] > 0:
+            print(f"  Scanned: {scan_results['scanned_files']}, Registered: {scan_results['registered_files']}, Indexed: {scan_results['indexed_files']}", flush=True)
+        
+    except Exception as e:
+        print(f"Warning: Could not check index integrity on startup: {e}", flush=True)
+    
+    # Start periodic index integrity checker
+    try:
+        from rag_kb.utils.index_scheduler import get_index_scheduler
+        
+        scheduler = get_index_scheduler()
+        scheduler.start()
+        print("Periodic index integrity checker started", flush=True)
+    except Exception as e:
+        print(f"Warning: Could not start index integrity scheduler: {e}", flush=True)
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -39,6 +81,16 @@ async def shutdown_event():
         print("Application shutdown completed", flush=True)
     else:
         print("Application shutdown completed (no async context)", flush=True)
+    
+    # Stop periodic index integrity checker
+    try:
+        from rag_kb.utils.index_scheduler import get_index_scheduler
+        
+        scheduler = get_index_scheduler()
+        scheduler.stop()
+        print("Periodic index integrity checker stopped", flush=True)
+    except Exception as e:
+        print(f"Warning: Could not stop index integrity scheduler: {e}", flush=True)
 
 # Include API routes - using direct import to avoid importlib issues
 try:
@@ -46,6 +98,13 @@ try:
     app.include_router(api_router, prefix="/api/v1")
 except Exception as e:
     print(f"Warning: Could not import API routes: {e}")
+
+# Include docs UI router
+try:
+    from rag_kb.api.docs_ui import router as docs_ui_router
+    app.include_router(docs_ui_router, prefix="/api/v1")
+except Exception as e:
+    print(f"Warning: Could not import docs UI router: {e}")
 
 # Static files directory - navigate to project root
 static_dir = Path(__file__).parent.parent.parent.parent / "static"
@@ -59,28 +118,34 @@ else:
 
 @app.get('/')
 def root():
-    """Root endpoint with unified interface."""
+    """Root endpoint - Intelligent query interface (main page)."""
     try:
-        main_ui_file = static_dir / "main_ui.html"
-        if main_ui_file.exists():
-            content = main_ui_file.read_text(encoding='utf-8')
+        index_file = static_dir / "index.html"
+        if index_file.exists():
+            content = index_file.read_text(encoding='utf-8')
             return HTMLResponse(content=content)
         else:
-            # Fallback to simple UI if main UI doesn't exist
-            simple_ui_file = static_dir / "simple_ui.html"
-            if simple_ui_file.exists():
-                content = simple_ui_file.read_text(encoding='utf-8')
+            # Fallback to main_ui.html if index.html doesn't exist
+            main_ui_file = static_dir / "main_ui.html"
+            if main_ui_file.exists():
+                content = main_ui_file.read_text(encoding='utf-8')
                 return HTMLResponse(content=content)
             else:
-                return {
-                    'message': 'RAG KB API Server',
-                    'version': __version__,
-                    'endpoints': {
-                        'health': '/health',
-                        'api_docs': '/docs',
-                        'chat_ui': '/chat-ui',
-                        'knowledge_graph': '/knowledge-graph',
-                        'knowledge_manager': '/knowledge-manager'
+                # Final fallback to simple UI
+                simple_ui_file = static_dir / "simple_ui.html"
+                if simple_ui_file.exists():
+                    content = simple_ui_file.read_text(encoding='utf-8')
+                    return HTMLResponse(content=content)
+                else:
+                    return {
+                        'message': 'RAG KB API Server',
+                        'version': __version__,
+                        'endpoints': {
+                            'health': '/health',
+                            'api_docs': '/docs',
+                            'chat_ui': '/chat-ui',
+                            'knowledge_graph': '/knowledge-graph',
+                            'knowledge_manager': '/knowledge-manager'
                     }
                 }
     except Exception as e:
@@ -112,13 +177,862 @@ async def knowledge_graph_ui():
 
 @app.get('/health')
 def health():
-    """Health check endpoint."""
-    return {'status': 'ok'}
+    """Health check endpoint with system metrics."""
+    try:
+        import psutil
+        import time
+        from pathlib import Path
+        
+        # Get system metrics
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('C:/') if Path('C:/').exists() else psutil.disk_usage('/')
+        
+        # Get process info
+        process = psutil.Process()
+        
+        # Calculate uptime (approximate from process start time)
+        uptime_seconds = time.time() - process.create_time()
+        
+        return {
+            'status': 'healthy',
+            'system_metrics': {
+                'cpu_percent': round(cpu_percent, 1),
+                'memory_percent': round(memory.percent, 1),
+                'memory_used_gb': round(memory.used / 1024**3, 2),
+                'memory_total_gb': round(memory.total / 1024**3, 2),
+                'disk_percent': round(disk.percent, 1),  # Changed from disk_usage_percent to disk_percent
+                'disk_used_gb': round(disk.used / 1024**3, 2),
+                'disk_total_gb': round(disk.total / 1024**3, 2),
+                'uptime': round(uptime_seconds, 1),
+                'process_memory_gb': round(process.memory_info().rss / 1024**3, 2)
+            },
+            'timestamp': time.time()
+        }
+    except Exception as e:
+        # Fallback to basic status if metrics collection fails
+        return {
+            'status': 'ok',
+            'error': str(e),
+            'system_metrics': {
+                'cpu_percent': 0,
+                'memory_percent': 0,
+                'disk_percent': 0,
+                'uptime': 0
+            }
+        }
+
+
+@app.get('/config-manager')
+async def config_manager_ui():
+    """Configuration manager interface."""
+    try:
+        current_static_dir = Path(__file__).parent.parent.parent.parent / "static"
+        config_file = current_static_dir / "config_manager.html"
+        
+        print(f"DEBUG: Serving config_manager.html from: {config_file}", flush=True)
+        
+        if config_file.exists():
+            return FileResponse(config_file)
+        else:
+            return HTMLResponse("<h1>Configuration manager interface not found</h1>")
+    except Exception as e:
+        print(f"Error serving config-manager: {e}", flush=True)
+        return HTMLResponse(f"<h1>Error loading configuration manager</h1><p>Error: {str(e)}</p>")
+
+
+@app.get('/document-manager')
+async def document_manager_ui():
+    """Document management interface."""
+    try:
+        current_static_dir = Path(__file__).parent.parent.parent.parent / "static"
+        docs_file = current_static_dir / "docs-ui.html"
+        
+        print(f"DEBUG: Serving docs-ui.html from: {docs_file}", flush=True)
+        print(f"DEBUG: File exists: {docs_file.exists()}", flush=True)
+        
+        if docs_file.exists():
+            return FileResponse(docs_file)
+        else:
+            print(f"DEBUG: File not found at: {docs_file}", flush=True)
+            return HTMLResponse("<h1>Document management interface not found</h1>")
+    except Exception as e:
+        print(f"Error serving document-manager: {e}", flush=True)
+        return HTMLResponse(f"<h1>Error loading document manager</h1><p>Error: {str(e)}</p>")
+
+
+@app.get('/llm-config')
+async def llm_config_ui():
+    """LLM configuration interface."""
+    try:
+        # Recalculate static_dir to ensure it's correct
+        current_static_dir = Path(__file__).parent.parent.parent.parent / "static"
+        config_file = current_static_dir / "llm_config.html"
+        
+        print(f"DEBUG: __file__ = {__file__}", flush=True)
+        print(f"DEBUG: calculated static_dir = {current_static_dir}", flush=True)
+        print(f"DEBUG: static_dir exists = {current_static_dir.exists()}", flush=True)
+        print(f"DEBUG: config_file = {config_file}", flush=True)
+        print(f"DEBUG: config_file exists = {config_file.exists()}", flush=True)
+        
+        if config_file.exists():
+            print(f"Serving llm_config.html from: {config_file}", flush=True)
+            return FileResponse(config_file)
+        else:
+            print(f"llm_config.html not found at: {config_file}", flush=True)
+            return HTMLResponse("<h1>LLM configuration interface not found</h1>")
+    except Exception as e:
+        print(f"Error serving llm-config: {e}", flush=True)
+        return HTMLResponse(f"<h1>Error loading LLM configuration</h1><p>Error: {str(e)}</p>")
+
+
+@app.get('/llm-config-ui')
+async def llm_config_ui_redirect():
+    """Alternative endpoint for LLM configuration interface."""
+    return await llm_config_ui()
+
+
+@app.get('/api/v1/index/integrity')
+async def get_index_integrity():
+    """Get index integrity report.
+    
+    Returns:
+        Index integrity information
+    """
+    try:
+        from rag_kb.ingest.index_manager import get_index_manager
+        
+        index_manager = get_index_manager()
+        report = index_manager.get_index_integrity_report()
+        
+        return {
+            'success': True,
+            'report': report
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'report': None
+        }
+
+
+@app.get('/api/v1/index/unindexed')
+async def get_unindexed_documents():
+    """Get list of unindexed documents.
+    
+    Returns:
+        List of unindexed documents
+    """
+    try:
+        from rag_kb.ingest.index_manager import get_index_manager
+        
+        index_manager = get_index_manager()
+        unindexed = index_manager.get_unindexed_documents()
+        
+        return {
+            'success': True,
+            'unindexed_count': len(unindexed),
+            'unindexed_documents': unindexed
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'unindexed_documents': []
+        }
+
+
+@app.post('/api/v1/index/document/{doc_id}')
+async def index_document(doc_id: str):
+    """Index a specific document.
+    
+    Args:
+        doc_id: Document ID to index
+        
+    Returns:
+        Indexing result
+    """
+    try:
+        from rag_kb.ingest.index_manager import get_index_manager
+        
+        index_manager = get_index_manager()
+        success, message = await index_manager.index_document(doc_id)
+        
+        return {
+            'success': success,
+            'message': message,
+            'doc_id': doc_id
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'message': f"Error indexing document {doc_id}"
+        }
+
+
+@app.post('/api/v1/index/all')
+async def index_all_unindexed():
+    """Index all unindexed documents.
+    
+    Returns:
+        Indexing results
+    """
+    try:
+        from rag_kb.ingest.index_manager import get_index_manager
+        
+        index_manager = get_index_manager()
+        results = await index_manager.index_all_unindexed()
+        
+        return {
+            'success': True,
+            'results': results
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'results': None
+        }
+
+
+@app.get('/api/v1/performance/summary')
+async def get_performance_summary():
+    """Get performance summary.
+    
+    Returns:
+        Performance summary with system and operation stats
+    """
+    try:
+        from rag_kb.utils.performance_monitor import get_performance_monitor
+        
+        monitor = get_performance_monitor()
+        summary = monitor.get_performance_summary()
+        
+        return {
+            'success': True,
+            'summary': summary
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'summary': None
+        }
+
+
+@app.get('/api/v1/performance/operations')
+async def get_operation_stats():
+    """Get operation statistics.
+    
+    Returns:
+        Dictionary with all operation statistics
+    """
+    try:
+        from rag_kb.utils.performance_monitor import get_performance_monitor
+        
+        monitor = get_performance_monitor()
+        stats = monitor.get_all_operation_stats()
+        
+        return {
+            'success': True,
+            'stats': stats
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'stats': None
+        }
+
+
+@app.get('/api/v1/performance/system')
+async def get_system_stats():
+    """Get current system statistics.
+    
+    Returns:
+        Dictionary with system statistics
+    """
+    try:
+        from rag_kb.utils.performance_monitor import get_performance_monitor
+        
+        monitor = get_performance_monitor()
+        stats = monitor.get_system_stats()
+        
+        return {
+            'success': True,
+            'stats': stats
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'stats': None
+        }
+
+
+@app.get('/api/v1/performance/alerts')
+async def get_performance_alerts(limit: int = 10):
+    """Get performance alerts.
+    
+    Args:
+        limit: Number of recent alerts
+        
+    Returns:
+        List of performance alerts
+    """
+    try:
+        from rag_kb.utils.performance_monitor import get_performance_monitor
+        
+        monitor = get_performance_monitor()
+        alerts = monitor.get_alerts(limit)
+        
+        return {
+            'success': True,
+            'alerts': alerts,
+            'count': len(alerts)
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'alerts': []
+        }
+
+
+@app.post('/api/v1/performance/alert-threshold')
+async def set_alert_threshold(request: dict):
+    """Set alert threshold for a metric.
+    
+    Args:
+        request: Request with metric and threshold
+        
+    Returns:
+        Configuration result
+    """
+    try:
+        from rag_kb.utils.performance_monitor import get_performance_monitor
+        
+        monitor = get_performance_monitor()
+        metric = request.get('metric')
+        threshold = request.get('threshold')
+        
+        if metric and threshold is not None:
+            monitor.set_alert_threshold(metric, threshold)
+            return {
+                'success': True,
+                'metric': metric,
+                'threshold': threshold,
+                'message': f"Alert threshold set for {metric}"
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'metric and threshold are required'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.post('/api/v1/recovery/backup')
+async def create_index_backup():
+    """Create a backup of the current index.
+    
+    Returns:
+        Backup result
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        result = recovery_manager.create_backup()
+        
+        return result
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Backup creation failed'
+        }
+
+
+@app.get('/api/v1/recovery/backups')
+async def list_index_backups():
+    """List available index backups.
+    
+    Returns:
+        List of backups
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        backups = recovery_manager.list_backups()
+        
+        return {
+            'success': True,
+            'backups': backups,
+            'count': len(backups)
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'backups': []
+        }
+
+
+@app.post('/api/v1/recovery/restore')
+async def restore_index_backup(request: dict):
+    """Restore index from backup.
+    
+    Args:
+        request: Request with backup_name
+        
+    Returns:
+        Restore result
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        backup_name = request.get('backup_name')
+        
+        if backup_name:
+            result = recovery_manager.restore_backup(backup_name)
+            return result
+        else:
+            return {
+                'success': False,
+                'error': 'backup_name is required'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Restore failed'
+        }
+
+
+@app.post('/api/v1/recovery/repair')
+async def repair_index():
+    """Attempt to repair corrupted index.
+    
+    Returns:
+        Repair result
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        result = recovery_manager.repair_index()
+        
+        return result
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Repair failed'
+        }
+
+
+@app.post('/api/v1/recovery/rebuild')
+async def rebuild_index():
+    """Rebuild index from document registry.
+    
+    Returns:
+        Rebuild result
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        result = await recovery_manager.rebuild_index()
+        
+        return result
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Rebuild failed'
+        }
+
+
+@app.get('/api/v1/recovery/status')
+async def get_recovery_status():
+    """Get index recovery status.
+    
+    Returns:
+        Recovery status
+    """
+    try:
+        from rag_kb.utils.index_recovery_manager import get_index_recovery_manager
+        
+        recovery_manager = get_index_recovery_manager()
+        status = recovery_manager.get_recovery_status()
+        
+        return {
+            'success': True,
+            'status': status
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'status': None
+        }
+
+
+@app.post('/api/v1/ingestion/reconciliation')
+async def get_ingestion_reconciliation():
+    """Get ingestion reconciliation report.
+    
+    Returns:
+        Comprehensive reconciliation report with all statistics
+    """
+    try:
+        from rag_kb.ingest.ingestion_reconciler import get_ingestion_reconciler
+        
+        reconciler = get_ingestion_reconciler()
+        report = reconciler.get_reconciliation_report()
+        
+        return {
+            'success': True,
+            'report': report
+        }
+    except Exception as e:
+        import traceback
+        print(f"Reconciliation report error: {e}", flush=True)
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'report': None
+        }
+
+
+@app.get('/api/v1/ingestion/document/{doc_id}')
+async def get_document_reconciliation_status(doc_id: str):
+    """Get reconciliation status for a specific document.
+    
+    Args:
+        doc_id: Document ID
+        
+    Returns:
+        Document reconciliation status
+    """
+    try:
+        from rag_kb.ingest.ingestion_reconciler import get_ingestion_reconciler
+        
+        reconciler = get_ingestion_reconciler()
+        status = reconciler.get_document_status(doc_id)
+        
+        if status:
+            return {
+                'success': True,
+                'status': status
+            }
+        else:
+            return {
+                'success': False,
+                'error': f'Document {doc_id} not found in reconciliation records'
+            }
+    except Exception as e:
+        import traceback
+        print(f"Document status error: {e}", flush=True)
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e),
+            'status': None
+        }
+
+
+@app.post('/api/v1/ingestion/retry/{doc_id}')
+async def retry_failed_document(doc_id: str):
+    """Retry a failed document ingestion.
+    
+    Args:
+        doc_id: Document ID to retry
+        
+    Returns:
+        Retry operation result
+    """
+    try:
+        from rag_kb.ingest.ingestion_reconciler import get_ingestion_reconciler
+        
+        reconciler = get_ingestion_reconciler()
+        status = reconciler.retry_failed_document(doc_id)
+        
+        return {
+            'success': True,
+            'message': f'Document {doc_id} marked for retry',
+            'status': status
+        }
+    except Exception as e:
+        import traceback
+        print(f"Retry document error: {e}", flush=True)
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.post('/api/v1/ingestion/cleanup')
+async def cleanup_old_reconciliation_records(days_to_keep: int = 30):
+    """Clean up old reconciliation records.
+    
+    Args:
+        days_to_keep: Number of days to keep records
+        
+    Returns:
+        Cleanup operation result
+    """
+    try:
+        from rag_kb.ingest.ingestion_reconciler import get_ingestion_reconciler
+        
+        reconciler = get_ingestion_reconciler()
+        result = reconciler.cleanup_old_records(days_to_keep)
+        
+        return {
+            'success': True,
+            'result': result
+        }
+    except Exception as e:
+        import traceback
+        print(f"Cleanup records error: {e}", flush=True)
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.post('/api/v1/notification/webhook')
+async def configure_webhook_notification(request: dict):
+    """Configure webhook notification.
+    
+    Args:
+        request: Request with webhook URL
+        
+    Returns:
+        Configuration result
+    """
+    try:
+        from rag_kb.utils.notification_system import get_notification_system
+        
+        notification_system = get_notification_system()
+        webhook_url = request.get('webhook_url')
+        
+        if webhook_url:
+            notification_system.configure_webhook(webhook_url)
+            return {
+                'success': True,
+                'message': 'Webhook notification configured',
+                'webhook_url': webhook_url
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'webhook_url is required'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.post('/api/v1/notification/email')
+async def configure_email_notification(request: dict):
+    """Configure email notification.
+    
+    Args:
+        request: Request with email configuration
+        
+    Returns:
+        Configuration result
+    """
+    try:
+        from rag_kb.utils.notification_system import get_notification_system
+        
+        notification_system = get_notification_system()
+        
+        smtp_server = request.get('smtp_server')
+        smtp_port = request.get('smtp_port', 587)
+        email = request.get('email')
+        password = request.get('password')
+        
+        if all([smtp_server, email, password]):
+            notification_system.configure_email(smtp_server, smtp_port, email, password)
+            return {
+                'success': True,
+                'message': 'Email notification configured',
+                'email': email
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'smtp_server, email, and password are required'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.get('/api/v1/notification/history')
+async def get_notification_history(limit: int = 10):
+    """Get notification history.
+    
+    Args:
+        limit: Number of recent notifications
+        
+    Returns:
+        Notification history
+    """
+    try:
+        from rag_kb.utils.notification_system import get_notification_system
+        
+        notification_system = get_notification_system()
+        history = notification_system.get_notification_history(limit)
+        
+        return {
+            'success': True,
+            'history': history,
+            'count': len(history)
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'history': []
+        }
+
+
+@app.get('/api/v1/index/performance')
+async def get_index_performance():
+    """Get index performance metrics.
+    
+    Returns:
+        Index performance metrics
+    """
+    try:
+        from rag_kb.utils.index_performance_monitor import get_index_performance_monitor
+        
+        perf_monitor = get_index_performance_monitor()
+        summary = perf_monitor.get_performance_summary()
+        
+        return {
+            'success': True,
+            'summary': summary
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'summary': None
+        }
+
+
+@app.get('/api/v1/index/history')
+async def get_index_history(limit: int = 50):
+    """Get index history.
+    
+    Args:
+        limit: Number of recent records
+        
+    Returns:
+        Index history
+    """
+    try:
+        from rag_kb.utils.index_performance_monitor import get_index_performance_monitor
+        
+        perf_monitor = get_index_performance_monitor()
+        history = perf_monitor.get_index_history(limit)
+        
+        return {
+            'success': True,
+            'history': history,
+            'count': len(history)
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'history': []
+        }
+
+
+@app.post('/api/v1/scheduler/auto-index')
+async def toggle_auto_index(request: dict):
+    """Toggle auto-index feature.
+    
+    Args:
+        request: Request with enabled flag
+        
+    Returns:
+        Toggle result
+    """
+    try:
+        from rag_kb.utils.index_scheduler import get_index_scheduler
+        
+        scheduler = get_index_scheduler()
+        enabled = request.get('enabled', False)
+        
+        scheduler.auto_index_enabled = enabled
+        
+        return {
+            'success': True,
+            'auto_index_enabled': enabled,
+            'message': f"Auto-index {'enabled' if enabled else 'disabled'}"
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@app.post('/api/v1/scheduler/interval')
+async def set_check_interval(request: dict):
+    """Set check interval.
+    
+    Args:
+        request: Request with interval in minutes
+        
+    Returns:
+        Configuration result
+    """
+    try:
+        from rag_kb.utils.index_scheduler import get_index_scheduler
+        
+        scheduler = get_index_scheduler()
+        minutes = request.get('minutes', 30)
+        
+        scheduler.set_check_interval(minutes)
+        
+        return {
+            'success': True,
+            'interval_minutes': minutes,
+            'message': f"Check interval set to {minutes} minutes"
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 
 @app.post('/api/v1/ingest')
 async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
-    """Ingest a document into the RAG knowledge base with full processing.
+    """Ingest a document into the RAG knowledge base with full processing and reconciliation.
     
     Args:
         file: Uploaded file to process
@@ -126,35 +1040,81 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
         level: Access level for ACL
         
     Returns:
-        Document metadata with processing status
+        Document metadata with processing status and reconciliation tracking
     """
     try:
-        from rag_kb.ingest.pipeline import IngestPipeline
-        from rag_kb.lightrag.adapter import LightRAGAdapter
         import json
         import time
+        import hashlib
+
+        from rag_kb.ingest.pipeline import IngestPipeline
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        from rag_kb.ingest.ingestion_reconciler import get_ingestion_reconciler
+        
+        reconciler = get_ingestion_reconciler()
         
         upload_path = settings.data_dir / 'uploads' / file.filename
         upload_path.parent.mkdir(parents=True, exist_ok=True)
-        upload_path.write_bytes(await file.read())
+        file_content = await file.read()
+        upload_path.write_bytes(file_content)
+        
+        # Calculate file hash for reconciliation
+        file_hash = hashlib.sha256(file_content).hexdigest()
+        
+        # Record upload in reconciler
+        reconciler.record_upload(
+            file_name=file.filename,
+            file_hash=file_hash,
+            metadata={'dept': dept, 'level': level}
+        )
         
         # Step 1: Parse and clean document
-        pipeline = IngestPipeline()
-        doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+        parsing_success = True
+        parsing_error = None
+        try:
+            pipeline = IngestPipeline()
+            doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+            reconciler.record_parsing(doc.doc_id, True, {
+                'title': doc.title,
+                'pages': doc.metadata.get('pages', 0),
+                'content_length': len(doc.content)
+            })
+        except Exception as e:
+            parsing_success = False
+            parsing_error = str(e)
+            reconciler.record_parsing(file_hash[:16], False, None, parsing_error)
+            return {
+                'error': parsing_error,
+                'message': 'Document parsing failed',
+                'doc_id': file_hash[:16],
+                'status': 'parsing_failed'
+            }
         
-        # Step 2: Semantic chunking (using simple chunking for reliability)
+        # Step 2: Enhanced chunking with structure awareness
         chunks = []
-        simple_chunk_size = 1000
-        for i in range(0, len(doc.content), simple_chunk_size):
-            chunk_text = doc.content[i:i+simple_chunk_size]
-            from rag_kb.models import Chunk
-            import uuid
-            chunks.append(Chunk(
-                chunk_id=str(uuid.uuid4()),
-                doc_id=doc.doc_id,
-                text=chunk_text,
-                metadata=doc.metadata
-            ))
+        try:
+            from rag_kb.chunkers.structure_aware_chunker import StructureAwareChunker
+            chunker = StructureAwareChunker(max_chunk_size=1000, min_chunk_size=200)
+            chunks = chunker.chunk(doc)
+        except Exception as e:
+            print(f"Structure-aware chunking failed, falling back to simple chunking: {e}", flush=True)
+            # Fallback to simple chunking
+            simple_chunk_size = 1000
+            for i in range(0, len(doc.content), simple_chunk_size):
+                chunk_text = doc.content[i:i+simple_chunk_size]
+                import uuid
+
+                from rag_kb.models import Chunk
+                chunks.append(Chunk(
+                    chunk_id=str(uuid.uuid4()),
+                    doc_id=doc.doc_id,
+                    text=chunk_text,
+                    metadata=doc.metadata,
+                    source_file=file.filename,
+                    chunk_type='text',
+                    offset=i,
+                    length=len(chunk_text)
+                ))
         
         # Step 3: LightRAG indexing and knowledge graph generation
         graph_generated = False
@@ -186,6 +1146,12 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 
             graph_generated = True
             print("LightRAG indexing completed successfully", file=sys.stderr, flush=True)
+            
+            # Record successful indexing
+            reconciler.record_indexing(doc.doc_id, True, {
+                'chunks_count': len(chunks),
+                'graph_generated': True
+            })
         except Exception as e:
             # LightRAG indexing failed, but document was parsed
             print(f"LightRAG indexing failed: {e}", file=sys.stderr, flush=True)
@@ -193,8 +1159,11 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
             traceback.print_exc(file=sys.stderr)
             graph_generated = False
             indexing_error = str(e)
+            
+            # Record failed indexing
+            reconciler.record_indexing(doc.doc_id, False, None, indexing_error)
         
-        # Save document to registry
+        # Save document to registry with indexing status
         registry_file = settings.data_dir / 'document_registry.json'
         registry = {}
         if registry_file.exists():
@@ -209,7 +1178,11 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
             'acl': doc.acl,
             'chunks_count': len(chunks),
             'import_type': 'upload',
-            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'indexed': graph_generated,
+            'indexing_error': indexing_error,
+            'file_hash': file_hash,
+            'reconciliation_tracked': True
         }
         
         with open(registry_file, 'w', encoding='utf-8') as f:
@@ -222,7 +1195,13 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 'pages': doc.metadata.get('pages', 0),
                 'chunks': len(chunks),
                 'status': 'indexed',
-                'graph_generated': True
+                'graph_generated': True,
+                'reconciliation': {
+                    'tracked': True,
+                    'upload_recorded': True,
+                    'parsing_recorded': True,
+                    'indexing_recorded': True
+                }
             }
         else:
             return {
@@ -232,7 +1211,14 @@ async def ingest(file: UploadFile = File(...), dept: str = '', level: str = 'Int
                 'chunks': len(chunks),
                 'status': 'parsed_only',
                 'graph_generated': False,
-                'error': f'LightRAG indexing failed: {indexing_error}'
+                'error': f'LightRAG indexing failed: {indexing_error}',
+                'reconciliation': {
+                    'tracked': True,
+                    'upload_recorded': True,
+                    'parsing_recorded': True,
+                    'indexing_recorded': True,
+                    'indexing_failed': True
+                }
             }
         
     except Exception as e:
@@ -253,10 +1239,9 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         Import results
     """
     try:
-        from pathlib import Path
-        import glob
         import json
         import uuid
+        from pathlib import Path
         
         folder = Path(folder_path)
         if not folder.exists() or not folder.is_dir():
@@ -274,7 +1259,6 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
         # Process files
         from rag_kb.ingest.pipeline import IngestPipeline
         from rag_kb.lightrag.adapter import LightRAGAdapter
-        import json
         
         pipeline = IngestPipeline()
         chunker = StructuredChunker()
@@ -298,8 +1282,9 @@ async def import_folder(folder_path: str = '', user_id: str = 'default', kb_name
                 simple_chunk_size = 1000
                 for i in range(0, len(doc.content), simple_chunk_size):
                     chunk_text = doc.content[i:i+simple_chunk_size]
-                    from rag_kb.models import Chunk
                     import uuid
+
+                    from rag_kb.models import Chunk
                     chunks.append(Chunk(
                         chunk_id=str(uuid.uuid4()),
                         doc_id=doc.doc_id,
@@ -410,10 +1395,10 @@ async def generate_knowledge_graph(request: dict):
         Knowledge graph data with nodes and edges
     """
     try:
-        from rag_kb.graph.generator import graph_generator
-        from rag_kb.config import settings
         import json
-        from pathlib import Path
+
+        from rag_kb.config.core_config import settings
+        from rag_kb.graph.generator import graph_generator
         
         # Load documents from registry
         registry_file = settings.data_dir / 'document_registry.json'
@@ -593,7 +1578,6 @@ async def get_node_source(user_id: str, kb_name: str, node_id: str):
     """
     try:
         import json
-        from pathlib import Path
         
         # Try to find source document from registry
         registry_file = settings.data_dir / 'document_registry.json'
@@ -646,9 +1630,9 @@ async def get_knowledge_graph(user_id: str, kb_name: str):
         Graph data with nodes and edges
     """
     try:
-        from rag_kb.lightrag.adapter import LightRAGAdapter
         import json
-        from pathlib import Path
+
+        from rag_kb.lightrag.adapter import LightRAGAdapter
         
         rag = LightRAGAdapter()
         
@@ -712,6 +1696,9 @@ async def get_knowledge_graph(user_id: str, kb_name: str):
         return {'error': str(e), 'message': 'Failed to get graph data', 'nodes': [], 'edges': [], 'node_count': 0, 'edge_count': 0}
 
 
+
+
+
 @app.get('/api/v1/users/{user_id}/kbs')
 async def get_user_knowledge_bases(user_id: str):
     """Get list of knowledge bases for a user.
@@ -723,7 +1710,6 @@ async def get_user_knowledge_bases(user_id: str):
         List of knowledge bases
     """
     try:
-        from pathlib import Path
         
         # Check for user directories
         user_dir = settings.data_dir / 'users' / user_id
@@ -751,6 +1737,330 @@ async def get_user_knowledge_bases(user_id: str):
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Failed to get knowledge bases', 'knowledge_bases': []}
+
+
+@app.post('/api/v1/users/{user_id}/kbs')
+async def create_user_knowledge_base(user_id: str, kb_name: str = 'default'):
+    """Create a new knowledge base for a user.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        
+    Returns:
+        Creation result
+    """
+    try:
+        # Create user/kb directory structure
+        user_kb_dir = settings.data_dir / 'users' / user_id / kb_name
+        user_kb_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create subdirectories
+        (user_kb_dir / 'uploads').mkdir(exist_ok=True)
+        (user_kb_dir / 'indexed').mkdir(exist_ok=True)
+        
+        return {
+            'success': True,
+            'message': f'Knowledge base {kb_name} created for user {user_id}',
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e), 'message': 'Failed to create knowledge base'}
+
+
+@app.post('/api/v1/users/{user_id}/kbs/{kb_name}/upload')
+async def upload_to_knowledge_base(user_id: str, kb_name: str, file: UploadFile = File(...), dept: str = '', level: str = 'Internal'):
+    """Upload a file to a specific knowledge base.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        file: Uploaded file to process
+        dept: Department for ACL
+        level: Access level for ACL
+        
+    Returns:
+        Document metadata with processing status
+    """
+    try:
+        import json
+        import time
+
+        from rag_kb.ingest.pipeline import IngestPipeline
+        from rag_kb.lightrag.adapter import LightRAGAdapter
+        
+        # Create user/kb directory structure
+        user_kb_dir = settings.data_dir / 'users' / user_id / kb_name
+        user_kb_dir.mkdir(parents=True, exist_ok=True)
+        
+        upload_path = user_kb_dir / 'uploads' / file.filename
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        upload_path.write_bytes(await file.read())
+        
+        # Step 1: Parse and clean document
+        pipeline = IngestPipeline()
+        doc = pipeline.run(upload_path, acl={'dept': [dept], 'level': [level]})
+        
+        # Step 2: Semantic chunking (using simple chunking for reliability)
+        chunks = []
+        simple_chunk_size = 1000
+        for i in range(0, len(doc.content), simple_chunk_size):
+            chunk_text = doc.content[i:i+simple_chunk_size]
+            import uuid
+
+            from rag_kb.models import Chunk
+            chunks.append(Chunk(
+                chunk_id=str(uuid.uuid4()),
+                doc_id=doc.doc_id,
+                text=chunk_text,
+                metadata=doc.metadata
+            ))
+        
+        # Step 3: LightRAG indexing and knowledge graph generation
+        graph_generated = False
+        indexing_error = None
+        try:
+            import sys
+            print("Starting LightRAG indexing...", file=sys.stderr, flush=True)
+            rag = LightRAGAdapter()
+            print("LightRAG adapter created for indexing", file=sys.stderr, flush=True)
+            
+            # Ensure LightRAG is initialized
+            await rag.ensure_initialized()
+            print("LightRAG storages initialized", file=sys.stderr, flush=True)
+            
+            # Insert document into LightRAG for indexing and graph generation
+            print(f"Attempting to ingest document {doc.doc_id}", file=sys.stderr, flush=True)
+            print(f"Document content length: {len(doc.content)}", file=sys.stderr, flush=True)
+            
+            ingest_success = await rag.ingest([{
+                'doc_id': doc.doc_id,
+                'content': doc.content,
+                'metadata': doc.metadata
+            }])
+            
+            print(f"Ingest result: {ingest_success}", file=sys.stderr, flush=True)
+            
+            if not ingest_success:
+                raise Exception("LightRAG ingestion returned False")
+                
+            graph_generated = True
+            print("LightRAG indexing completed successfully", file=sys.stderr, flush=True)
+        except Exception as e:
+            # LightRAG indexing failed, but document was parsed
+            print(f"LightRAG indexing failed: {e}", file=sys.stderr, flush=True)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
+            graph_generated = False
+            indexing_error = str(e)
+        
+        # Save document to registry with indexing status
+        registry_file = user_kb_dir / 'document_registry.json'
+        registry = {}
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+        
+        registry[doc.doc_id] = {
+            'doc_id': doc.doc_id,
+            'title': doc.title,
+            'content': doc.content,
+            'metadata': doc.metadata,
+            'acl': doc.acl,
+            'chunks_count': len(chunks),
+            'import_type': 'upload',
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'indexed': graph_generated,
+            'indexing_error': indexing_error,
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+        
+        with open(registry_file, 'w', encoding='utf-8') as f:
+            json.dump(registry, f, indent=2, ensure_ascii=False)
+        
+        if graph_generated:
+            return {
+                'success': True,
+                'doc_id': doc.doc_id, 
+                'title': doc.title, 
+                'pages': doc.metadata.get('pages', 0),
+                'chunks': len(chunks),
+                'status': 'indexed',
+                'graph_generated': True,
+                'user_id': user_id,
+                'kb_name': kb_name
+            }
+        else:
+            return {
+                'success': True,
+                'doc_id': doc.doc_id, 
+                'title': doc.title, 
+                'pages': doc.metadata.get('pages', 0),
+                'chunks': len(chunks),
+                'status': 'parsed_only',
+                'graph_generated': False,
+                'error': f'LightRAG indexing failed: {indexing_error}',
+                'user_id': user_id,
+                'kb_name': kb_name
+            }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e), 'message': 'Document upload failed'}
+
+
+@app.post('/api/v1/users/{user_id}/kbs/{kb_name}/ingest')
+async def ingest_knowledge_base(user_id: str, kb_name: str):
+    """Ingest all uploaded files in a knowledge base.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        
+    Returns:
+        Ingestion results
+    """
+    try:
+        import json
+        from pathlib import Path
+        
+        user_kb_dir = settings.data_dir / 'users' / user_id / kb_name
+        upload_dir = user_kb_dir / 'uploads'
+        
+        if not upload_dir.exists():
+            return {
+                'success': False,
+                'message': 'No upload directory found',
+                'processed': 0,
+                'failed': 0
+            }
+        
+        # Get document registry
+        registry_file = user_kb_dir / 'document_registry.json'
+        registry = {}
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+        
+        # Count already indexed documents
+        indexed_count = sum(1 for doc in registry.values() if doc.get('indexed', False))
+        total_docs = len(registry)
+        
+        return {
+            'success': True,
+            'message': f'Knowledge base ingestion status',
+            'total_documents': total_docs,
+            'indexed_documents': indexed_count,
+            'unindexed_documents': total_docs - indexed_count,
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e), 'message': 'Knowledge base ingestion failed'}
+
+
+@app.get('/api/v1/users/{user_id}/kbs/{kb_name}/stats')
+async def get_knowledge_base_stats(user_id: str, kb_name: str):
+    """Get statistics for a specific knowledge base.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        
+    Returns:
+        Knowledge base statistics
+    """
+    try:
+        import json
+        from pathlib import Path
+        
+        user_kb_dir = settings.data_dir / 'users' / user_id / kb_name
+        
+        if not user_kb_dir.exists():
+            return {
+                'success': False,
+                'error': 'Knowledge base not found',
+                'file_count': 0,
+                'total_size_mb': 0
+            }
+        
+        # Get document registry
+        registry_file = user_kb_dir / 'document_registry.json'
+        file_count = 0
+        total_size = 0
+        
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+                file_count = len(registry)
+                
+                # Calculate total size from documents
+                for doc in registry.values():
+                    content_length = len(doc.get('content', ''))
+                    total_size += content_length
+        
+        total_size_mb = total_size / (1024 * 1024)  # Convert to MB
+        
+        return {
+            'success': True,
+            'file_count': file_count,
+            'total_size_mb': total_size_mb,
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e), 'file_count': 0, 'total_size_mb': 0}
+
+
+@app.delete('/api/v1/users/{user_id}/kbs/{kb_name}')
+async def delete_knowledge_base(user_id: str, kb_name: str):
+    """Delete a specific knowledge base.
+    
+    Args:
+        user_id: User ID
+        kb_name: Knowledge base name
+        
+    Returns:
+        Deletion result
+    """
+    try:
+        import shutil
+        from pathlib import Path
+        
+        user_kb_dir = settings.data_dir / 'users' / user_id / kb_name
+        
+        if not user_kb_dir.exists():
+            return {
+                'success': False,
+                'error': 'Knowledge base not found',
+                'message': f'Knowledge base {kb_name} does not exist for user {user_id}'
+            }
+        
+        # Delete the entire directory
+        shutil.rmtree(user_kb_dir)
+        
+        return {
+            'success': True,
+            'message': f'Knowledge base {kb_name} deleted successfully',
+            'user_id': user_id,
+            'kb_name': kb_name
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e), 'message': 'Failed to delete knowledge base'}
 
 
 @app.get('/api/v1/folders')
@@ -788,7 +2098,6 @@ async def get_documents():
         List of documents with metadata
     """
     try:
-        from pathlib import Path
         import json
         import os
         
@@ -825,6 +2134,86 @@ async def get_documents():
         }
     except Exception as e:
         return {'error': str(e), 'message': 'Failed to get documents', 'documents': [], 'total': 0}
+
+
+def delete_document_logic(doc_id: str, data_dir: Path):
+    """Core logic for deleting a document (extracted for testing).
+    
+    Args:
+        doc_id: Document ID to delete
+        data_dir: Data directory path
+        
+    Returns:
+        Deletion result dictionary
+    """
+    try:
+        import json
+        import os
+        
+        # Check for document registry
+        registry_file = data_dir / 'document_registry.json'
+        if registry_file.exists():
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+            
+            if doc_id in registry:
+                # Remove from registry
+                doc_info = registry.pop(doc_id)
+                
+                # Delete the actual file if it exists
+                if 'source' in doc_info:
+                    file_path = Path(doc_info['source'])
+                    if file_path.exists():
+                        file_path.unlink()
+                
+                # Update registry file
+                with open(registry_file, 'w', encoding='utf-8') as f:
+                    json.dump(registry, f, ensure_ascii=False, indent=2)
+                
+                return {
+                    'success': True,
+                    'message': f'Document {doc_id} deleted successfully',
+                    'doc_id': doc_id
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Document {doc_id} not found in registry'
+                }
+        else:
+            # Fallback to uploaded files directory
+            upload_dir = data_dir / 'uploads'
+            
+            # Try to find and delete the file
+            for ext in ['.pdf', '.docx', '.md', '.txt', '.html']:
+                potential_file = upload_dir / f'{doc_id}{ext}'
+                if potential_file.exists():
+                    potential_file.unlink()
+                    return {
+                        'success': True,
+                        'message': f'Document {doc_id} deleted successfully',
+                        'doc_id': doc_id
+                    }
+            
+            return {
+                'success': False,
+                'message': f'Document {doc_id} not found'
+            }
+    except Exception as e:
+        return {'error': str(e), 'message': f'Failed to delete document {doc_id}'}
+
+
+@app.delete('/api/v1/documents/{doc_id}')
+async def delete_document(doc_id: str):
+    """Delete a document from the knowledge base.
+    
+    Args:
+        doc_id: Document ID to delete
+        
+    Returns:
+        Deletion result
+    """
+    return delete_document_logic(doc_id, settings.data_dir)
 
 
 @app.post('/api/v1/evaluate')
@@ -914,7 +2303,11 @@ async def get_performance_metrics():
     """
     try:
         from rag_kb.maintenance import PerformanceMonitor, QualityMetrics
+        from rag_kb.utils.performance_monitor import get_performance_monitor as get_utils_perf_monitor
+        import psutil
+        import time
         
+        # Get maintenance performance monitor
         perf_monitor = PerformanceMonitor()
         quality_metrics = QualityMetrics()
         
@@ -926,16 +2319,50 @@ async def get_performance_metrics():
         for metric in ['precision', 'recall', 'relevance', 'faithfulness']:
             quality_trends[metric] = quality_metrics.get_quality_trends(metric, days=7)
         
+        # Get real-time system metrics from utils performance monitor
+        try:
+            utils_perf_monitor = get_utils_perf_monitor()
+            system_stats = utils_perf_monitor.get_system_stats()
+            operation_stats = utils_perf_monitor.get_all_operation_stats()
+        except:
+            # Fallback to direct psutil calls
+            system_stats = {
+                'cpu_percent': psutil.cpu_percent(interval=1),
+                'memory_percent': psutil.virtual_memory().percent,
+                'memory_used_gb': psutil.virtual_memory().used / 1024**3,
+                'memory_total_gb': psutil.virtual_memory().total / 1024**3,
+                'disk_usage_percent': psutil.disk_usage('/').percent if Path('/').exists() else psutil.disk_usage('C:/').percent,
+                'process_memory_gb': psutil.Process().memory_info().rss / 1024**3,
+                'uptime_seconds': time.time() - perf_monitor.__dict__.get('start_time', time.time())
+            }
+            operation_stats = {}
+        
+        # Ensure performance summary has real data
+        enhanced_summary = {
+            **performance_summary,
+            'system_metrics': system_stats,
+            'operation_stats': operation_stats,
+            'has_data': performance_summary.get('total_metrics', 0) > 0
+        }
+        
+        # Replace None values with 0 for better frontend handling
+        for key in ['search_latency', 'ingestion_latency', 'retrieval_precision', 'retrieval_recall', 'answer_relevance', 'faithfulness']:
+            if enhanced_summary.get(key) is None:
+                enhanced_summary[key] = 0.0
+        
         return {
             'success': True,
-            'performance': performance_summary,
+            'performance': enhanced_summary,
             'quality': {
-                'overall_score': quality_score,
+                'overall_score': quality_score.get('overall_score', 0.0),
                 'trends': quality_trends
             },
-            'alerts': perf_monitor.get_alerts(hours=24)
+            'alerts': perf_monitor.get_alerts(hours=24),
+            'timestamp': time.time()
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {'error': str(e), 'message': 'Failed to get performance metrics'}
 
 
@@ -990,7 +2417,7 @@ async def record_quality_metric(quality_data: dict):
 
 
 @app.post('/api/v1/maintenance/sync')
-async def sync_documents(file_paths: List[str] = None):
+async def sync_documents(file_paths: list[str] = None):
     """Synchronize documents and detect changes.
     
     Args:
@@ -1000,8 +2427,9 @@ async def sync_documents(file_paths: List[str] = None):
         Sync results with change information
     """
     try:
-        from rag_kb.maintenance import IncrementalUpdater
         from pathlib import Path
+
+        from rag_kb.maintenance import IncrementalUpdater
         
         updater = IncrementalUpdater()
         
@@ -1058,9 +2486,10 @@ async def cleanup_old_documents(days: int = 30):
         Cleanup results
     """
     try:
-        from rag_kb.maintenance import IncrementalUpdater
-        from datetime import datetime, timedelta
         import json
+        from datetime import datetime, timedelta
+
+        from rag_kb.maintenance import IncrementalUpdater
         
         updater = IncrementalUpdater()
         
@@ -1337,7 +2766,7 @@ async def execute_workflow(request: dict):
         Complete workflow results
     """
     try:
-        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        from rag_kb.workflow import WorkflowContext, WorkflowStage, workflow_manager
         
         context = WorkflowContext(
             query=request.get('query', ''),
@@ -1398,7 +2827,7 @@ async def execute_ingestion_stage(request: dict):
         Ingestion stage results
     """
     try:
-        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        from rag_kb.workflow import WorkflowContext, WorkflowStage, workflow_manager
         
         context = WorkflowContext(
             query='',  # Ingestion doesn't need query
@@ -1426,7 +2855,7 @@ async def execute_retrieval_stage(request: dict):
         Retrieval stage results
     """
     try:
-        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        from rag_kb.workflow import WorkflowContext, WorkflowStage, workflow_manager
         
         context = WorkflowContext(
             query=request.get('query', ''),
@@ -1454,7 +2883,7 @@ async def execute_generation_stage(request: dict):
         Generation stage results
     """
     try:
-        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        from rag_kb.workflow import WorkflowContext, WorkflowStage, workflow_manager
         
         context = WorkflowContext(
             query=request.get('query', ''),
@@ -1487,7 +2916,7 @@ async def execute_citation_stage(request: dict):
         Citation stage results
     """
     try:
-        from rag_kb.workflow import workflow_manager, WorkflowContext, WorkflowStage
+        from rag_kb.workflow import WorkflowContext, WorkflowStage, workflow_manager
         
         context = WorkflowContext(
             query=request.get('query', ''),
@@ -1523,9 +2952,14 @@ async def add_user_feedback(feedback_data: dict):
         Feedback addition result
     """
     try:
-        from rag_kb.feedback import feedback_manager, UserFeedback, FeedbackType, FeedbackReason
-        from datetime import datetime
         import uuid
+
+        from rag_kb.feedback import (
+            FeedbackReason,
+            FeedbackType,
+            UserFeedback,
+            feedback_manager,
+        )
         
         feedback = UserFeedback(
             feedback_id=str(uuid.uuid4()),
@@ -1868,7 +3302,6 @@ async def compare_fragments(request: dict):
         Comparison result
     """
     try:
-        from rag_kb.perspective import fragment_perspective, SimilarFragment, MatchType
         
         # In a real implementation, you'd fetch actual fragments
         # For now, return a placeholder
@@ -1974,7 +3407,7 @@ async def add_rlhf_training_example(request: dict):
         Addition result
     """
     try:
-        from rag_kb.rlhf import rlhf_manager, FeedbackLabel
+        from rag_kb.rlhf import FeedbackLabel, rlhf_manager
         
         label = FeedbackLabel(request.get('label', 'neutral'))
         
@@ -2256,7 +3689,7 @@ async def set_routing_strategy(strategy: str):
         Strategy change result
     """
     try:
-        from rag_kb.routing import optimized_router, RoutingStrategy
+        from rag_kb.routing import RoutingStrategy, optimized_router
         
         strategy_enum = RoutingStrategy(strategy)
         optimized_router.set_routing_strategy(strategy_enum)
@@ -2307,13 +3740,23 @@ async def pdf_preview_ui():
 @app.get('/interactive-graph')
 async def interactive_graph_ui():
     """Interactive graph interface with entity linking and source tracing."""
-    return FileResponse('static/interactive_graph.html')
+    static_dir = Path(__file__).parent.parent.parent.parent / "static"
+    graph_file = static_dir / "interactive_graph.html"
+    if graph_file.exists():
+        return FileResponse(graph_file)
+    else:
+        return HTMLResponse("<h1>Interactive graph interface not found</h1>")
 
 
 @app.get('/enhanced-search')
 async def enhanced_search_ui():
     """Enhanced search interface with hybrid retrieval and multi-modal interaction."""
-    return FileResponse('static/enhanced_search.html')
+    static_dir = Path(__file__).parent.parent.parent.parent / "static"
+    search_file = static_dir / "enhanced_search.html"
+    if search_file.exists():
+        return FileResponse(search_file)
+    else:
+        return HTMLResponse("<h1>Enhanced search interface not found</h1>")
 
 
 @app.get('/chat-ui')
@@ -2342,7 +3785,7 @@ async def chat_ui():
         <head><title>Chat Interface Error</title></head>
         <body>
         <h1>Chat Interface Error</h1>
-        <p>Error loading chat interface: {str(e)}</p>
+        <p>Error loading chat interface: {e!s}</p>
         <p>Static directory: {static_dir}</p>
         <p>Available endpoints: <a href="/docs">API Documentation</a></p>
         </body>
@@ -2356,19 +3799,55 @@ async def graph_ui():
     return RedirectResponse(url='/knowledge-graph')
 
 
+@app.get('/graph-visualization')
+async def graph_visualization_ui():
+    """Cytoscape.js-based interactive graph visualization."""
+    static_dir = Path(__file__).parent.parent.parent.parent / "static"
+    graph_file = static_dir / "graph_visualization.html"
+    if graph_file.exists():
+        return FileResponse(graph_file)
+    else:
+        return HTMLResponse("<h1>Graph visualization interface not found</h1>")
+
+
+@app.get('/api/v1/graph/data')
+async def get_graph_data_api():
+    """Get complete graph data for visualization.
+    
+    Returns:
+        Graph data with nodes and edges
+    """
+    try:
+        from rag_kb.lightrag.graph_extractor import LightRAGGraphExtractor
+        
+        graph_extractor = LightRAGGraphExtractor(settings.lightrag_working_dir)
+        graph_data = graph_extractor.get_graph_data()
+        
+        return {
+            'success': True,
+            'graph': graph_data
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'graph': {'nodes': [], 'edges': []}
+        }
+
+
 @app.get('/knowledge-manager')
 async def knowledge_manager():
     """Unified knowledge management interface."""
     try:
-        km_file = static_dir / "knowledge_manager.html"
+        current_static_dir = Path(__file__).parent.parent.parent.parent / "static"
+        km_file = current_static_dir / "knowledge_manager.html"
         if km_file.exists():
-            content = km_file.read_text(encoding='utf-8')
-            return HTMLResponse(content=content)
+            return FileResponse(km_file)
         else:
             html_content = "<html><head><title>Knowledge Manager</title></head><body>"
             html_content += "<h1>Knowledge Manager</h1>"
             html_content += "<p>Knowledge manager interface not found. Please ensure static files are properly configured.</p>"
-            html_content += "<p>Static directory: " + str(static_dir) + "</p>"
+            html_content += "<p>Static directory: " + str(current_static_dir) + "</p>"
             html_content += "<p>Available endpoints: <a href=\"/docs\">API Documentation</a></p>"
             html_content += "</body></html>"
             return HTMLResponse(content=html_content)

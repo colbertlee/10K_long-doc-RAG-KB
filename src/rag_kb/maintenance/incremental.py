@@ -2,9 +2,10 @@
 
 import hashlib
 import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 from rag_kb.config import settings
 
 
@@ -32,7 +33,7 @@ class IncrementalUpdater:
                 sha256_hash.update(chunk)
         return sha256_hash.hexdigest()
     
-    def get_file_hashes(self) -> Dict[str, str]:
+    def get_file_hashes(self) -> dict[str, str]:
         """Get stored file hashes.
         
         Returns:
@@ -43,7 +44,7 @@ class IncrementalUpdater:
                 return json.load(f)
         return {}
     
-    def save_file_hashes(self, hashes: Dict[str, str]):
+    def save_file_hashes(self, hashes: dict[str, str]):
         """Save file hashes.
         
         Args:
@@ -52,7 +53,7 @@ class IncrementalUpdater:
         with open(self.hash_file, 'w', encoding='utf-8') as f:
             json.dump(hashes, f, indent=2, ensure_ascii=False)
     
-    def detect_changes(self, file_paths: List[Path]) -> Dict[str, Any]:
+    def detect_changes(self, file_paths: list[Path]) -> dict[str, Any]:
         """Detect changed files since last update.
         
         Args:
@@ -92,7 +93,7 @@ class IncrementalUpdater:
         
         return changes
     
-    def log_change(self, change_type: str, file_path: str, details: Dict[str, Any]):
+    def log_change(self, change_type: str, file_path: str, details: dict[str, Any]):
         """Log a change to the change log.
         
         Args:
@@ -121,7 +122,7 @@ class IncrementalUpdater:
         with open(self.change_log_file, 'w', encoding='utf-8') as f:
             json.dump(change_log, f, indent=2, ensure_ascii=False)
     
-    def get_change_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_change_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent change log entries.
         
         Args:
@@ -136,7 +137,7 @@ class IncrementalUpdater:
                 return change_log[-limit:]
         return []
     
-    def cleanup_deleted_documents(self, deleted_files: List[str]):
+    def cleanup_deleted_documents(self, deleted_files: list[str]):
         """Clean up deleted documents from registry.
         
         Args:
@@ -157,7 +158,7 @@ class IncrementalUpdater:
         with open(self.registry_file, 'w', encoding='utf-8') as f:
             json.dump(updated_registry, f, indent=2, ensure_ascii=False)
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get knowledge base statistics.
         
         Returns:

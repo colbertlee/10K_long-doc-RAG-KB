@@ -1,18 +1,18 @@
 """RAGAS evaluation framework for RAG quality assessment."""
 
-from typing import List, Dict, Any
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class EvaluationResult:
     """Evaluation result container."""
     query: str
-    retrieved_contexts: List[str]
+    retrieved_contexts: list[str]
     generated_answer: str
     ground_truth: str
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     latency: float
 
 
@@ -26,7 +26,7 @@ class RAGASEvaluator:
     def evaluate_single(
         self,
         query: str,
-        retrieved_contexts: List[str],
+        retrieved_contexts: list[str],
         generated_answer: str,
         ground_truth: str
     ) -> EvaluationResult:
@@ -66,10 +66,10 @@ class RAGASEvaluator:
     def _calculate_metrics(
         self,
         query: str,
-        retrieved_contexts: List[str],
+        retrieved_contexts: list[str],
         generated_answer: str,
         ground_truth: str
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate RAGAS metrics (simplified implementation).
         
@@ -106,7 +106,7 @@ class RAGASEvaluator:
         
         return metrics
     
-    def _calculate_faithfulness(self, answer: str, contexts: List[str]) -> float:
+    def _calculate_faithfulness(self, answer: str, contexts: list[str]) -> float:
         """
         Calculate faithfulness score (simplified).
         
@@ -159,7 +159,7 @@ class RAGASEvaluator:
         overlap = len(query_terms & answer_terms)
         return overlap / len(query_terms)
     
-    def _calculate_context_precision(self, query: str, contexts: List[str]) -> float:
+    def _calculate_context_precision(self, query: str, contexts: list[str]) -> float:
         """
         Calculate context precision score (simplified).
         
@@ -187,7 +187,7 @@ class RAGASEvaluator:
         
         return relevant_contexts / len(contexts)
     
-    def _calculate_context_recall(self, contexts: List[str], ground_truth: str) -> float:
+    def _calculate_context_recall(self, contexts: list[str], ground_truth: str) -> float:
         """
         Calculate context recall score (simplified).
         
@@ -215,8 +215,8 @@ class RAGASEvaluator:
     
     def evaluate_batch(
         self,
-        test_cases: List[Dict[str, Any]]
-    ) -> List[EvaluationResult]:
+        test_cases: list[dict[str, Any]]
+    ) -> list[EvaluationResult]:
         """
         Evaluate a batch of test cases.
         
@@ -238,7 +238,7 @@ class RAGASEvaluator:
         
         return results
     
-    def get_average_metrics(self) -> Dict[str, float]:
+    def get_average_metrics(self) -> dict[str, float]:
         """
         Get average metrics across all evaluations.
         

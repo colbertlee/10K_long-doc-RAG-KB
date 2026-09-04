@@ -4,15 +4,14 @@ import asyncio
 import atexit
 import signal
 import sys
-from typing import Set, Optional
 
 
 class AsyncContextManager:
     """Manages async context with proper event loop cleanup and graceful shutdown."""
     
     def __init__(self):
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.tasks: Set[asyncio.Task] = set()
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self.tasks: set[asyncio.Task] = set()
         self._shutdown_event = asyncio.Event()
         self._initialized = False
     
@@ -62,7 +61,7 @@ class AsyncContextManager:
                 task.cancel()
                 try:
                     await asyncio.wait_for(task, timeout=5.0)
-                except (asyncio.CancelledError, asyncio.TimeoutError):
+                except (TimeoutError, asyncio.CancelledError):
                     pass
         
         # Wait for all tasks to complete
@@ -72,7 +71,7 @@ class AsyncContextManager:
                     asyncio.gather(*self.tasks, return_exceptions=True),
                     timeout=10.0
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 print("Some tasks did not complete in time", file=sys.stderr, flush=True)
         
         # Only close the loop if we created it and it's not running
@@ -103,7 +102,7 @@ class AsyncContextManager:
 
 
 # Global instance
-_global_async_context: Optional[AsyncContextManager] = None
+_global_async_context: AsyncContextManager | None = None
 
 
 def get_async_context() -> AsyncContextManager:

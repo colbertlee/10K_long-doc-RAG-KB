@@ -1,19 +1,19 @@
 """RAGAS evaluation framework for RAG quality assessment."""
 
 import asyncio
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 try:
     from ragas import evaluate
     from ragas.metrics import (
-        faithfulness,
         answer_relevancy,
+        context_entity_recall,
         context_precision,
         context_recall,
-        context_entity_recall
+        faithfulness,
     )
     RAGAS_AVAILABLE = True
 except ImportError:
@@ -25,10 +25,10 @@ except ImportError:
 class EvaluationCase:
     """Single evaluation case for RAGAS."""
     question: str
-    contexts: List[str]
+    contexts: list[str]
     answer: str
-    ground_truth: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    ground_truth: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -37,8 +37,8 @@ class EvaluationResult:
     faithfulness: float
     answer_relevancy: float
     context_precision: float
-    context_recall: Optional[float] = None
-    context_entity_recall: Optional[float] = None
+    context_recall: float | None = None
+    context_entity_recall: float | None = None
     overall_score: float = 0.0
 
 
@@ -52,7 +52,7 @@ class RAGASEvaluator:
             use_ragas: Whether to use RAGAS (requires installation)
         """
         self.use_ragas = use_ragas and RAGAS_AVAILABLE
-        self.evaluation_cases: List[EvaluationCase] = []
+        self.evaluation_cases: list[EvaluationCase] = []
         self._initialized = False
     
     async def initialize(self):
@@ -70,10 +70,10 @@ class RAGASEvaluator:
     def add_evaluation_case(
         self,
         question: str,
-        contexts: List[str],
+        contexts: list[str],
         answer: str,
-        ground_truth: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        ground_truth: str | None = None,
+        metadata: dict[str, Any] | None = None
     ):
         """Add an evaluation case.
         
@@ -93,7 +93,7 @@ class RAGASEvaluator:
         )
         self.evaluation_cases.append(case)
     
-    async def evaluate(self) -> Dict[str, Any]:
+    async def evaluate(self) -> dict[str, Any]:
         """Run evaluation on all cases.
         
         Returns:
@@ -107,7 +107,7 @@ class RAGASEvaluator:
         else:
             return await self._evaluate_fallback()
     
-    async def _evaluate_with_ragas(self) -> Dict[str, Any]:
+    async def _evaluate_with_ragas(self) -> dict[str, Any]:
         """Evaluate using RAGAS framework."""
         try:
             # Convert evaluation cases to RAGAS format
@@ -156,7 +156,7 @@ class RAGASEvaluator:
             print(f"RAGAS evaluation error: {e}", flush=True)
             return await self._evaluate_fallback()
     
-    async def _evaluate_fallback(self) -> Dict[str, Any]:
+    async def _evaluate_fallback(self) -> dict[str, Any]:
         """Fallback evaluation using simple heuristics."""
         total_faithfulness = 0.0
         total_relevancy = 0.0
@@ -212,7 +212,7 @@ class RAGASEvaluator:
         """Clear all evaluation cases."""
         self.evaluation_cases.clear()
     
-    def save_results(self, results: Dict[str, Any], filepath: Path):
+    def save_results(self, results: dict[str, Any], filepath: Path):
         """Save evaluation results to file.
         
         Args:
@@ -224,7 +224,7 @@ class RAGASEvaluator:
             json.dump(results, f, indent=2)
         print(f"Results saved to {filepath}", flush=True)
     
-    def get_evaluation_summary(self) -> Dict[str, Any]:
+    def get_evaluation_summary(self) -> dict[str, Any]:
         """Get summary of current evaluation cases."""
         return {
             "total_cases": len(self.evaluation_cases),
@@ -244,7 +244,7 @@ class RAGQualityMonitor:
             evaluator: RAGAS evaluator instance
         """
         self.evaluator = evaluator
-        self.evaluation_history: List[Dict[str, Any]] = []
+        self.evaluation_history: list[dict[str, Any]] = []
         self.thresholds = {
             "faithfulness": 0.8,
             "answer_relevancy": 0.8,
@@ -255,10 +255,10 @@ class RAGQualityMonitor:
     async def monitor_quality(
         self,
         question: str,
-        contexts: List[str],
+        contexts: list[str],
         answer: str,
-        ground_truth: Optional[str] = None
-    ) -> Dict[str, Any]:
+        ground_truth: str | None = None
+    ) -> dict[str, Any]:
         """Monitor quality of a single RAG interaction.
         
         Args:
@@ -306,7 +306,7 @@ class RAGQualityMonitor:
             "status": "warning" if alerts else "good"
         }
     
-    def get_quality_trends(self) -> Dict[str, Any]:
+    def get_quality_trends(self) -> dict[str, Any]:
         """Get quality trends over time."""
         if not self.evaluation_history:
             return {"error": "No evaluation history"}

@@ -3,8 +3,8 @@
 import hashlib
 import json
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import List, Set, Tuple, Callable
 
 CHUNK_MAP = Path('./data/chunk_map.json')
 CATEGORY_DIR = Path('./data/category_dbs')
@@ -28,7 +28,7 @@ def compute_file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def plan_update(docs_dir: Path, known: dict) -> Tuple[List[Path], Set[str]]:
+def plan_update(docs_dir: Path, known: dict) -> tuple[list[Path], set[str]]:
     """Plan incremental update by comparing current files with known hashes.
     
     Args:

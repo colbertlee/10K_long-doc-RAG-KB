@@ -1,15 +1,15 @@
 """Intent classification module."""
 
 from .classifier import (
+    IntentClassification,
     IntentClassifier,
     QueryIntent,
-    IntentClassification,
-    intent_classifier
+    intent_classifier,
 )
 
 __all__ = [
+    'IntentClassification',
     'IntentClassifier',
     'QueryIntent',
-    'IntentClassification',
     'intent_classifier'
 ]

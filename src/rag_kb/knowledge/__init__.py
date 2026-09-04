@@ -1,5 +1,5 @@
 """Knowledge organization and management module."""
 
-from .organization import SmartKnowledgeOrganizer, KnowledgeQualityAnalyzer
+from .organization import KnowledgeQualityAnalyzer, SmartKnowledgeOrganizer
 
-__all__ = ['SmartKnowledgeOrganizer', 'KnowledgeQualityAnalyzer']
+__all__ = ['KnowledgeQualityAnalyzer', 'SmartKnowledgeOrganizer']

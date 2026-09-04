@@ -1,15 +1,18 @@
-"""Document processing tracking module."""
+"""Complete document processing pipeline module."""
+
+from .complete_pipeline import (
+    DocumentProcessingPipeline,
+    ProcessingStats
+)
 
 from .tracker import (
-    ProcessingTracker,
     ProcessingStatus,
-    DocumentProcessingTask,
     processing_tracker
 )
 
 __all__ = [
-    'ProcessingTracker',
+    'DocumentProcessingPipeline',
+    'ProcessingStats',
     'ProcessingStatus',
-    'DocumentProcessingTask',
     'processing_tracker'
 ]

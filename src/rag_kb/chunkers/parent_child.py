@@ -1,9 +1,9 @@
 """Parent-child chunker for hierarchical document chunking."""
 
 import uuid
-from typing import List
-from rag_kb.models import Document, Chunk
+
 from rag_kb.chunkers.structured import StructuredChunker
+from rag_kb.models import Chunk, Document
 
 
 class ParentChildChunker(StructuredChunker):
@@ -14,10 +14,10 @@ class ParentChildChunker(StructuredChunker):
         super().__init__(target_tokens=child_target, overlap_chars=overlap_chars)
         self.parent_target = parent_target
 
-    def chunk(self, doc: Document) -> List[Chunk]:
+    def chunk(self, doc: Document) -> list[Chunk]:
         """Split document into parent-child chunk hierarchy."""
         sections = super().chunk(doc)
-        children: List[Chunk] = []
+        children: list[Chunk] = []
         
         for parent in sections:
             parent.chunk_id = str(uuid.uuid4())

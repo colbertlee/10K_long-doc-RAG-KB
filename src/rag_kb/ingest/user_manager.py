@@ -1,10 +1,14 @@
 """User data management for multi-user support."""
 
 from pathlib import Path
-from typing import Dict, List, Optional
-from rag_kb.models import Document
+
 from rag_kb.ingest.pipeline import IngestPipeline
-from rag_kb.utils.validation import validate_user_id, validate_kb_name, sanitize_path_component
+from rag_kb.models import Document
+from rag_kb.utils.validation import (
+    sanitize_path_component,
+    validate_kb_name,
+    validate_user_id,
+)
 
 
 class UserDataManager:
@@ -71,7 +75,7 @@ class UserDataManager:
         return kb_folder
     
     def ingest_user_folder(self, user_id: str, kb_name: str, 
-                          acl: Optional[Dict] = None) -> List[Document]:
+                          acl: dict | None = None) -> list[Document]:
         """Ingest all documents from a user's knowledge base folder.
         
         Args:
@@ -99,7 +103,7 @@ class UserDataManager:
         
         return documents
     
-    def get_user_kbs(self, user_id: str) -> List[str]:
+    def get_user_kbs(self, user_id: str) -> list[str]:
         """Get list of knowledge bases for a user.
         
         Args:
@@ -131,7 +135,7 @@ class UserDataManager:
             return True
         return False
     
-    def get_kb_stats(self, user_id: str, kb_name: str) -> Dict:
+    def get_kb_stats(self, user_id: str, kb_name: str) -> dict:
         """Get statistics for a knowledge base.
         
         Args:

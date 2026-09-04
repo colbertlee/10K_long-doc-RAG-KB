@@ -1,10 +1,9 @@
 """Advanced graph analysis for knowledge graph insights."""
 
-from typing import Dict, Any, List, Optional, Set, Tuple
+import json
 from dataclasses import dataclass, field
 from enum import Enum
-import json
-from pathlib import Path
+from typing import Any
 
 
 class AnalysisType(Enum):
@@ -26,9 +25,9 @@ class GraphNode:
     betweenness: float = 0.0
     closeness: float = 0.0
     pagerank: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'node_id': self.node_id,
@@ -48,12 +47,12 @@ class GraphPath:
     path_id: str
     source_node: str
     target_node: str
-    path_nodes: List[str]
+    path_nodes: list[str]
     path_length: int
     path_weight: float
-    intermediate_nodes: List[str] = field(default_factory=list)
+    intermediate_nodes: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'path_id': self.path_id,
@@ -73,8 +72,8 @@ class AdvancedGraphAnalyzer:
         """Initialize graph analyzer."""
         from rag_kb.config import settings
         self.graph_file = settings.data_dir / 'lightrag_output' / 'graph_index.json'
-        self.nodes: Dict[str, GraphNode] = {}
-        self.edges: List[Dict[str, Any]] = []
+        self.nodes: dict[str, GraphNode] = {}
+        self.edges: list[dict[str, Any]] = []
         self._load_graph()
     
     def _load_graph(self):
@@ -117,7 +116,7 @@ class AdvancedGraphAnalyzer:
             if target in self.nodes:
                 self.nodes[target].degree += 1
     
-    def get_neighborhood(self, node_id: str, degree: int = 2) -> Dict[str, Any]:
+    def get_neighborhood(self, node_id: str, degree: int = 2) -> dict[str, Any]:
         """Get neighborhood of a node.
         
         Args:
@@ -160,7 +159,7 @@ class AdvancedGraphAnalyzer:
             'nodes': neighborhood_nodes
         }
     
-    def _get_direct_neighbors(self, node_id: str) -> List[str]:
+    def _get_direct_neighbors(self, node_id: str) -> list[str]:
         """Get direct neighbors of a node.
         
         Args:
@@ -179,7 +178,7 @@ class AdvancedGraphAnalyzer:
         
         return neighbors
     
-    def find_shortest_path(self, source_node: str, target_node: str) -> Optional[GraphPath]:
+    def find_shortest_path(self, source_node: str, target_node: str) -> GraphPath | None:
         """Find shortest path between two nodes using BFS.
         
         Args:
@@ -219,7 +218,7 @@ class AdvancedGraphAnalyzer:
         
         return None
     
-    def analyze_entity_relationships(self, entity_id: str, max_degree: int = 3) -> Dict[str, Any]:
+    def analyze_entity_relationships(self, entity_id: str, max_degree: int = 3) -> dict[str, Any]:
         """Analyze relationships for an entity with 2-3 degree connections.
         
         Args:
@@ -292,7 +291,7 @@ class AdvancedGraphAnalyzer:
         return shared_neighbors / total_neighbors
     
     def find_paths_between_entities(self, entity1: str, entity2: str, 
-                                   max_paths: int = 5) -> List[Dict[str, Any]]:
+                                   max_paths: int = 5) -> list[dict[str, Any]]:
         """Find multiple paths between two entities.
         
         Args:
@@ -315,7 +314,7 @@ class AdvancedGraphAnalyzer:
         
         return paths
     
-    def get_centrality_measures(self) -> Dict[str, Any]:
+    def get_centrality_measures(self) -> dict[str, Any]:
         """Calculate centrality measures for all nodes.
         
         Returns:
@@ -368,7 +367,7 @@ class AdvancedGraphAnalyzer:
             ]
         }
     
-    def detect_communities(self) -> Dict[str, Any]:
+    def detect_communities(self) -> dict[str, Any]:
         """Detect communities in the graph (simplified).
         
         Returns:

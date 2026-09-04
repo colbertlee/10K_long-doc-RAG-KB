@@ -1,13 +1,9 @@
 """Search suggestions and quick questions module."""
 
-from .manager import (
-    SuggestionManager,
-    Suggestion,
-    suggestion_manager
-)
+from .manager import Suggestion, SuggestionManager, suggestion_manager
 
 __all__ = [
-    'SuggestionManager',
     'Suggestion',
+    'SuggestionManager',
     'suggestion_manager'
 ]

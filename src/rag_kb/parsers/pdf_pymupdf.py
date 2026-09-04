@@ -2,7 +2,9 @@
 
 import hashlib
 from pathlib import Path
+
 import fitz  # PyMuPDF
+
 from rag_kb.models import Document
 from rag_kb.parsers.base import BaseParser
 
@@ -48,9 +50,10 @@ class PyMuPDFParser(BaseParser):
     def _apply_ocr(self, doc) -> str:
         """Apply OCR to extract text from scanned PDF pages."""
         try:
+            import io
+
             import pytesseract
             from PIL import Image
-            import io
             
             ocr_parts = []
             

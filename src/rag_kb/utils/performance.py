@@ -1,11 +1,12 @@
 """Performance monitoring and optimization utilities."""
 
-import time
-import psutil
-from typing import Dict, Any, Optional
-from functools import wraps
-from collections import defaultdict
 import threading
+import time
+from collections import defaultdict
+from functools import wraps
+from typing import Any
+
+import psutil
 
 
 class PerformanceMonitor:
@@ -17,7 +18,7 @@ class PerformanceMonitor:
         self.lock = threading.Lock()
         self.enabled = True
     
-    def record_metric(self, name: str, value: float, metadata: Dict = None):
+    def record_metric(self, name: str, value: float, metadata: dict = None):
         """Record a performance metric.
         
         Args:
@@ -35,7 +36,7 @@ class PerformanceMonitor:
                 'metadata': metadata or {}
             })
     
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> dict[str, Any]:
         """Get current system metrics.
         
         Returns:
@@ -51,7 +52,7 @@ class PerformanceMonitor:
             'process_cpu': psutil.Process().cpu_percent()
         }
     
-    def get_metric_statistics(self, name: str) -> Dict[str, float]:
+    def get_metric_statistics(self, name: str) -> dict[str, float]:
         """Get statistics for a specific metric.
         
         Args:
@@ -74,7 +75,7 @@ class PerformanceMonitor:
             'sum': sum(values)
         }
     
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         """Get all recorded metrics.
         
         Returns:
@@ -111,7 +112,7 @@ def monitor_performance(metric_name: str):
                 elapsed = time.time() - start_time
                 performance_monitor.record_metric(metric_name, elapsed)
                 return result
-            except Exception as e:
+            except Exception:
                 elapsed = time.time() - start_time
                 performance_monitor.record_metric(f"{metric_name}_error", elapsed)
                 raise
@@ -241,7 +242,7 @@ class CacheManager:
         self.max_size = max_size
         self.access_count = defaultdict(int)
     
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get value from cache.
         
         Args:
@@ -283,7 +284,7 @@ class CacheManager:
         self.cache.clear()
         self.access_count.clear()
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
         
         Returns:

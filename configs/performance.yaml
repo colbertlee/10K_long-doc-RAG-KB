@@ -12,6 +12,8 @@ embedding:
   model: nomic-embed-text
   batch_size: 32  # Process embeddings in batches
   cache_enabled: true  # Enable embedding cache
+  embedding_dim: 768  # Optimized for nomic-embed-text
+  distance_metric: cosine  # Use cosine similarity for better semantic matching
 
 # Performance-optimized LLM settings
 llm:
@@ -30,6 +32,7 @@ lightrag:
   chunk_overlap_token_size: 50
   enable_llm_cache: true
   enable_embedding_cache: true
+  top_k: 10  # Reduced for faster retrieval in performance mode
   
   # Query mode performance
   query_mode: hybrid  # Use hybrid mode for best performance/quality balance

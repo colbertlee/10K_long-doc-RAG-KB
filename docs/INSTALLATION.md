@@ -1,9 +1,9 @@
 # Installation Guide - RAG Knowledge Base
 
-**Current Version**: v0.4.0 (Stable)  
-**Release Date**: 2026-08-24
+**Current Version**: v0.6.0 (Stable)  
+**Release Date**: 2026-09-04
 
-> **Version Note**: v0.4.0 includes knowledge management features with automatic document classification, batch operations, and quality analysis.
+> **Version Note**: v0.6.0 is a major enterprise RAG optimization release featuring advanced retrieval (BM25 + BGE-Reranker), comprehensive evaluation framework (RAGAS), enhanced knowledge graph, multi-knowledge base system, and performance monitoring.
 
 ## System Requirements
 

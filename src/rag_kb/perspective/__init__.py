@@ -2,14 +2,14 @@
 
 from .fragment import (
     FragmentPerspective,
-    SimilarFragment,
     MatchType,
-    fragment_perspective
+    SimilarFragment,
+    fragment_perspective,
 )
 
 __all__ = [
     'FragmentPerspective',
-    'SimilarFragment',
     'MatchType',
+    'SimilarFragment',
     'fragment_perspective'
 ]

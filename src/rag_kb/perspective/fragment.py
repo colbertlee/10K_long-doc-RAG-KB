@@ -1,10 +1,9 @@
 """Similarity fragment perspective for enhanced retrieval analysis."""
 
-from typing import Dict, Any, List, Optional, Tuple
+import json
 from dataclasses import dataclass, field
 from enum import Enum
-import json
-from pathlib import Path
+from typing import Any
 
 
 class MatchType(Enum):
@@ -24,11 +23,11 @@ class SimilarFragment:
     match_type: MatchType
     source_doc_id: str
     source_title: str
-    page_number: Optional[int] = None
-    chunk_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    page_number: int | None = None
+    chunk_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'fragment_id': self.fragment_id,
@@ -70,8 +69,8 @@ class FragmentPerspective:
         except Exception as e:
             print(f"Error saving fragment cache: {e}")
     
-    def analyze_similar_fragments(self, query: str, retrieval_results: List[Dict[str, Any]], 
-                                 top_k: int = 10) -> List[SimilarFragment]:
+    def analyze_similar_fragments(self, query: str, retrieval_results: list[dict[str, Any]], 
+                                 top_k: int = 10) -> list[SimilarFragment]:
         """Analyze and enhance similar fragments from retrieval results.
         
         Args:
@@ -117,7 +116,7 @@ class FragmentPerspective:
         
         return enhanced_fragments
     
-    def _determine_match_type(self, result: Dict[str, Any]) -> MatchType:
+    def _determine_match_type(self, result: dict[str, Any]) -> MatchType:
         """Determine the type of match for a result.
         
         Args:
@@ -143,7 +142,7 @@ class FragmentPerspective:
         # Default to vector match
         return MatchType.VECTOR
     
-    def _calculate_enhanced_similarity(self, query: str, result: Dict[str, Any], 
+    def _calculate_enhanced_similarity(self, query: str, result: dict[str, Any], 
                                       match_type: MatchType) -> float:
         """Calculate enhanced similarity score.
         
@@ -198,7 +197,7 @@ class FragmentPerspective:
         return text[:context_length] + "..."
     
     def compare_fragments(self, fragment1: SimilarFragment, 
-                        fragment2: SimilarFragment) -> Dict[str, Any]:
+                        fragment2: SimilarFragment) -> dict[str, Any]:
         """Compare two similar fragments.
         
         Args:
@@ -273,7 +272,7 @@ class FragmentPerspective:
             return "Fragments are distinct, both provide unique information"
     
     def get_fragment_perspective_view(self, query: str, 
-                                     retrieval_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+                                     retrieval_results: list[dict[str, Any]]) -> dict[str, Any]:
         """Get comprehensive fragment perspective view.
         
         Args:
@@ -316,7 +315,7 @@ class FragmentPerspective:
             'recommendations': self._generate_perspective_recommendations(fragments)
         }
     
-    def _generate_perspective_recommendations(self, fragments: List[SimilarFragment]) -> List[str]:
+    def _generate_perspective_recommendations(self, fragments: list[SimilarFragment]) -> list[str]:
         """Generate perspective recommendations.
         
         Args:

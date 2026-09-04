@@ -1,49 +1,59 @@
-# config.yaml — Ollama / OpenAI-compatible settings for rag-kb
 app:
-  name: rag-kb
   data_dir: ./data
   lightrag_working_dir: ./lightrag_db
-  log_level: INFO
-
+  log_level: WARNING
+  name: rag-kb
+chunking:
+  kg_chunk_size: 1200
+  max_chunk_size: 800
+  min_chunk_size: 200
+  preserve_knowledge: true
+  strategy: knowledge_aware
+  vector_chunk_size: 600
 embedding:
-  provider: ollama
   base_url: http://localhost:11434
-  model: nomic-embed-text
-  # Alternative: sentence-transformers (CPU-only, no Ollama needed)
-  # provider: sentence-transformers
-  # model: BAAI/bge-m3
-
+  batch_size: 32
+  cache_enabled: true
+  distance_metric: cosine
+  embedding_dim: 768
+  model: nomic-embed-text-v2-moe
+  provider: ollama
+knowledge_processing:
+  enable_enhanced_search: true
+  enable_graph_building: true
+  enable_knowledge_extraction: true
+  enable_technical_cleaner: true
+lightrag:
+  chunk_overlap_token_size: 100
+  chunk_token_size: 800
+  embedding_batch_size: 32
+  embedding_dim: 768
+  enable_embedding_cache: true
+  enable_llm_cache: true
+  enable_rerank: false
+  max_concurrent_requests: 4
+  max_token: 3072
+  query_mode: hybrid
+  top_k: 30
+  use_async: true
+  working_dir: ./lightrag_db
 llm:
-  # Mode 1: local Ollama (default for Windows native deployment)
-  provider: ollama
   base_url: http://localhost:11434
+  cache_enabled: true
+  max_tokens: 2048
   model: qwen3.5:4b
+  num_batch: 128
+  num_ctx: 1024
+  provider: ollama
   temperature: 0.3
   top_p: 0.9
-  max_tokens: 2048
-
-  # Mode 2: OpenAI / OpenAI-compatible / domestic providers
-  # provider: openai
-  # base_url: https://api.openai.com/v1
-  # api_key: ${OPENAI_API_KEY}
-  # model: gpt-4o
-  # temperature: 0.3
-  # top_p: 0.9
-  # max_tokens: 2048
-
-  # Mode 3: domestic OpenAI-compatible endpoint
-  # provider: openai
-  # base_url: https://your-provider.example.com/v1
-  # api_key: ${PROVIDER_API_KEY}
-
-lightrag:
-  working_dir: ./lightrag_db
-  chunk_token_size: 1200
-  max_token: 4096
-  query_mode: hybrid
-  enable_llm_cache: true
-
+reranking:
+  enable: false
+  max_length: 512
+  model: BAAI/bge-reranker-base
+  rerank_top_k: 15
 security:
   default_acl:
     dept: []
-    level: ['Internal']
+    level:
+    - Internal

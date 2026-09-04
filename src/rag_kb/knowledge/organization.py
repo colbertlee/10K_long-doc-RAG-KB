@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """Intelligent knowledge organization module for automatic classification and tagging."""
 
-from typing import Dict, List, Optional, Any
 import re
-from collections import Counter
-from pathlib import Path
+from typing import Any
 
 
 class SmartKnowledgeOrganizer:
@@ -24,7 +21,7 @@ class SmartKnowledgeOrganizer:
         
         self.business_keywords = ['市场', '销售', '营销', '客户', '用户', '增长', '收入', '利润', '成本', '预算', '投资', '融资', '估值', '战略', '竞争', '分析', '报告', '数据', '指标', 'KPI']
     
-    def organize_document(self, content: str, filename: str = '') -> Dict[str, Any]:
+    def organize_document(self, content: str, filename: str = '') -> dict[str, Any]:
         """Organize a document with automatic classification and tagging."""
         category = self.detect_category(content, filename)
         tags = self.extract_tags(content, filename)
@@ -59,7 +56,7 @@ class SmartKnowledgeOrganizer:
             return max(category_scores, key=category_scores.get)
         return 'general'
     
-    def extract_tags(self, content: str, filename: str = '') -> List[str]:
+    def extract_tags(self, content: str, filename: str = '') -> list[str]:
         """Extract relevant tags from document content."""
         tags = []
         content_lower = content.lower()
@@ -79,7 +76,7 @@ class SmartKnowledgeOrganizer:
         tags = list(set(tags))
         return tags[:10]
     
-    def extract_entities(self, content: str) -> Dict[str, List[str]]:
+    def extract_entities(self, content: str) -> dict[str, list[str]]:
         """Extract named entities from document content."""
         entities = {
             'organizations': [],
@@ -132,7 +129,7 @@ class SmartKnowledgeOrganizer:
             return first_paragraph
         return content[:max_length] + '...' if len(content) > max_length else content
     
-    def calculate_confidence(self, content: str, category: str, tags: List[str]) -> float:
+    def calculate_confidence(self, content: str, category: str, tags: list[str]) -> float:
         """Calculate confidence score for classification."""
         confidence = 0.5
         
@@ -162,7 +159,7 @@ class KnowledgeQualityAnalyzer:
             'readability': 0.0
         }
     
-    def analyze_document_quality(self, content: str, metadata: Dict) -> Dict[str, Any]:
+    def analyze_document_quality(self, content: str, metadata: dict) -> dict[str, Any]:
         """Analyze the quality of a document."""
         analysis = {
             'overall_score': 0.0,
@@ -185,7 +182,7 @@ class KnowledgeQualityAnalyzer:
         
         return analysis
     
-    def analyze_completeness(self, content: str, metadata: Dict) -> float:
+    def analyze_completeness(self, content: str, metadata: dict) -> float:
         """Analyze document completeness."""
         score = 0.5
         
@@ -240,7 +237,7 @@ class KnowledgeQualityAnalyzer:
         
         return min(score, 1.0)
     
-    def generate_suggestions(self, metrics: Dict) -> List[str]:
+    def generate_suggestions(self, metrics: dict) -> list[str]:
         """Generate improvement suggestions based on metrics."""
         suggestions = []
         

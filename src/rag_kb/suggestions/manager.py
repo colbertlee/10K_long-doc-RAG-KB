@@ -1,10 +1,9 @@
 """Search suggestions and quick questions system."""
 
-from typing import Dict, Any, List, Optional
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
-import json
-from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -14,10 +13,10 @@ class Suggestion:
     text: str
     category: str
     frequency: int = 0
-    last_used: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_used: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'suggestion_id': self.suggestion_id,
@@ -39,7 +38,7 @@ class SuggestionManager:
         self.suggestions = self._load_suggestions()
         self._initialize_default_suggestions()
     
-    def _load_suggestions(self) -> Dict[str, Any]:
+    def _load_suggestions(self) -> dict[str, Any]:
         """Load suggestions from file."""
         if self.suggestion_file.exists():
             with open(self.suggestion_file, 'r', encoding='utf-8') as f:
@@ -110,7 +109,7 @@ class SuggestionManager:
             self._save_suggestions()
     
     def add_suggestion(self, text: str, category: str = 'general', 
-                      metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+                      metadata: dict[str, Any] = None) -> dict[str, Any]:
         """Add a new suggestion.
         
         Args:
@@ -148,7 +147,7 @@ class SuggestionManager:
                 'message': 'Failed to add suggestion'
             }
     
-    def get_suggestions(self, category: str = None, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_suggestions(self, category: str = None, limit: int = 10) -> list[dict[str, Any]]:
         """Get suggestions.
         
         Args:
@@ -172,7 +171,7 @@ class SuggestionManager:
         
         return suggestions[:limit]
     
-    def get_suggestions_by_prefix(self, prefix: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_suggestions_by_prefix(self, prefix: str, limit: int = 5) -> list[dict[str, Any]]:
         """Get suggestions by text prefix (for autocomplete).
         
         Args:
@@ -191,7 +190,7 @@ class SuggestionManager:
         
         return matching[:limit]
     
-    def record_suggestion_use(self, suggestion_id: str) -> Dict[str, Any]:
+    def record_suggestion_use(self, suggestion_id: str) -> dict[str, Any]:
         """Record that a suggestion was used.
         
         Args:
@@ -223,7 +222,7 @@ class SuggestionManager:
                 'message': 'Failed to record suggestion use'
             }
     
-    def get_categories(self) -> Dict[str, str]:
+    def get_categories(self) -> dict[str, str]:
         """Get available suggestion categories.
         
         Returns:
@@ -231,7 +230,7 @@ class SuggestionManager:
         """
         return self.suggestions['categories']
     
-    def get_quick_questions(self, product_id: str = None, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_quick_questions(self, product_id: str = None, limit: int = 5) -> list[dict[str, Any]]:
         """Get quick questions for a specific product.
         
         Args:

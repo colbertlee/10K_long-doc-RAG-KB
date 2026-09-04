@@ -12,8 +12,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; position: relative; }
         .header h1 { font-size: 2em; margin-bottom: 10px; }
+        .back-btn { position: absolute; top: 30px; left: 30px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
         
         .graph-panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .graph-panel h3 { color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
@@ -68,6 +70,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <button class="back-btn" onclick="window.location.href='/'">🏠 返回主页</button>
             <h1>🚀 增强搜索 - 混合检索 + 多形态交互</h1>
             <p>智能对话 | 关键词搜索 | 分类筛选</p>
         </div>

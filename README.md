@@ -2,10 +2,10 @@
 
 An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed for processing and querying 10,000+ long documents with LightRAG graph-enhanced retrieval.
 
-**Current Version**: v0.5.53 (Latest)  
-**Release Date**: 2026-08-25
+**Current Version**: v0.6.0 (Latest)  
+**Release Date**: 2026-09-04
 
-> **Version Note**: v0.5.53 implements enterprise-level RAG optimization with hybrid search, BGE-Reranker, RAGAS evaluation, and performance tuning system.
+> **Version Note**: v0.6.0 is a major enterprise RAG optimization release featuring advanced retrieval (BM25 + BGE-Reranker), comprehensive evaluation framework (RAGAS), enhanced knowledge graph, multi-knowledge base system, and performance monitoring.
 
 ## Features
 
@@ -31,15 +31,17 @@ An enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system d
 - **Document Processing Tracking**: Real-time progress tracking for document ingestion
 - **Enhanced Citations**: Page numbers, chunk IDs, and entity information in citations
 
-### Enterprise RAG Optimization (v0.5.53)
-- **Hybrid Search Engine**: BM25 sparse search + LightRAG vector search with weighted RRF fusion
-- **BGE-Reranker Integration**: Cross-encoder reranking with GPU support and rule-based fallback
-- **RAGAS Evaluation Framework**: Comprehensive quality assessment with faithfulness, relevancy, and precision metrics
-- **Performance Tuning System**: Dynamic parameter adjustment with speed/accuracy/balance optimization profiles
-- **BM25 Index Builder**: Automatic BM25 index construction from document registry with persistence
-- **Knowledge Graph Naming**: Improved node naming with document titles instead of hash IDs
-- **Event Loop Management**: Robust async context management for stable LightRAG operations
-- **Quality Monitoring**: Continuous RAG quality monitoring with threshold-based alerts
+### Enterprise RAG Optimization (v0.6.0)
+- **Advanced Retrieval System**: BM25 sparse search + LightRAG vector search with weighted RRF fusion
+- **BGE-Reranker Integration**: Cross-encoder reranking using sentence-transformers (v5.5.1) with GPU support
+- **RAGAS Evaluation Framework**: Comprehensive quality assessment (v0.4.3) with 15+ metrics including faithfulness, relevancy, and precision
+- **Performance Tuning System**: YAML-based configuration with speed/accuracy/balance optimization profiles
+- **Multi-Path Retrieval**: Parallel query execution with intelligent result fusion and deduplication
+- **Knowledge Graph Enhancement**: Proper node naming with document titles and content-based ID mapping
+- **GPU Acceleration**: CUDA support for embedding and reranking operations with result caching
+- **Quality Monitoring**: Real-time quality thresholds, performance metrics, and automated regression testing
+- **Anti-Hallucination System**: LLM-level quality control with strict system prompts and answer validation
+- **OCR Document Support**: Scanned PDF processing with OCR integration for enhanced document parsing
 
 ## Architecture
 
@@ -85,6 +87,8 @@ The system follows a layered pipeline architecture:
    # Development installation
    pip install -e .[dev]
    ```
+
+   **Note**: For GPU acceleration support, ensure CUDA-compatible hardware and drivers are installed. The system automatically detects and uses GPU when available.
 
 4. **Install Ollama models**:
    ```bash

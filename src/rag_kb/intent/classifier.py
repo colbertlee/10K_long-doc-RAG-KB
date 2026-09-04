@@ -1,9 +1,8 @@
 """Intent classifier for automatic query mode selection."""
 
-from typing import Dict, Any, List, Optional
+import re
 from dataclasses import dataclass
 from enum import Enum
-import re
 
 
 class QueryIntent(Enum):

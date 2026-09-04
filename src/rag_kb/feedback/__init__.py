@@ -2,16 +2,16 @@
 
 from .manager import (
     FeedbackManager,
-    UserFeedback,
-    FeedbackType,
     FeedbackReason,
-    feedback_manager
+    FeedbackType,
+    UserFeedback,
+    feedback_manager,
 )
 
 __all__ = [
     'FeedbackManager',
-    'UserFeedback',
-    'FeedbackType',
     'FeedbackReason',
+    'FeedbackType',
+    'UserFeedback',
     'feedback_manager'
 ]

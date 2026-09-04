@@ -1,5 +1,42 @@
 # Release Notes
 
+## [0.6.0] - 2026-09-04
+
+### Enterprise RAG Optimization - Major Release
+- **Advanced Retrieval System**: BM25 sparse search with complete index builder and weighted RRF fusion
+- **BGE-Reranker Integration**: Advanced reranking using sentence-transformers (v5.5.1) for improved result precision
+- **RAGAS Evaluation Framework**: Comprehensive quality assessment framework (v0.4.3) with 15+ quality metrics
+- **Performance Tuning System**: YAML-based configuration with speed/accuracy/balance optimization profiles
+- **Knowledge Graph Enhancement**: Proper node naming with document titles and content-based ID mapping
+- **Multi-Knowledge Base System**: Product isolation with separate knowledge bases and unified management
+- **Anti-Hallucination System**: LLM-level quality control with strict system prompts and answer validation
+- **Comprehensive Monitoring**: Structured logging, performance metrics, and health check endpoints
+- **OCR Document Support**: Scanned PDF processing with OCR integration for enhanced document parsing
+- **GPU Acceleration**: CUDA support for embedding and reranking operations with result caching
+
+### New API Endpoints
+- 50+ new endpoints for advanced search, evaluation, monitoring, and management
+- Dual GET/POST support for browser compatibility
+- Enhanced API documentation with interactive examples
+- Performance endpoints for monitoring integration
+
+### Technical Improvements
+- New modules: retrieval, evaluation, monitoring, graph_analysis, maintenance
+- Dependency updates: sentence-transformers v5.5.1, ragas v0.4.3, torch v2.13.0
+- Performance optimizations with GPU support and result caching
+- 30+ new test files with integration, performance, and regression tests
+- Enhanced error handling, logging, and validation across all modules
+
+### Breaking Changes
+- None (fully backward compatible with v0.5.x)
+
+### Migration Guide
+Existing installations can upgrade safely:
+```bash
+pip install -e .[all]
+```
+For performance optimization, copy `configs/performance.yaml` and tune parameters according to use case.
+
 ## [0.4.0] - 2026-08-24
 
 ### Knowledge Management Features

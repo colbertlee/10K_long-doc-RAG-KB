@@ -1,8 +1,8 @@
 """Performance tuning configuration for RAG system."""
 
-import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -57,7 +57,7 @@ class PerformanceTuner:
     def __init__(self):
         self.settings = performance_settings
     
-    def get_rrf_config(self) -> Dict[str, Any]:
+    def get_rrf_config(self) -> dict[str, Any]:
         """Get RRF fusion configuration."""
         return {
             'k': self.settings.rrf_k,
@@ -65,14 +65,14 @@ class PerformanceTuner:
             'weight_vector': self.settings.rrf_weight_vector
         }
     
-    def get_bm25_config(self) -> Dict[str, Any]:
+    def get_bm25_config(self) -> dict[str, Any]:
         """Get BM25 search configuration."""
         return {
             'k1': self.settings.bm25_k1,
             'b': self.settings.bm25_b
         }
     
-    def get_rerank_config(self) -> Dict[str, Any]:
+    def get_rerank_config(self) -> dict[str, Any]:
         """Get reranking configuration."""
         return {
             'enabled': self.settings.rerank_enabled,
@@ -81,7 +81,7 @@ class PerformanceTuner:
             'device': self.settings.rerank_device
         }
     
-    def get_search_config(self) -> Dict[str, Any]:
+    def get_search_config(self) -> dict[str, Any]:
         """Get search configuration."""
         return {
             'top_k': self.settings.search_top_k,
@@ -90,7 +90,7 @@ class PerformanceTuner:
             'parallel': self.settings.parallel_search
         }
     
-    def get_quality_thresholds(self) -> Dict[str, float]:
+    def get_quality_thresholds(self) -> dict[str, float]:
         """Get quality monitoring thresholds."""
         return {
             'faithfulness': self.settings.quality_threshold_faithfulness,
@@ -98,7 +98,7 @@ class PerformanceTuner:
             'context_precision': self.settings.quality_threshold_precision
         }
     
-    def optimize_for_speed(self) -> Dict[str, Any]:
+    def optimize_for_speed(self) -> dict[str, Any]:
         """Get performance-optimized configuration (speed over accuracy)."""
         return {
             'rrf': {
@@ -116,7 +116,7 @@ class PerformanceTuner:
             }
         }
     
-    def optimize_for_accuracy(self) -> Dict[str, Any]:
+    def optimize_for_accuracy(self) -> dict[str, Any]:
         """Get accuracy-optimized configuration (accuracy over speed)."""
         return {
             'rrf': {
@@ -135,7 +135,7 @@ class PerformanceTuner:
             }
         }
     
-    def optimize_for_balance(self) -> Dict[str, Any]:
+    def optimize_for_balance(self) -> dict[str, Any]:
         """Get balanced configuration (speed and accuracy)."""
         return {
             'rrf': {

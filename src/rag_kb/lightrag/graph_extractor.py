@@ -1,10 +1,9 @@
 """LightRAG knowledge graph extraction and visualization utilities."""
 
 import json
-import re
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
+from pathlib import Path
+
 import networkx as nx
 
 
@@ -57,7 +56,7 @@ class LightRAGGraphExtractor:
             except Exception as e:
                 print(f"Error parsing {json_file}: {e}")
     
-    def _extract_entities_and_relations(self, data: Dict, source: str):
+    def _extract_entities_and_relations(self, data: dict, source: str):
         """Extract entities and relations from LightRAG data.
         
         Args:
@@ -87,7 +86,7 @@ class LightRAGGraphExtractor:
             for item in data:
                 self._extract_entities_and_relations(item, source)
     
-    def _add_entity(self, entity_id: str, entity_data: Dict, source: str):
+    def _add_entity(self, entity_id: str, entity_data: dict, source: str):
         """Add an entity to the graph data.
         
         Args:
@@ -113,7 +112,7 @@ class LightRAGGraphExtractor:
                 'degree': 0
             })
     
-    def _add_relation(self, relation_data: Dict, source: str):
+    def _add_relation(self, relation_data: dict, source: str):
         """Add a relation to the graph data.
         
         Args:
@@ -197,7 +196,7 @@ class LightRAGGraphExtractor:
         except ImportError:
             print("NetworkX not available for graph extraction")
     
-    def get_graph_data(self) -> Dict:
+    def get_graph_data(self) -> dict:
         """Get the complete graph data.
         
         Returns:
@@ -244,7 +243,7 @@ class LightRAGGraphExtractor:
         
         return G
     
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
         """Get graph statistics.
         
         Returns:
@@ -287,7 +286,7 @@ class LightRAGGraphExtractor:
             'connected_components': connected_components
         }
     
-    def filter_by_entity_type(self, entity_type: str) -> Dict:
+    def filter_by_entity_type(self, entity_type: str) -> dict:
         """Filter graph data by entity type.
         
         Args:
@@ -311,7 +310,7 @@ class LightRAGGraphExtractor:
             }
         }
     
-    def get_neighborhood(self, entity_id: str, depth: int = 1) -> Dict:
+    def get_neighborhood(self, entity_id: str, depth: int = 1) -> dict:
         """Get the neighborhood of an entity in the graph.
         
         Args:

@@ -1,12 +1,11 @@
 """Document processing progress tracking and notification system."""
 
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
 import json
-from pathlib import Path
 import threading
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class ProcessingStatus(Enum):
@@ -31,12 +30,12 @@ class DocumentProcessingTask:
     status: ProcessingStatus
     progress: float = 0.0
     current_stage: str = ""
-    error_message: Optional[str] = None
+    error_message: str | None = None
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    end_time: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'task_id': self.task_id,
@@ -61,7 +60,7 @@ class ProcessingTracker:
         """Initialize processing tracker."""
         from rag_kb.config import settings
         self.tracker_file = settings.data_dir / 'processing_tracker.json'
-        self.tasks: Dict[str, DocumentProcessingTask] = {}
+        self.tasks: dict[str, DocumentProcessingTask] = {}
         self.lock = threading.Lock()
         self._load_tasks()
     
@@ -90,7 +89,7 @@ class ProcessingTracker:
         except Exception as e:
             print(f"Error saving tasks: {e}")
     
-    def _dict_to_task(self, data: Dict[str, Any]) -> DocumentProcessingTask:
+    def _dict_to_task(self, data: dict[str, Any]) -> DocumentProcessingTask:
         """Convert dictionary to task object."""
         return DocumentProcessingTask(
             task_id=data['task_id'],
@@ -108,7 +107,7 @@ class ProcessingTracker:
         )
     
     def create_task(self, user_id: str, kb_name: str, file_path: str, 
-                   file_name: str, metadata: Dict[str, Any] = None) -> str:
+                   file_name: str, metadata: dict[str, Any] = None) -> str:
         """Create a new processing task.
         
         Args:
@@ -182,7 +181,7 @@ class ProcessingTracker:
             self._save_tasks()
             return True
     
-    def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_task(self, task_id: str) -> dict[str, Any] | None:
         """Get task by ID.
         
         Args:
@@ -196,7 +195,7 @@ class ProcessingTracker:
                 return self.tasks[task_id].to_dict()
         return None
     
-    def get_user_tasks(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_tasks(self, user_id: str) -> list[dict[str, Any]]:
         """Get all tasks for a user.
         
         Args:
@@ -212,7 +211,7 @@ class ProcessingTracker:
                 if task.user_id == user_id
             ]
     
-    def get_kb_tasks(self, kb_name: str) -> List[Dict[str, Any]]:
+    def get_kb_tasks(self, kb_name: str) -> list[dict[str, Any]]:
         """Get all tasks for a knowledge base.
         
         Args:
@@ -228,7 +227,7 @@ class ProcessingTracker:
                 if task.kb_name == kb_name
             ]
     
-    def get_active_tasks(self) -> List[Dict[str, Any]]:
+    def get_active_tasks(self) -> list[dict[str, Any]]:
         """Get all active (not completed/failed) tasks.
         
         Returns:
@@ -241,7 +240,7 @@ class ProcessingTracker:
                 if task.status not in [ProcessingStatus.COMPLETED, ProcessingStatus.FAILED]
             ]
     
-    def get_processing_summary(self, kb_name: str) -> Dict[str, Any]:
+    def get_processing_summary(self, kb_name: str) -> dict[str, Any]:
         """Get processing summary for a knowledge base.
         
         Args:

@@ -1,10 +1,9 @@
 """Validation utilities for user IDs and knowledge base names."""
 
 import re
-from typing import Tuple
 
 
-def validate_user_id(user_id: str) -> Tuple[bool, str]:
+def validate_user_id(user_id: str) -> tuple[bool, str]:
     """Validate user ID format.
     
     Args:
@@ -32,7 +31,7 @@ def validate_user_id(user_id: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_kb_name(kb_name: str) -> Tuple[bool, str]:
+def validate_kb_name(kb_name: str) -> tuple[bool, str]:
     """Validate knowledge base name format.
     
     Args:

@@ -1,10 +1,10 @@
 """Access control list (ACL) and RBAC utilities for RAG KB."""
 
-from typing import Dict, List
+
 from rag_kb.models import SearchResult
 
 
-def allowed_sources(user_roles: Dict[str, List[str]]):
+def allowed_sources(user_roles: dict[str, list[str]]):
     """Determine allowed sources based on user roles.
     
     Args:
@@ -17,7 +17,7 @@ def allowed_sources(user_roles: Dict[str, List[str]]):
     return []
 
 
-def filter_results(results: List[SearchResult], user_roles: Dict[str, List[str]]) -> List[SearchResult]:
+def filter_results(results: list[SearchResult], user_roles: dict[str, list[str]]) -> list[SearchResult]:
     """Filter search results based on user ACL.
     
     Args:
@@ -40,7 +40,7 @@ def filter_results(results: List[SearchResult], user_roles: Dict[str, List[str]]
     return filtered
 
 
-def filter_by_source(answer: str, allowed: List[str]) -> str:
+def filter_by_source(answer: str, allowed: list[str]) -> str:
     """Filter answer content based on allowed sources.
     
     Args:
@@ -55,7 +55,7 @@ def filter_by_source(answer: str, allowed: List[str]) -> str:
     return answer
 
 
-def build_acl_filter(user_roles: Dict[str, List[str]]) -> Dict[str, List[str]]:
+def build_acl_filter(user_roles: dict[str, list[str]]) -> dict[str, list[str]]:
     """Build ACL filter dictionary from user roles.
     
     Args:

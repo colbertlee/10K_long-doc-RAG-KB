@@ -2,16 +2,16 @@
 
 from .advanced import (
     AdvancedGraphAnalyzer,
+    AnalysisType,
     GraphNode,
     GraphPath,
-    AnalysisType,
-    graph_analyzer
+    graph_analyzer,
 )
 
 __all__ = [
     'AdvancedGraphAnalyzer',
+    'AnalysisType',
     'GraphNode',
     'GraphPath',
-    'AnalysisType',
     'graph_analyzer'
 ]

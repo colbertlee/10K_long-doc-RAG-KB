@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-09-04
+
+### Enterprise RAG Optimization - Major Release
+- **BM25 Sparse Search**: Complete BM25 indexing system with index builder and weighted RRF fusion
+- **BGE-Reranker Integration**: Advanced reranking using sentence-transformers (v5.5.1) for improved result precision
+- **RAGAS Evaluation Framework**: Comprehensive quality assessment framework (v0.4.3) for automated RAG system evaluation
+- **Performance Tuning System**: YAML-based configuration with speed/accuracy/balance optimization profiles
+- **Knowledge Graph Enhancement**: Proper node naming with document titles and content-based ID mapping
+- **Multi-Knowledge Base System**: Product isolation with separate knowledge bases and unified management
+- **Advanced RAG Features**: Intent classification, optimized routing, and RLHF support for continuous improvement
+- **Anti-Hallucination System**: LLM-level quality control with strict system prompts and answer validation
+- **Comprehensive Monitoring**: Structured logging, performance metrics, and health check endpoints
+- **OCR Document Support**: Scanned PDF processing with OCR integration for enhanced document parsing
+
+### Advanced Retrieval System
+- **BM25 Index Builder**: Automatic BM25 index building from document registry with persistence
+- **Weighted RRF Fusion**: Configurable Reciprocal Rank Fusion for optimal hybrid search (default: 0.4/0.6 BM25/vector weights)
+- **Multi-Path Retrieval**: Parallel query execution with intelligent result fusion and deduplication
+- **GPU Acceleration**: CUDA support for embedding and reranking operations
+- **Result Caching**: Configurable TTL for repeated queries to improve performance
+- **Performance Profiles**: Pre-configured optimization presets for different use cases (speed/accuracy/balance)
+
+### Evaluation & Quality Framework
+- **RAGAS Integration**: Complete evaluation framework with 15+ metrics (faithfulness, answer relevance, context precision)
+- **Quality Monitoring**: Real-time quality thresholds and performance metrics tracking
+- **Automated Testing**: Regression testing framework with baseline comparison and trend analysis
+- **Answer Validation**: Strict citation rules and contradiction detection for enhanced answer quality
+- **Performance Benchmarks**: Comprehensive performance testing and optimization verification
+
+### Knowledge Graph Enhancement
+- **Proper Node Naming**: Knowledge graph nodes display meaningful document titles instead of hash IDs
+- **Content-Based ID Mapping**: Maps LightRAG doc-xxx IDs to original document IDs via content matching
+- **Enhanced Visualization**: Interactive graph visualization with Cytoscape.js integration
+- **Incremental Updates**: Efficient graph updates without full rebuild for changed documents
+- **Graph Statistics**: Node/edge counts, connectivity metrics, and neighborhood analysis
+
+### Enterprise Features
+- **Multi-Knowledge Base**: Product isolation with separate knowledge bases and unified management interface
+- **Enhanced Security**: RBAC/ACL with pre-filtering and post-filtering for department and level-based access control
+- **Monitoring System**: Comprehensive logging (console + file), performance metrics, and health check endpoints
+- **Maintenance Tools**: Automated cleanup, reindexing, recovery, and incremental update mechanisms
+- **Configuration Management**: YAML-based configuration with history tracking and persistence
+
+### Document Processing Enhancements
+- **OCR Support**: Scanned PDF document processing with OCR integration
+- **Enhanced Parsers**: Improved PDF (pdfplumber + pymupdf), Markdown, and DOCX parsers with structure detection
+- **Structure-Aware Chunking**: Better document boundary detection with semantic and structure-aware strategies
+- **Metadata Enrichment**: Rich chunk metadata (source_file, page_num, section_title, chunk_type, offset, length)
+- **Ingestion Reconciliation**: Complete pipeline tracking with integrity checks and failure recovery
+
+### API Enhancements
+- **50+ New Endpoints**: Advanced search, evaluation, monitoring, and management APIs
+- **Dual GET/POST Support**: Browser-compatible API methods for enhanced client compatibility
+- **Enhanced Documentation**: Interactive API docs with examples and use cases
+- **Error Handling**: Comprehensive error responses with detailed error messages and recovery suggestions
+- **Performance Endpoints**: `/metrics` endpoint for monitoring integration and performance tracking
+
+### Technical Improvements
+- **Dependency Updates**: sentence-transformers v5.5.1, ragas v0.4.3, torch v2.13.0, datasets v5.0.1
+- **New Modules**: retrieval (bm25_search, hybrid_search, reranker), evaluation (ragas_eval, regression_tester), monitoring, graph_analysis, maintenance
+- **Performance Optimizations**: GPU support, result caching, optimized worker management, index persistence
+- **Testing Coverage**: 30+ new test files with integration tests, performance tests, and regression tests
+- **Code Quality**: Enhanced error handling, logging, and validation across all modules
+
+### Breaking Changes
+- None (fully backward compatible with v0.5.x)
+
+### Migration Guide
+Existing installations can upgrade safely:
+```bash
+pip install -e .[all]
+```
+For performance optimization, copy `configs/performance.yaml` and tune parameters according to use case.
+
+### Known Issues
+- LightRAG entity extraction may fall back to simple graph for complex documents
+- GPU acceleration requires CUDA-compatible hardware
+- Large document sets may require increased embedding timeout configuration
+
+## [0.5.55] - 2026-08-25
+
+### Complete Document Processing Pipeline
+- **File Parsing**: Comprehensive parser registry with PDF, Markdown, and text support
+- **Data Cleaning**: Enhanced text cleaning with PII masking and noise removal
+- **Document Chunking**: Structure-aware chunking with configurable token size and overlap
+- **Vectorization**: Ollama-based embedding with configurable timeout settings
+- **Vector Database Storage**: LightRAG integration with nano-vector database
+
+### Technical Improvements
+- **Processing Pipeline**: Created complete document processing pipeline module
+- **Simple Processor**: Added simple processor bypassing LightRAG complexity
+- **Configuration Optimization**: Increased embedding timeout to 20 minutes
+- **Worker Management**: Reduced concurrent workers to 1 to avoid timeout
+- **Chunk Size**: Reduced chunk size to 600 tokens for better performance
+
+### Bug Fixes
+- **Circular Import**: Fixed circular import between processing and ingest modules
+- **Embedding Timeout**: Fixed embedding worker timeout issues with increased timeout
+- **LightRAG Configuration**: Removed unsupported LLM configuration parameters
+- **Pipeline Dependencies**: Fixed missing dependencies in processing pipeline
+
+### New Modules
+- **rag_kb.processing.complete_pipeline**: Complete document processing pipeline
+- **rag_kb.processing.tracker**: Document processing progress tracking
+- **scripts.simple_processor**: Simple document processor for testing
+
 ## [0.5.54] - 2026-08-25
 
 ### Knowledge Graph Naming Fix

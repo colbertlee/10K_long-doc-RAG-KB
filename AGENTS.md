@@ -4,28 +4,99 @@
 
 This is an enterprise-grade RAG (Retrieval-Augmented Generation) knowledge base system designed to handle 10,000+ long documents efficiently. The system integrates LightRAG for hybrid retrieval, BM25 for sparse search, Cross-Encoder reranking, comprehensive security, evaluation, and deployment capabilities.
 
-## Latest Implementation Status (v0.3.2)
+## Latest Implementation Status (v0.6.0)
 
-The system has been enhanced with comprehensive user journey analysis and documentation:
+The system has been enhanced with comprehensive enterprise-grade RAG capabilities:
 
 ### ✅ Current Status
-- **Stable Version**: v0.3.0 (recommended for use)
-- **Latest Analysis**: v0.3.2 (documentation and user journey analysis)
-- **Known Issues**: v0.5.0 has technical issues (routes.py corruption)
+- **Stable Version**: v0.6.0 (recommended for use) - Enterprise RAG Optimization
+- **Latest Enhancement**: Advanced retrieval system with BM25, BGE-Reranker, and RAGAS evaluation
+- **Previous Version**: v0.5.55 (document processing pipeline)
 
-### ✅ Completed Enhancements (v0.3.0)
-- **Python 3.11+ Compatibility**: Updated from 3.9 to meet requirements
-- **Incremental Updates**: File hash-based change detection with document registry
-- **Enterprise Security**: Comprehensive RBAC/ACL with pre-filtering and post-filtering
-- **Hybrid Search**: BM25 sparse search + LightRAG hybrid with RRF fusion
-- **Advanced Reranking**: Cross-encoder and rule-based reranking with GPU support
-- **Knowledge Graph**: LightRAG graph extraction with NetworkX integration
-- **RAGAS Evaluation**: Complete evaluation framework with 15+ test cases
-- **Deployment Scripts**: PowerShell and batch automation with health checks
-- **Performance Monitoring**: Structured logging, system metrics, and performance tracking
-- **Performance Optimization**: Configurable templates and tuning guidelines
+### ✅ Completed Enhancements (v0.6.0 - Enterprise RAG Optimization)
+- **Advanced Retrieval System**:
+  - BM25 sparse search with complete index builder and persistence
+  - BGE-Reranker integration using sentence-transformers (v5.5.1)
+  - Weighted RRF fusion for optimal hybrid search (configurable BM25/vector weights)
+  - Multi-path retrieval with parallel query execution and intelligent fusion
+  - GPU acceleration support for embedding and reranking operations
+  - Result caching with configurable TTL for performance optimization
+- **Evaluation & Quality Framework**:
+  - RAGAS evaluation framework (v0.4.3) with 15+ quality metrics
+  - Performance tuning system with YAML-based configuration profiles
+  - Quality monitoring with real-time thresholds and performance metrics
+  - Automated regression testing framework with baseline comparison
+  - Answer validation with strict citation rules and contradiction detection
+- **Knowledge Graph Enhancement**:
+  - Proper node naming with meaningful document titles instead of hash IDs
+  - Content-based ID mapping between LightRAG and document registry
+  - Enhanced interactive graph visualization with Cytoscape.js integration
+  - Incremental graph updates without full rebuild for changed documents
+  - Graph statistics with node/edge counts and connectivity metrics
+- **Enterprise Features**:
+  - Multi-knowledge base system with product isolation and unified management
+  - Enhanced RBAC/ACL security with pre-filtering and post-filtering
+  - Comprehensive monitoring system with structured logging and health checks
+  - Maintenance tools for automated cleanup, reindexing, and recovery
+  - Configuration management with YAML-based configs and history tracking
+- **Document Processing Enhancements**:
+  - OCR support for scanned PDF documents
+  - Enhanced parsers (PDF, Markdown, DOCX) with structure detection
+  - Structure-aware chunking with semantic and boundary detection strategies
+  - Rich chunk metadata (source_file, page_num, section_title, chunk_type, offset, length)
+  - Ingestion reconciliation with complete pipeline tracking and integrity checks
+- **API Enhancements**:
+  - 50+ new endpoints for advanced search, evaluation, and monitoring
+  - Dual GET/POST support for browser compatibility
+  - Enhanced API documentation with interactive examples
+  - Comprehensive error handling with detailed recovery suggestions
+  - Performance endpoints for monitoring integration
+- **Technical Improvements**:
+  - New modules: retrieval, evaluation, monitoring, graph_analysis, maintenance
+  - Dependency updates: sentence-transformers v5.5.1, ragas v0.4.3, torch v2.13.0
+  - Performance optimizations with GPU support and result caching
+  - 30+ new test files with integration, performance, and regression tests
+  - Enhanced error handling, logging, and validation across all modules
 
-### 📊 User Journey Analysis (v0.3.2)
+### ✅ Previous Enhancements (v0.5.55 - Document Processing Pipeline)
+- **Complete Document Processing Pipeline**: Comprehensive parser registry with PDF, Markdown, and text support
+- **Data Cleaning**: Enhanced text cleaning with PII masking and noise removal
+- **Document Chunking**: Structure-aware chunking with configurable token size and overlap
+- **Vectorization**: Ollama-based embedding with configurable timeout settings
+- **Vector Database Storage**: LightRAG integration with nano-vector database
+- **Processing Pipeline**: Created complete document processing pipeline module
+- **Simple Processor**: Added simple processor bypassing LightRAG complexity
+- **Configuration Optimization**: Increased embedding timeout to 20 minutes
+- **Worker Management**: Reduced concurrent workers to 1 to avoid timeout
+- **Chunk Size**: Reduced chunk size to 600 tokens for better performance
+
+### ✅ Historical Enhancements (v0.4.0 - v0.5.54)
+- **Document Parsing Enhancements**:
+  - DOCX parser with python-docx integration
+  - Enhanced PDF parser with structure detection (headings, lists, tables)
+  - Enhanced Markdown parser with structure analysis
+  - Updated parser registry with priority ordering
+- **Advanced Chunking**:
+  - Semantic chunker using sentence-transformers (paraphrase-multilingual-MiniLM-L12-v2)
+  - Structure-aware chunker respecting document boundaries
+  - Enhanced Chunk model with source_file, page_num, section_title, chunk_type, offset, length
+  - Fallback mechanisms for model unavailability
+- **Ingestion Reconciliation**:
+  - Complete pipeline tracking (upload → parsing → indexing)
+  - Comprehensive reconciliation reports with integrity checks
+  - Failure logging and retry mechanisms
+  - New API endpoints: `/api/v1/ingestion/reconciliation`, `/api/v1/ingestion/document/{doc_id}`, `/api/v1/ingestion/retry/{doc_id}`, `/api/v1/ingestion/cleanup`
+- **Testing Coverage**: 28+ new test cases across all enhanced modules
+
+### 🔄 Multi-Step RAG Enhancements (v0.4.0)
+- **Query Decomposition**: Intelligent reference resolution and sub-query generation
+- **Multi-Step Retrieval**: Parallel query execution with deduplication and RRF fusion
+- **Enhanced Answer Generation**: Strict citation rules and contradiction detection
+- **Conversation History**: Context-aware reference resolution for follow-up questions
+- **Fallback Mechanisms**: Graceful handling of insufficient information and system failures
+- **Advanced API Endpoints**: New `/multi-step-search` and `/multi-step-debug` endpoints
+
+### �📊 User Journey Analysis (v0.3.2)
 - **Complete Workflow Analysis**: 7-step user journey from start to finish
 - **Problem Identification**: Each step's current issues and impact
 - **Improvement Roadmap**: Prioritized improvements (P0, P1, P2)
@@ -35,16 +106,19 @@ The system has been enhanced with comprehensive user journey analysis and docume
 
 - **Python**: 3.11+ (required for modern dependencies)
 - **Web Framework**: FastAPI with Uvicorn
-- **RAG Engine**: LightRAG (lightrag-hku>=1.5.6), BM25 (secondary)
-- **Local LLM**: Ollama with qwen3.5:4b model (or gemma4:e4b)
-- **Embedding**: Ollama with nomic-embed-text or sentence-transformers
+- **RAG Engine**: LightRAG (lightrag-hku>=1.5.6), BM25 sparse search, Hybrid retrieval with RRF fusion
+- **Reranking**: BGE-Reranker using sentence-transformers (v5.5.1) with GPU support
+- **Local LLM**: Ollama with qwen3.5:4b model (or gemma4:e4b), Minimax API support
+- **Embedding**: Ollama with nomic-embed-text or sentence-transformers with GPU acceleration
+- **Evaluation**: RAGAS framework (v0.4.3) with 15+ quality metrics
 - **Frontend**: Custom interfaces with Cytoscape.js for graph visualization, Open WebUI integration
-- **Testing**: pytest with custom RAGAS evaluation framework
-- **Graph Processing**: NetworkX for knowledge graph visualization
-- **Monitoring**: psutil for system metrics tracking
-- **Performance**: rank-bm25 for sparse search optimization
-- **Dependencies**: numpy>=2.0.0,<2.8.0, pydantic-core==2.46.4, cryptography==48.0.0
+- **Testing**: pytest with RAGAS evaluation framework, 30+ comprehensive test files
+- **Graph Processing**: NetworkX for knowledge graph visualization and analysis
+- **Monitoring**: psutil for system metrics, structured logging, performance tracking
+- **Performance**: rank-bm25 for sparse search, weighted RRF fusion, result caching
+- **Dependencies**: numpy>=2.0.0,<2.8.0, pydantic-core==2.46.4, cryptography==48.0.0, sentence-transformers>=5.5.1, ragas>=0.4.3, torch>=2.13.0
 - **Visualization**: Cytoscape.js for interactive knowledge graph display
+- **GPU Support**: CUDA acceleration for embedding and reranking operations
 
 ## Build and Test Commands
 
@@ -80,6 +154,18 @@ python scripts/test_ingestion.py
 python scripts/test_hybrid_search.py
 python scripts/test_graph_extraction.py
 python scripts/end_to_end_test.py  # NEW: Complete business flow validation
+python scripts/test_multi_step_workflow.py  # NEW: Multi-step RAG workflow testing
+python scripts/test_enhanced_parsers_real.py  # NEW: Enhanced parsers testing
+python scripts/test_simple_enhanced.py  # NEW: Simple enhanced testing
+python scripts/test_direct_enhanced.py  # NEW: Direct enhanced testing
+
+# Run multi-step RAG specific tests
+pytest tests/test_multi_step_rag.py -v  # NEW: Multi-step RAG integration tests
+
+# Run evaluation set tests
+pytest tests/test_eval_sets.py -v  # NEW: Evaluation set management tests
+python scripts/run_regression_tests.py --mode full  # NEW: Full regression test suite
+python scripts/run_regression_tests.py --mode quick  # NEW: Quick demonstration test
 ```
 
 ### Starting the Server
@@ -123,9 +209,14 @@ rag-kb/
 │   ├── uploads/           # Uploaded files
 │   ├── users/             # User-specific data
 │   ├── samples/           # Sample documents for testing (NEW)
-│   └── bm25_cache/        # BM25 index cache
+│   ├── bm25_cache/        # BM25 index cache
+│   ├── eval_sets/         # Evaluation set storage (NEW)
+│   ├── regression_results/ # Regression test results (NEW)
+│   ├── execution_results/  # Execution results (NEW)
+│   └── reports/           # Generated reports (NEW)
 ├── docs/                   # Documentation
 │   └── PERFORMANCE_TUNING.md  # Performance optimization guide (NEW)
+│   └── EVALUATION_SETS.md  # Evaluation sets documentation (NEW)
 ├── logs/                   # Log files (auto-created) (NEW)
 ├── scripts/               # Deployment scripts
 │   ├── manage.ps1        # Unified management script (NEW)
@@ -134,9 +225,11 @@ rag-kb/
 │   ├── import_local_folder.ps1 # Folder import (NEW)
 │   ├── _start_internal.ps1 # Internal startup script (RENAMED)
 │   ├── test_ingestion.py # Ingestion testing (NEW)
+│   ├── run_regression_tests.py # Automated regression testing (NEW)
 │   ├── test_hybrid_search.py # Search testing (NEW)
 │   ├── test_graph_extraction.py # Graph testing (NEW)
-│   └── end_to_end_test.py # Complete business flow validation (NEW)
+│   ├── end_to_end_test.py # Complete business flow validation (NEW)
+│   └── test_multi_step_workflow.py # Multi-step RAG workflow testing (NEW)
 ├── src/rag_kb/           # Main source code
 │   ├── api/              # API layer
 │   │   ├── main.py       # FastAPI application with monitoring (UPDATED)
@@ -154,12 +247,27 @@ rag-kb/
 │   │   ├── llm_funcs.py  # LLM functions
 │   │   └── graph_extractor.py # Knowledge graph extraction (NEW)
 │   ├── parsers/          # Document parsers
+│   │   ├── docx_parser.py # DOCX parser with structure preservation (NEW)
+│   │   ├── pdf_pdfplumber.py # Enhanced PDF parser (UPDATED)
+│   │   └── markdown_parser.py # Enhanced Markdown parser (UPDATED)
+│   ├── engines/          # RAG engines (NEW MODULE)
+│   │   ├── rag_query_engine.py # Enterprise RAG query engine (NEW)
+│   │   ├── enhanced_answer_generator.py # Enhanced answer generator with citations (NEW)
+│   │   └── multi_step_rag_engine.py # Multi-step RAG engine (NEW)
 │   ├── retrieval/        # Search engines (NEW MODULE)
 │   │   ├── bm25_search.py # BM25 sparse search (NEW)
 │   │   ├── hybrid_search.py # Hybrid search with RRF (NEW)
-│   │   └── reranker.py   # Cross-encoder reranking (NEW)
+│   │   ├── reranker.py   # Cross-encoder reranking (NEW)
+│   │   ├── query_decomposer.py # Query decomposition and reference resolution (NEW)
+│   │   └── multi_step_retrieval.py # Multi-step retrieval with parallel execution (NEW)
 │   ├── security/         # Security module
 │   │   └── acl.py        # Enhanced RBAC/ACL implementation (UPDATED)
+│   ├── evaluation/       # Evaluation and testing (NEW MODULE)
+│   │   ├── eval_sets.py  # Evaluation set management (NEW)
+│   │   ├── regression_tester.py # Regression testing framework (NEW)
+│   │   ├── eval_runner.py # Execution and reporting (NEW)
+│   │   ├── ragas_evaluator.py # RAGAS evaluation integration (NEW)
+│   │   └── rag_judge.py  # Expert judge evaluation (NEW)
 │   └── utils/            # Utility functions
 │       ├── hashing.py    # File hashing utilities
 │       ├── logging.py    # Monitoring and logging (NEW)
@@ -168,11 +276,13 @@ rag-kb/
 │   └── rag_kb_integration.html # Integration interface
 ├── tests/                # Test suite
 │   ├── test_dummy.py     # Basic tests
+│   ├── test_eval_sets.py # Evaluation set management tests (NEW)
 │   ├── test_chunking.py  # Chunking tests
 │   ├── test_ingest.py    # Ingestion tests
 │   ├── test_lightrag.py   # LightRAG tests
 │   ├── test_eval.py       # Evaluation tests
-│   └── test_ragas_eval.py # RAGAS evaluation tests (NEW)
+│   ├── test_ragas_eval.py # RAGAS evaluation tests (NEW)
+│   └── test_multi_step_rag.py # Multi-step RAG integration tests (NEW)
 └── pyproject.toml       # Project configuration (UPDATED)
 ```
 
@@ -220,15 +330,35 @@ rag-kb/
 - **Metrics API**: `/metrics` endpoint for monitoring integration
 - **Statistics**: Node/edge counts, connectivity metrics
 
+### Multi-Step RAG Implementation (NEW)
+- **Three-Step Workflow**: Query decomposition → Parallel retrieval → Enhanced answer generation
+- **Reference Resolution**: Context-aware resolution of pronouns and references in conversation
+- **Query Decomposition**: Intelligent generation of 1-3 complementary sub-queries (core fact, synonym, context)
+- **Parallel Retrieval**: Concurrent execution of multiple sub-queries with timeout handling
+- **RRF Fusion**: Reciprocal Rank Fusion for combining results from different query paths
+- **Deduplication**: Content-based deduplication across multiple retrieval results
+- **Strict Citation Rules**: Answer generation with mandatory source citations
+- **Contradiction Detection**: Automatic detection and handling of conflicting information
+- **Fallback Mechanisms**: Graceful handling of insufficient information and system failures
+- **Conversation History**: Session-based context management for follow-up questions
+
 ## API Endpoints
 
 ### Core Endpoints
-- `POST /api/v1/ingest` - Document ingestion (with performance monitoring)
+- `POST /api/v1/ingest` - Document ingestion (with performance monitoring and reconciliation tracking)
 - `POST /api/v1/import-folder` - Local folder batch import (NEW)
 - `POST /api/v1/search` - Knowledge base search (with ACL filtering)
 - `POST /api/v1/chat/completions` - OpenAI-compatible chat (with streaming)
+- `POST /api/v1/multi-step-search` - Multi-step RAG search with query decomposition (NEW)
+- `GET /api/v1/multi-step-debug` - Debug endpoint for multi-step workflow (NEW)
 - `GET /health` - Health check with system metrics (ENHANCED)
 - `GET /metrics` - Performance metrics and statistics (NEW)
+
+### Ingestion Reconciliation Endpoints (NEW)
+- `POST /api/v1/ingestion/reconciliation` - Get comprehensive reconciliation report
+- `GET /api/v1/ingestion/document/{doc_id}` - Get specific document reconciliation status
+- `POST /api/v1/ingestion/retry/{doc_id}` - Retry failed document ingestion
+- `POST /api/v1/ingestion/cleanup` - Clean up old reconciliation records
 
 ### User Management
 - `GET /api/v1/current-user` - Current user info
@@ -250,6 +380,10 @@ rag-kb/
 2. **Integration Tests**: Multi-component interaction testing
 3. **RAGAS Evaluation**: Comprehensive RAG quality assessment (NEW)
 4. **Performance Tests**: Load and stress testing (NEW)
+5. **Multi-Step RAG Tests**: Three-step workflow validation (NEW)
+6. **Enhanced Parser Tests**: Document parser functionality testing (NEW)
+7. **Enhanced Chunking Tests**: Advanced chunking strategy testing (NEW)
+8. **Ingestion Reconciliation Tests**: Pipeline tracking and validation (NEW)
 
 ### Key Test Files
 - `tests/test_chunking.py` - Chunking strategy tests
@@ -257,11 +391,18 @@ rag-kb/
 - `tests/test_lightrag.py` - LightRAG integration tests
 - `tests/test_ragas_eval.py` - RAGAS evaluation framework tests (NEW)
 - `tests/test_eval.py` - General evaluation tests
+- `tests/test_multi_step_rag.py` - Multi-step RAG integration tests (NEW)
+- `tests/test_enhanced_parsers.py` - Enhanced document parsers tests (NEW)
+- `tests/test_enhanced_chunking.py` - Enhanced chunking strategies tests (NEW)
+- `tests/test_ingestion_reconciler.py` - Ingestion reconciliation system tests (NEW)
 
 ### Custom Test Scripts (NEW)
 - `scripts/test_ingestion.py` - Document ingestion validation
 - `scripts/test_hybrid_search.py` - Hybrid search functionality testing
 - `scripts/test_graph_extraction.py` - Knowledge graph extraction testing
+- `scripts/test_enhanced_parsers_real.py` - Enhanced parsers real-world testing (NEW)
+- `scripts/test_simple_enhanced.py` - Simple enhanced functionality testing (NEW)
+- `scripts/test_direct_enhanced.py` - Direct component testing (NEW)
 
 ## Performance Benchmarks
 
@@ -364,8 +505,116 @@ rag-kb/
 - Ensure execution policy allows script running
 - Path separators should use backslashes for Windows paths
 
+## Stage 1 Implementation Details (v0.4.0)
+
+### Enhanced Document Parsing
+- **DOCX Parser**: Supports .docx files with python-docx integration
+  - Preserves document structure (headings, paragraphs, tables)
+  - Extracts metadata (author, title, creation date)
+  - Converts tables to markdown format
+  - Maintains heading hierarchy
+- **Enhanced PDF Parser**: Improved structure detection
+  - Heading detection (all caps, numbered patterns, common words)
+  - List item detection (bullet points, numbered lists, lettered lists)
+  - Table extraction with markdown formatting
+  - Page-level content organization
+- **Enhanced Markdown Parser**: Structure analysis
+  - Heading, list, table, code block detection
+  - Metadata flags for structure presence
+  - Preserves original markdown formatting
+
+### Advanced Chunking Strategies
+- **Semantic Chunker**: Intelligent text segmentation
+  - Uses sentence-transformers (paraphrase-multilingual-MiniLM-L12-v2)
+  - Sentence boundary detection
+  - Semantic similarity-based grouping
+  - Overlap management for context continuity
+  - Fallback to simple chunking when model unavailable
+- **Structure-Aware Chunker**: Document boundary respect
+  - Element type detection (heading, table, list, code, text)
+  - Section path tracking
+  - Page number extraction
+  - Size constraint enforcement
+  - Natural boundary preservation
+
+### Enhanced Chunk Model
+- **New Metadata Fields**:
+  - `source_file`: Original source file name
+  - `page_num`: Page number in source document
+  - `section_title`: Title of containing section
+  - `chunk_type`: Type (text, table, heading, list, code)
+  - `offset`: Character offset in document
+  - `length`: Chunk length in characters
+  - `table_id`: Table identifier if applicable
+  - `list_index`: List index if applicable
+
+### Ingestion Reconciliation System
+- **Pipeline Tracking**: Complete lifecycle monitoring
+  - Upload stage: File hash calculation and registration
+  - Parsing stage: Document processing status
+  - Indexing stage: LightRAG integration status
+  - Error tracking: Detailed failure logging
+- **Reconciliation Reports**: Comprehensive validation
+  - Summary statistics (uploaded, parsed, indexed, failed)
+  - Integrity checks (upload=parsed+failed, parsed=indexed+failed)
+  - Failed document analysis
+  - Health status calculation
+- **Retry Mechanisms**: Error recovery
+  - Failed document retry functionality
+  - Status reset for reprocessing
+  - Retry count tracking
+- **Cleanup Operations**: Maintenance
+  - Old record cleanup based on age
+  - Configurable retention periods
+  - Safe deletion of completed documents
+
+### Testing Enhancements
+- **Enhanced Parser Tests**: 10 test cases
+  - DOCX parser functionality
+  - Enhanced PDF parser structure detection
+  - Enhanced Markdown parser analysis
+  - Parser registry validation
+  - Integration testing
+- **Enhanced Chunking Tests**: Comprehensive coverage
+  - Semantic chunker with fallback
+  - Structure-aware chunker functionality
+  - Enhanced metadata validation
+  - Chunk type detection
+  - Size constraint testing
+- **Ingestion Reconciliation Tests**: 18 test cases
+  - Reconciler initialization
+  - Upload/parsing/indexing recording
+  - Reconciliation report generation
+  - Document status queries
+  - Retry functionality
+  - Cleanup operations
+  - Error recovery scenarios
+
 ## Future Enhancement Areas
 
+### Stage 2 - Query Enhancement (Planned)
+1. **Query Rewriting**: Context-aware query modification for better retrieval
+2. **Reference Resolution**: Pronoun and reference resolution in multi-turn conversations
+3. **Conversation History**: Session-based context management
+4. **Query Decomposition**: Intelligent sub-query generation
+
+### Stage 2 - Retrieval Enhancement (Planned)
+1. **Folder/Type Filtering**: Enhanced filtering capabilities
+2. **Advanced Reranking**: More sophisticated reranking models
+3. **Hybrid Search Optimization**: Performance tuning for mixed retrieval
+
+### Stage 2 - Answer Enhancement (Planned)
+1. **Source Linking**: Precise answer-to-source mapping
+2. **Position Tracking**: Character-level position information
+3. **Citation Enhancement**: Improved citation accuracy and formatting
+
+### Stage 3 - Advanced Features (Planned)
+1. **OCR Support**: Scanned document processing
+2. **Folder Monitoring**: Automatic reindexing on file changes
+3. **Multi-modal Support**: Image and table processing
+4. **Distributed Processing**: Multi-node deployment support
+
+### Legacy Future Areas
 1. **Advanced Reranking**: Integration with more sophisticated reranking models
 2. **Multi-modal Support**: Image and table processing capabilities
 3. **Distributed Processing**: Support for multi-node deployment

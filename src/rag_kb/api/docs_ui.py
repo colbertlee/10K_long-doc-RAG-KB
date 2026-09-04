@@ -1,13 +1,10 @@
 """Document management UI for RAG Knowledge Base."""
 
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-from typing import Optional
-import shutil
-import json
 import os
+from pathlib import Path
+
+from fastapi import APIRouter
+from fastapi.responses import HTMLResponse
 
 router = APIRouter()
 
@@ -374,8 +371,10 @@ async def document_management_ui():
                 for (let i = 0; i < files.length; i++) {
                     const formData = new FormData();
                     formData.append('file', files[i]);
+                    formData.append('dept', dept);
+                    formData.append('level', level);
 
-                    await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/upload', {
+                    await fetch('/api/v1/ingest', {
                         method: 'POST',
                         body: formData
                     });
@@ -384,15 +383,8 @@ async def document_management_ui():
                     updateProgress('upload-progress', 30 + (uploadedCount / files.length) * 60);
                 }
 
-                // Ingest documents
-                updateProgress('upload-progress', 90);
-                await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/ingest', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        acl: { read: [userId], write: [userId] }
-                    })
-                });
+                // Ingest documents (skip - already done in ingest endpoint)
+                updateProgress('upload-progress', 100);
 
                 updateProgress('upload-progress', 100);
                 showStatus('upload-status', '成功上传 ' + files.length + ' 个文档！', 'success');
@@ -506,8 +498,10 @@ async def document_management_ui():
                 for (let i = 0; i < files.length; i++) {
                     const formData = new FormData();
                     formData.append('file', files[i]);
+                    formData.append('dept', dept);
+                    formData.append('level', level);
 
-                    await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/upload', {
+                    await fetch('/api/v1/ingest', {
                         method: 'POST',
                         body: formData
                     });
@@ -516,15 +510,8 @@ async def document_management_ui():
                     updateProgress('folder-progress', 20 + (uploadedCount / files.length) * 60);
                 }
 
-                // Ingest documents
-                updateProgress('folder-progress', 90);
-                await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/ingest', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        acl: { read: [userId], write: [userId] }
-                    })
-                });
+                // Ingest documents (skip - already done in ingest endpoint)
+                updateProgress('folder-progress', 100);
 
                 updateProgress('folder-progress', 100);
                 showStatus('folder-status', '成功导入 ' + files.length + ' 个文档！', 'success');
@@ -544,18 +531,18 @@ async def document_management_ui():
             const kbName = document.getElementById('manage-kb-name').value;
 
             try {
-                const response = await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/stats');
-                const stats = await response.json();
+                const response = await fetch('/api/v1/documents');
+                const data = await response.json();
 
-                if (stats.error) {
-                    showStatus('document-list', '知识库不存在: ' + stats.error, 'error');
+                if (data.error) {
+                    showStatus('document-list', '获取文档列表失败: ' + data.error, 'error');
                     return;
                 }
 
                 // Show stats
-                document.getElementById('stat-total').textContent = stats.file_count;
-                const totalSize = stats.total_size_mb || 0;
-                document.getElementById('stat-size').textContent = totalSize.toFixed(2) + ' MB';
+                const documents = Array.isArray(data) ? data : (data.documents || []);
+                document.getElementById('stat-total').textContent = documents.length;
+                document.getElementById('stat-size').textContent = 'N/A';
                 document.getElementById('document-stats').style.display = 'grid';
 
                 // Load document list (placeholder)
@@ -686,7 +673,7 @@ async def document_management_ui():
 
         async function loadKbStats(userId, kbName) {
             try {
-                const response = await fetch('/api/v1/users/' + userId + '/kbs/' + kbName + '/stats');
+                const response = await fetch('/api/v1/documents');
                 const stats = await response.json();
                 
                 if (stats.error) {

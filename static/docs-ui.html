@@ -8,9 +8,11 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; position: relative; }
         .header h1 { font-size: 2.5em; margin-bottom: 10px; }
         .header p { opacity: 0.9; }
+        .back-btn { position: absolute; top: 30px; left: 30px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
         .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .card h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
         .form-group { margin-bottom: 20px; }
@@ -44,6 +46,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <button class="back-btn" onclick="window.location.href='/'">🏠 返回主页</button>
             <h1>📚 RAG知识库 - 文档管理</h1>
             <p>上传、管理和查询您的文档</p>
         </div>
@@ -51,6 +54,7 @@
         <div class="card">
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('upload')">📤 上传文档</div>
+                <div class="tab" onclick="switchTab('folder')">📁 导入文件夹</div>
                 <div class="tab" onclick="switchTab('documents')">📄 文档列表</div>
                 <div class="tab" onclick="switchTab('search')">🔍 搜索文档</div>
             </div>
@@ -81,6 +85,28 @@
                     </select>
                 </div>
                 <button class="btn" onclick="uploadFile()">上传文档</button>
+            </div>
+
+            <div id="folder-tab" class="tab-content">
+                <h2>导入本地文件夹</h2>
+                <div class="form-group">
+                    <label>文件夹路径</label>
+                    <input type="text" id="folder-path" placeholder="例如：C:\Users\YourName\Documents\MyFiles">
+                </div>
+                <div class="form-group">
+                    <label>用户ID</label>
+                    <input type="text" id="user-id" value="default" placeholder="用户ID">
+                </div>
+                <div class="form-group">
+                    <label>知识库名称</label>
+                    <input type="text" id="kb-name" value="default" placeholder="知识库名称">
+                </div>
+                <div class="form-group">
+                    <label>访问控制 (可选)</label>
+                    <input type="text" id="acl-config" placeholder='{"dept": ["Engineering"], "level": ["Internal"]}'>
+                </div>
+                <button class="btn" onclick="importFolder()">导入文件夹</button>
+                <div id="folder-import-status" style="margin-top: 15px;"></div>
             </div>
 
             <div id="documents-tab" class="tab-content">
@@ -159,11 +185,84 @@
                 if (response.ok) {
                     alert('文档上传成功！');
                     fileInput.value = '';
+                    loadDocuments(); // Refresh document list
                 } else {
-                    alert('上传失败: ' + (result.detail || '未知错误'));
+                    alert('上传失败: ' + (result.detail || result.error || '未知错误'));
                 }
             } catch (error) {
                 alert('上传失败: ' + error.message);
+            }
+        }
+
+        async function importFolder() {
+            const folderPath = document.getElementById('folder-path').value.trim();
+            const userId = document.getElementById('user-id').value.trim();
+            const kbName = document.getElementById('kb-name').value.trim();
+            const aclConfig = document.getElementById('acl-config').value.trim();
+            const statusDiv = document.getElementById('folder-import-status');
+
+            if (!folderPath) {
+                alert('请输入文件夹路径');
+                return;
+            }
+
+            statusDiv.innerHTML = '<div class="loading">正在导入文件夹...</div>';
+
+            try {
+                const requestBody = {
+                    folder_path: folderPath,
+                    user_id: userId || 'default',
+                    kb_name: kbName || 'default'
+                };
+
+                // Parse ACL if provided
+                if (aclConfig) {
+                    try {
+                        requestBody.acl = JSON.parse(aclConfig);
+                    } catch (e) {
+                        alert('ACL配置格式错误，请使用JSON格式');
+                        statusDiv.innerHTML = '';
+                        return;
+                    }
+                }
+
+                const response = await fetch(`${API_BASE}/import-folder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h3>文件夹导入成功！</h3>
+                            <p><strong>文件夹:</strong> ${result.folder_name || folderPath}</p>
+                            <p><strong>处理文件数:</strong> ${result.total_files || 0}</p>
+                            <p><strong>成功索引:</strong> ${result.indexed_count || 0}</p>
+                            <p><strong>失败:</strong> ${result.failed_count || 0}</p>
+                            ${result.details ? `<p><strong>详情:</strong> ${JSON.stringify(result.details)}</p>` : ''}
+                        </div>
+                    `;
+                    loadDocuments(); // Refresh document list
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-error">
+                            <h3>导入失败</h3>
+                            <p>${result.error || result.message || '未知错误'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <h3>导入失败</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -173,14 +272,19 @@
 
             try {
                 const response = await fetch(`${API_BASE}/documents`);
-                const documents = await response.json();
+                const data = await response.json();
 
-                if (response.ok && documents.length > 0) {
-                    listContainer.innerHTML = documents.map(doc => `
+                if (response.ok && data.success && data.documents && data.documents.length > 0) {
+                    listContainer.innerHTML = data.documents.map(doc => `
                         <div class="file-item">
                             <div class="file-info">
-                                <div class="file-name">${doc.filename || doc.doc_id}</div>
-                                <div class="file-meta">部门: ${doc.dept || 'N/A'} | 密级: ${doc.level || 'N/A'}</div>
+                                <div class="file-name">${doc.title || doc.filename || doc.doc_id}</div>
+                                <div class="file-meta">
+                                    类型: ${doc.import_type || 'upload'} | 
+                                    部门: ${doc.dept || 'N/A'} | 
+                                    密级: ${doc.level || 'N/A'}
+                                    ${doc.indexed !== undefined ? ` | 索引: ${doc.indexed ? '✓' : '✗'}` : ''}
+                                </div>
                             </div>
                             <div class="file-actions">
                                 <button class="btn btn-sm btn-danger" onclick="deleteDocument('${doc.doc_id}')">删除</button>
@@ -205,11 +309,13 @@
                     method: 'DELETE'
                 });
 
-                if (response.ok) {
+                const result = await response.json();
+
+                if (response.ok || result.success) {
                     alert('删除成功');
                     loadDocuments();
                 } else {
-                    alert('删除失败');
+                    alert('删除失败: ' + (result.error || result.detail || '未知错误'));
                 }
             } catch (error) {
                 alert('删除失败: ' + error.message);

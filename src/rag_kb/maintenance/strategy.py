@@ -1,9 +1,9 @@
 """Strategy management for closed-loop iteration and optimization."""
 
 import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any
+
 from rag_kb.config import settings
 
 
@@ -51,7 +51,7 @@ class StrategyManager:
         self.current_strategies = self._load_strategies()
         self.performance_history = self._load_performance_history()
     
-    def _load_strategies(self) -> Dict[str, Any]:
+    def _load_strategies(self) -> dict[str, Any]:
         """Load current strategies from file."""
         if self.strategy_file.exists():
             with open(self.strategy_file, 'r', encoding='utf-8') as f:
@@ -63,7 +63,7 @@ class StrategyManager:
         with open(self.strategy_file, 'w', encoding='utf-8') as f:
             json.dump(self.current_strategies, f, indent=2, ensure_ascii=False)
     
-    def _load_performance_history(self) -> List[Dict[str, Any]]:
+    def _load_performance_history(self) -> list[dict[str, Any]]:
         """Load performance history from file."""
         if self.performance_history_file.exists():
             with open(self.performance_history_file, 'r', encoding='utf-8') as f:
@@ -75,7 +75,7 @@ class StrategyManager:
         with open(self.performance_history_file, 'w', encoding='utf-8') as f:
             json.dump(self.performance_history, f, indent=2, ensure_ascii=False)
     
-    def get_current_strategy(self, strategy_type: str) -> Dict[str, Any]:
+    def get_current_strategy(self, strategy_type: str) -> dict[str, Any]:
         """Get current strategy for a specific type.
         
         Args:
@@ -86,7 +86,7 @@ class StrategyManager:
         """
         return self.current_strategies.get(strategy_type, {})
     
-    def update_strategy(self, strategy_type: str, strategy_name: str, config: Dict[str, Any]):
+    def update_strategy(self, strategy_type: str, strategy_name: str, config: dict[str, Any]):
         """Update a specific strategy.
         
         Args:
@@ -101,7 +101,7 @@ class StrategyManager:
         self._save_strategies()
     
     def record_performance(self, strategy_type: str, strategy_name: str, 
-                         metrics: Dict[str, float], context: Optional[Dict[str, Any]] = None):
+                         metrics: dict[str, float], context: dict[str, Any] | None = None):
         """Record performance metrics for a strategy.
         
         Args:
@@ -127,7 +127,7 @@ class StrategyManager:
         self._save_performance_history()
     
     def analyze_performance_trend(self, strategy_type: str, strategy_name: str, 
-                                  metric: str, days: int = 7) -> Dict[str, Any]:
+                                  metric: str, days: int = 7) -> dict[str, Any]:
         """Analyze performance trend for a specific strategy.
         
         Args:
@@ -179,7 +179,7 @@ class StrategyManager:
         }
     
     def suggest_strategy_adjustment(self, strategy_type: str, metric: str, 
-                                   current_value: float, target_value: float) -> Dict[str, Any]:
+                                   current_value: float, target_value: float) -> dict[str, Any]:
         """Suggest strategy adjustments based on performance.
         
         Args:
@@ -253,7 +253,7 @@ class StrategyManager:
             'suggestions': suggestions
         }
     
-    def auto_optimize_strategy(self, strategy_type: str, target_metrics: Dict[str, float]) -> Dict[str, Any]:
+    def auto_optimize_strategy(self, strategy_type: str, target_metrics: dict[str, float]) -> dict[str, Any]:
         """Automatically optimize strategy based on target metrics.
         
         Args:
@@ -318,7 +318,7 @@ class StrategyManager:
         
         return optimization_results
     
-    def get_strategy_comparison(self, strategy_type: str) -> Dict[str, Any]:
+    def get_strategy_comparison(self, strategy_type: str) -> dict[str, Any]:
         """Compare performance of different strategies.
         
         Args:

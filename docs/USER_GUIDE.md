@@ -4,7 +4,7 @@
 1. [Getting Started](#getting-started)
 2. [Basic Usage](#basic-usage)
 3. [Document Ingestion](#document-ingestion)
-4. [Knowledge Management Features (v0.4.0)](#knowledge-management-features-v040)
+4. [Knowledge Management Features (v0.6.0)](#knowledge-management-features-v060)
 5. [Querying the Knowledge Base](#querying-the-knowledge-base)
 6. [Using Open WebUI](#using-open-webui)
 7. [Configuration](#configuration)
@@ -95,7 +95,7 @@ Set access control during ingestion:
 - `dept`: Department (e.g., "Engineering", "Sales")
 - `level`: Access level (e.g., "Internal", "Confidential")
 
-## Knowledge Management Features (v0.4.0)
+## Knowledge Management Features (v0.6.0)
 
 ### Knowledge Organization API
 

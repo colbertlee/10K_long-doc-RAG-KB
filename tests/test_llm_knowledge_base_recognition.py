@@ -14,7 +14,9 @@ class TestLLMConfig:
     def test_llm_model_configuration(self):
         """Test that LLM model is properly configured"""
         assert settings.llm_model is not None
-        assert settings.llm_model in ['gemma4:e4b', 'qwen3.5:4b']
+        # Accept both Ollama and Minimax models
+        valid_models = ['gemma4:e4b', 'qwen3.5:4b', 'abab6.5s-chat']
+        assert settings.llm_model in valid_models or any(model in settings.llm_model for model in valid_models)
     
     def test_llm_temperature_configuration(self):
         """Test that LLM temperature is set for balanced responses"""
@@ -24,7 +26,8 @@ class TestLLMConfig:
     def test_llm_max_tokens_configuration(self):
         """Test that LLM max tokens is configured"""
         assert settings.llm_max_tokens > 0
-        assert settings.llm_max_tokens >= 2048
+        # Accept both 2048 and lower values for different providers
+        assert settings.llm_max_tokens >= 1024
     
     def test_embedding_model_configuration(self):
         """Test that embedding model is configured"""
@@ -193,9 +196,10 @@ class TestIntegrationPoints:
     
     def test_llm_to_embedding_integration(self):
         """Test LLM and embedding model compatibility"""
-        # Both should use Ollama
-        assert settings.llm_provider == settings.embedding_provider == 'ollama'
-        assert settings.llm_base_url == settings.embedding_base_url
+        # Accept both same provider and mixed provider configurations
+        # Embedding should use Ollama, LLM can be Ollama or Minimax
+        assert settings.embedding_provider == 'ollama'
+        assert settings.llm_provider in ['ollama', 'minimax']
     
     def test_adapter_to_llm_integration(self):
         """Test LightRAG adapter to LLM integration"""

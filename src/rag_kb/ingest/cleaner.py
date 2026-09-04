@@ -1,9 +1,9 @@
 """Data cleaning utilities for RAG KB."""
 
-import re
 import hashlib
-from typing import List, Dict, Any
+import re
 from dataclasses import dataclass
+
 from rag_kb.models import Document
 
 
@@ -51,7 +51,7 @@ class PIIMasker:
         
         return masked_text
     
-    def detect_pii(self, text: str) -> List[PIIEntity]:
+    def detect_pii(self, text: str) -> list[PIIEntity]:
         """Detect PII entities in text.
         
         Args:
@@ -106,7 +106,7 @@ class TextCleaner:
         
         return text.strip()
     
-    def deduplicate_chunks(self, chunks: List[str], threshold: float = 0.9) -> List[str]:
+    def deduplicate_chunks(self, chunks: list[str], threshold: float = 0.9) -> list[str]:
         """Simple deduplication based on similarity.
         
         Args:
@@ -133,7 +133,7 @@ class TextCleaner:
         return unique_chunks
 
 
-def dedupe_by_hash(documents: List[Document]) -> List[Document]:
+def dedupe_by_hash(documents: list[Document]) -> list[Document]:
     """Remove duplicate documents based on file hash."""
     seen = set()
     unique = []
@@ -157,3 +157,90 @@ def mask_pii_placeholder(text: str) -> str:
     # Credit card number
     text = re.sub(r'\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}', '[CARD]', text)
     return text
+
+
+# Import enhanced document cleaner for advanced processing
+try:
+    from rag_kb.ingest.enhanced_document_cleaner import (
+        EnhancedDocumentCleaner, 
+        get_enhanced_document_cleaner
+    )
+    _enhanced_cleaner_available = True
+except ImportError:
+    _enhanced_cleaner_available = False
+    EnhancedDocumentCleaner = None
+    get_enhanced_document_cleaner = None
+
+
+class AdvancedTextCleaner:
+    """Advanced text cleaner with enhanced document processing capabilities."""
+    
+    def __init__(self, use_enhanced: bool = True):
+        """Initialize advanced text cleaner.
+        
+        Args:
+            use_enhanced: Whether to use enhanced cleaning features
+        """
+        self.use_enhanced = use_enhanced and _enhanced_cleaner_available
+        self.base_cleaner = TextCleaner()
+        
+        if self.use_enhanced:
+            self.enhanced_cleaner = get_enhanced_document_cleaner()
+        else:
+            self.enhanced_cleaner = None
+    
+    def clean_document(self, text: str, mask_pii: bool = True, merge_tables: bool = True) -> tuple[str, dict]:
+        """Clean document with advanced processing.
+        
+        Args:
+            text: Input text
+            mask_pii: Whether to mask PII
+            merge_tables: Whether to merge cross-page tables
+            
+        Returns:
+            Tuple of (cleaned_text, cleaning_metadata)
+        """
+        metadata = {
+            'cleaner_type': 'enhanced' if self.use_enhanced else 'basic',
+            'steps': [],
+            'statistics': {}
+        }
+        
+        # Step 1: Enhanced cleaning if available (includes PII masking)
+        if self.use_enhanced and self.enhanced_cleaner:
+            text, enhanced_metadata = self.enhanced_cleaner.clean_document(text)
+            metadata['steps'].extend(enhanced_metadata['cleaning_steps'])
+            metadata['statistics'].update(enhanced_metadata['statistics'])
+            
+            # Apply PII masking if requested
+            if mask_pii:
+                text = self.base_cleaner.pii_masker.mask_text(text)
+                metadata['steps'].append('pii_masking')
+            
+            # Step 2: Cross-page table merging
+            if merge_tables:
+                text, table_metadata = self.enhanced_cleaner.merge_cross_page_tables(text)
+                metadata['steps'].append('table_merging')
+                metadata['statistics']['table_merging'] = table_metadata
+        else:
+            # Step 1: Base cleaning (PII, basic noise)
+            text = self.base_cleaner.clean_text(text, mask_pii=mask_pii)
+            metadata['steps'].append('base_cleaning')
+        
+        return text, metadata
+    
+    def clean_text(self, text: str, mask_pii: bool = True) -> str:
+        """Backward compatible clean_text method.
+        
+        Args:
+            text: Input text
+            mask_pii: Whether to mask PII
+            
+        Returns:
+            Cleaned text
+        """
+        if self.use_enhanced:
+            cleaned_text, _ = self.clean_document(text, mask_pii=mask_pii)
+            return cleaned_text
+        else:
+            return self.base_cleaner.clean_text(text, mask_pii=mask_pii)

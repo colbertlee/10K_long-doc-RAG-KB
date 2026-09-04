@@ -1,19 +1,20 @@
 """Logging and monitoring utilities for RAG KB."""
 
+import json
 import logging
 import sys
-from pathlib import Path
-from datetime import datetime
-from typing import Optional, Dict, Any
-import json
-import psutil
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import psutil
 
 
 class RAGKBLogger:
     """Custom logger for RAG KB with structured logging and performance monitoring."""
     
-    def __init__(self, name: str = "rag-kb", log_level: str = "INFO", log_dir: Optional[Path] = None):
+    def __init__(self, name: str = "rag-kb", log_level: str = "INFO", log_dir: Path | None = None):
         """Initialize RAG KB logger.
         
         Args:
@@ -72,7 +73,7 @@ class RAGKBLogger:
         perf_file = self.log_dir / f"performance_{datetime.now().strftime('%Y%m%d')}.jsonl"
         self.performance_file = perf_file
     
-    def log_performance(self, operation: str, duration: float, metadata: Dict[str, Any] = None):
+    def log_performance(self, operation: str, duration: float, metadata: dict[str, Any] = None):
         """Log performance metrics.
         
         Args:
@@ -97,7 +98,7 @@ class RAGKBLogger:
         if duration > 5.0:  # Log operations taking > 5 seconds
             self.logger.warning(f"Slow operation: {operation} took {duration:.2f}s")
     
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> dict[str, Any]:
         """Get current system metrics.
         
         Returns:
@@ -124,7 +125,7 @@ class RAGKBLogger:
                         f"Memory={metrics['memory_percent']}%, "
                         f"Process Memory={metrics['process_memory_mb']:.1f}MB")
     
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary statistics.
         
         Returns:
@@ -182,7 +183,7 @@ class RAGKBLogger:
 class PerformanceMonitor:
     """Context manager for monitoring operation performance."""
     
-    def __init__(self, logger: RAGKBLogger, operation: str, metadata: Dict[str, Any] = None):
+    def __init__(self, logger: RAGKBLogger, operation: str, metadata: dict[str, Any] = None):
         """Initialize performance monitor.
         
         Args:
@@ -213,7 +214,7 @@ class PerformanceMonitor:
         return False  # Don't suppress exceptions
 
 
-def setup_logging(log_level: str = "INFO", log_dir: Optional[Path] = None) -> RAGKBLogger:
+def setup_logging(log_level: str = "INFO", log_dir: Path | None = None) -> RAGKBLogger:
     """Setup logging for RAG KB application.
     
     Args:

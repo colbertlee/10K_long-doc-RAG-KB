@@ -1,14 +1,14 @@
 """Base chunker interface for document chunking."""
 
 from abc import ABC, abstractmethod
-from typing import List
-from rag_kb.models import Document, Chunk
+
+from rag_kb.models import Chunk, Document
 
 
 class BaseChunker(ABC):
     """Abstract base class for document chunkers."""
     
     @abstractmethod
-    def chunk(self, doc: Document) -> List[Chunk]:
+    def chunk(self, doc: Document) -> list[Chunk]:
         """Split a Document into semantic Chunks."""
         ...

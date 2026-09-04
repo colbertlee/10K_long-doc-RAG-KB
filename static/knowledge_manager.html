@@ -8,8 +8,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; position: relative; }
         .header h1 { font-size: 2em; margin-bottom: 10px; }
+        .back-btn { position: absolute; top: 30px; left: 30px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
         .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .card h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
         .document-list { list-style: none; }
@@ -49,6 +51,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <button class="back-btn" onclick="window.location.href='/'">🏠 返回主页</button>
             <h1>🗂️ 知识管理</h1>
             <p>管理您的文档和知识库</p>
         </div>
@@ -76,7 +79,101 @@
         </div>
 
         <div class="card">
-            <h2>📤 上传的文档</h2>
+            <h2>� 索引状态</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-uploaded">0</div>
+                    <div class="stat-label">总上传文档</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-indexed">0</div>
+                    <div class="stat-label">已索引文档</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="unindexed-count">0</div>
+                    <div class="stat-label">未索引文档</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="index-health" style="font-size: 1.2em;">检查中...</div>
+                    <div class="stat-label">索引健康状态</div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn" onclick="refreshIndexStatus()">刷新索引状态</button>
+                <button class="btn" onclick="indexAllDocuments()">索引所有未索引文档</button>
+            </div>
+            <div id="index-status-message" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ 性能监控</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-operations">0</div>
+                    <div class="stat-label">总操作数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avg-operation-time">0s</div>
+                    <div class="stat-label">平均操作时间</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="slow-operations">0</div>
+                    <div class="stat-label">慢操作数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="recent-alerts">0</div>
+                    <div class="stat-label">最近告警</div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn" onclick="refreshPerformanceMetrics()">刷新性能指标</button>
+                <button class="btn" onclick="viewPerformanceDetails()">查看详细信息</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 索引恢复</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="backup-count">0</div>
+                    <div class="stat-label">可用备份</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="index-health-status">检查中...</div>
+                    <div class="stat-label">索引健康</div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn" onclick="createBackup()">创建备份</button>
+                <button class="btn" onclick="listBackups()">查看备份列表</button>
+                <button class="btn" onclick="repairIndex()">修复索引</button>
+            </div>
+            <div id="recovery-message" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔔 通知配置</h2>
+            <div style="margin-top: 20px;">
+                <h3>Webhook通知</h3>
+                <input type="text" id="webhook-url" placeholder="Webhook URL" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                <button class="btn" onclick="configureWebhook()">配置Webhook</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <h3>邮件通知</h3>
+                <input type="text" id="smtp-server" placeholder="SMTP服务器" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                <input type="number" id="smtp-port" placeholder="SMTP端口" value="587" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                <input type="email" id="email-address" placeholder="邮箱地址" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                <input type="password" id="email-password" placeholder="邮箱密码" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                <button class="btn" onclick="configureEmail()">配置邮件通知</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="viewNotificationHistory()">查看通知历史</button>
+            </div>
+            <div id="notification-message" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>�📤 上传的文档</h2>
             <div id="uploaded-documents">
                 <div class="empty-state">暂无上传的文档</div>
             </div>
@@ -131,10 +228,15 @@
                     // 分类文档
                     uploadedDocuments = docData.documents.filter(doc => doc.import_type !== 'folder');
                     folderDocuments = docData.documents.filter(doc => doc.import_type === 'folder');
+                    
+                    // 更新本地存储以保持同步
+                    localStorage.setItem('uploadedDocuments', JSON.stringify(uploadedDocuments));
+                    localStorage.setItem('folderDocuments', JSON.stringify(folderDocuments));
                 }
                 
                 if (folderData.success) {
                     folderRecords = folderData.folders;
+                    localStorage.setItem('folderRecords', JSON.stringify(folderRecords));
                 }
                 
                 renderDocuments();
@@ -265,18 +367,35 @@
             alert('查看文档功能需要实现文档详情API');
         }
 
-        function deleteDocument(docId) {
+        async function deleteDocument(docId) {
             if (confirm('确定要删除这个文档吗？')) {
-                // 从列表中删除
-                uploadedDocuments = uploadedDocuments.filter(doc => doc.doc_id !== docId);
-                folderDocuments = folderDocuments.filter(doc => doc.doc_id !== docId);
-                
-                // 更新本地存储
-                localStorage.setItem('uploadedDocuments', JSON.stringify(uploadedDocuments));
-                localStorage.setItem('folderDocuments', JSON.stringify(folderDocuments));
-                
-                renderDocuments();
-                updateStats();
+                try {
+                    // 调用后端API删除文档
+                    const response = await fetch(`${API_BASE}/documents/${docId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // 从列表中删除
+                        uploadedDocuments = uploadedDocuments.filter(doc => doc.doc_id !== docId);
+                        folderDocuments = folderDocuments.filter(doc => doc.doc_id !== docId);
+                        
+                        // 更新本地存储
+                        localStorage.setItem('uploadedDocuments', JSON.stringify(uploadedDocuments));
+                        localStorage.setItem('folderDocuments', JSON.stringify(folderDocuments));
+                        
+                        renderDocuments();
+                        updateStats();
+                        alert('文档删除成功！');
+                    } else {
+                        alert('删除失败: ' + (result.message || '未知错误'));
+                    }
+                } catch (error) {
+                    console.error('删除文档时出错:', error);
+                    alert('删除失败: ' + error.message);
+                }
             }
         }
 
@@ -314,6 +433,309 @@
             renderDocuments();
             updateStats();
         });
+
+        async function refreshIndexStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/index/integrity`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const report = data.report;
+                    
+                    document.getElementById('total-uploaded').textContent = report.total_uploaded;
+                    document.getElementById('total-indexed').textContent = report.total_indexed;
+                    document.getElementById('unindexed-count').textContent = report.unindexed_count;
+                    
+                    const healthElement = document.getElementById('index-health');
+                    healthElement.textContent = report.index_health;
+                    
+                    // Set color based on health status
+                    if (report.index_health === 'healthy') {
+                        healthElement.style.color = '#28a745';
+                    } else if (report.index_health === 'partial') {
+                        healthElement.style.color = '#ffc107';
+                    } else if (report.index_health === 'unhealthy') {
+                        healthElement.style.color = '#dc3545';
+                    } else {
+                        healthElement.style.color = '#6c757d';
+                    }
+                    
+                    showIndexStatusMessage('索引状态已更新', 'success');
+                } else {
+                    showIndexStatusMessage('获取索引状态失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error refreshing index status:', error);
+                showIndexStatusMessage('获取索引状态时出错', 'error');
+            }
+        }
+
+        async function indexAllDocuments() {
+            try {
+                showIndexStatusMessage('正在索引所有未索引文档...', 'info');
+                
+                const response = await fetch(`${API_BASE}/index/all`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const results = data.results;
+                    const successCount = results.success_count;
+                    const failureCount = results.failure_count;
+                    
+                    showIndexStatusMessage(
+                        `索引完成: 成功 ${successCount} 个, 失败 ${failureCount} 个`,
+                        successCount > 0 ? 'success' : 'error'
+                    );
+                    
+                    // Refresh index status after indexing
+                    setTimeout(refreshIndexStatus, 1000);
+                } else {
+                    showIndexStatusMessage('索引失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error indexing documents:', error);
+                showIndexStatusMessage('索引文档时出错', 'error');
+            }
+        }
+
+        function showIndexStatusMessage(message, type) {
+            const messageElement = document.getElementById('index-status-message');
+            messageElement.textContent = message;
+            messageElement.style.display = 'block';
+            
+            if (type === 'success') {
+                messageElement.style.background = '#d4edda';
+                messageElement.style.color = '#155724';
+            } else if (type === 'error') {
+                messageElement.style.background = '#f8d7da';
+                messageElement.style.color = '#721c24';
+            } else {
+                messageElement.style.background = '#d1ecf1';
+                messageElement.style.color = '#0c5460';
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load index status on page load
+        window.addEventListener('load', function() {
+            refreshIndexStatus();
+            refreshPerformanceMetrics();
+            loadRecoveryStatus();
+        });
+
+        async function refreshPerformanceMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/performance/summary`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const summary = data.summary;
+                    
+                    document.getElementById('total-operations').textContent = summary.total_operations;
+                    document.getElementById('avg-operation-time').textContent = summary.avg_operation_time.toFixed(2) + 's';
+                    document.getElementById('slow-operations').textContent = summary.slow_operations_count;
+                    document.getElementById('recent-alerts').textContent = summary.recent_alerts_count;
+                }
+            } catch (error) {
+                console.error('Error refreshing performance metrics:', error);
+            }
+        }
+
+        async function viewPerformanceDetails() {
+            try {
+                const response = await fetch(`${API_BASE}/performance/operations`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('性能统计:\n' + JSON.stringify(data.stats, null, 2));
+                }
+            } catch (error) {
+                console.error('Error viewing performance details:', error);
+            }
+        }
+
+        async function createBackup() {
+            try {
+                const response = await fetch(`${API_BASE}/recovery/backup`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showRecoveryMessage('备份创建成功: ' + data.backup_path, 'success');
+                    loadRecoveryStatus();
+                } else {
+                    showRecoveryMessage('备份创建失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating backup:', error);
+                showRecoveryMessage('创建备份时出错', 'error');
+            }
+        }
+
+        async function listBackups() {
+            try {
+                const response = await fetch(`${API_BASE}/recovery/backups`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('可用备份:\n' + JSON.stringify(data.backups, null, 2));
+                }
+            } catch (error) {
+                console.error('Error listing backups:', error);
+            }
+        }
+
+        async function repairIndex() {
+            try {
+                const response = await fetch(`${API_BASE}/recovery/repair`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showRecoveryMessage('索引修复成功: ' + data.message, 'success');
+                } else {
+                    showRecoveryMessage('索引修复失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error repairing index:', error);
+                showRecoveryMessage('修复索引时出错', 'error');
+            }
+        }
+
+        async function loadRecoveryStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/recovery/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.status;
+                    
+                    document.getElementById('backup-count').textContent = status.backup_count;
+                    document.getElementById('index-health-status').textContent = status.index_health;
+                }
+            } catch (error) {
+                console.error('Error loading recovery status:', error);
+            }
+        }
+
+        async function configureWebhook() {
+            try {
+                const webhookUrl = document.getElementById('webhook-url').value;
+                
+                const response = await fetch(`${API_BASE}/notification/webhook`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ webhook_url: webhookUrl })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotificationMessage('Webhook配置成功', 'success');
+                } else {
+                    showNotificationMessage('Webhook配置失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error configuring webhook:', error);
+                showNotificationMessage('配置Webhook时出错', 'error');
+            }
+        }
+
+        async function configureEmail() {
+            try {
+                const smtpServer = document.getElementById('smtp-server').value;
+                const smtpPort = document.getElementById('smtp-port').value;
+                const email = document.getElementById('email-address').value;
+                const password = document.getElementById('email-password').value;
+                
+                const response = await fetch(`${API_BASE}/notification/email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        smtp_server: smtpServer,
+                        smtp_port: parseInt(smtpPort),
+                        email: email,
+                        password: password
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotificationMessage('邮件通知配置成功', 'success');
+                } else {
+                    showNotificationMessage('邮件通知配置失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error configuring email:', error);
+                showNotificationMessage('配置邮件通知时出错', 'error');
+            }
+        }
+
+        async function viewNotificationHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/notification/history`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('通知历史:\n' + JSON.stringify(data.history, null, 2));
+                }
+            } catch (error) {
+                console.error('Error viewing notification history:', error);
+            }
+        }
+
+        function showRecoveryMessage(message, type) {
+            const messageElement = document.getElementById('recovery-message');
+            messageElement.textContent = message;
+            messageElement.style.display = 'block';
+            
+            if (type === 'success') {
+                messageElement.style.background = '#d4edda';
+                messageElement.style.color = '#155724';
+            } else if (type === 'error') {
+                messageElement.style.background = '#f8d7da';
+                messageElement.style.color = '#721c24';
+            } else {
+                messageElement.style.background = '#d1ecf1';
+                messageElement.style.color = '#0c5460';
+            }
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function showNotificationMessage(message, type) {
+            const messageElement = document.getElementById('notification-message');
+            messageElement.textContent = message;
+            messageElement.style.display = 'block';
+            
+            if (type === 'success') {
+                messageElement.style.background = '#d4edda';
+                messageElement.style.color = '#155724';
+            } else if (type === 'error') {
+                messageElement.style.background = '#f8d7da';
+                messageElement.style.color = '#721c24';
+            } else {
+                messageElement.style.background = '#d1ecf1';
+                messageElement.style.color = '#0c5460';
+            }
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
     </script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 """Domain models for RAG KB."""
 
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -13,11 +15,11 @@ class Document(BaseModel):
     title: str = ''
     source: str = ''
     content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     file_hash: str = ''
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    acl: Dict[str, List[str]] = Field(default_factory=dict, description='RBAC/ACL tags, e.g. {"dept": ["Sales"], "level": ["Internal"]}')
+    acl: dict[str, list[str]] = Field(default_factory=dict, description='RBAC/ACL tags, e.g. {"dept": ["Sales"], "level": ["Internal"]}')
 
 
 class Chunk(BaseModel):
@@ -25,13 +27,23 @@ class Chunk(BaseModel):
     
     chunk_id: str
     doc_id: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     text: str
     level: int = 0
-    section_path: List[str] = Field(default_factory=list)
+    section_path: list[str] = Field(default_factory=list)
     token_count: int = 0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    embedding: Optional[List[float]] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    embedding: list[float] | None = None
+    
+    # Enhanced metadata for internal document retrieval
+    source_file: str = Field(default="", description="Original source file name")
+    page_num: int | None = Field(default=None, description="Page number in source document")
+    section_title: str = Field(default="", description="Title of the section this chunk belongs to")
+    chunk_type: str = Field(default="text", description="Type of chunk: text, table, heading, list, code")
+    offset: int = Field(default=0, description="Character offset in original document")
+    length: int = Field(default=0, description="Length of chunk in characters")
+    table_id: str | None = Field(default=None, description="ID if this chunk is from a table")
+    list_index: int | None = Field(default=None, description="Index if this chunk is from a list")
 
 
 class SearchResult(BaseModel):
@@ -43,4 +55,4 @@ class SearchResult(BaseModel):
     score: float
     rank: int
     source: str = ''
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)

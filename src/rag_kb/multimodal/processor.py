@@ -1,10 +1,10 @@
 """Basic multimodal support for image and table processing."""
 
-from typing import Dict, Any, List, Optional, BinaryIO
+import json
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-import json
+from typing import Any
 
 
 class ModalityType(Enum):
@@ -22,11 +22,11 @@ class MultimodalContent:
     content_id: str
     modality_type: ModalityType
     source_file: str
-    extracted_data: Dict[str, Any] = field(default_factory=dict)
+    extracted_data: dict[str, Any] = field(default_factory=dict)
     text_description: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'content_id': self.content_id,
@@ -56,7 +56,7 @@ class ImageProcessor:
         """
         return Path(file_path).suffix.lower() in self.supported_formats
     
-    def extract_image_info(self, file_path: str) -> Dict[str, Any]:
+    def extract_image_info(self, file_path: str) -> dict[str, Any]:
         """Extract basic image information.
         
         Args:
@@ -129,7 +129,7 @@ class TableProcessor:
         """
         return Path(file_path).suffix.lower() in self.supported_formats
     
-    def extract_table_data(self, file_path: str) -> Dict[str, Any]:
+    def extract_table_data(self, file_path: str) -> dict[str, Any]:
         """Extract table data from file.
         
         Args:
@@ -151,7 +151,7 @@ class TableProcessor:
         except Exception as e:
             return {'error': str(e)}
     
-    def _extract_csv(self, file_path: str) -> Dict[str, Any]:
+    def _extract_csv(self, file_path: str) -> dict[str, Any]:
         """Extract data from CSV file.
         
         Args:
@@ -176,7 +176,7 @@ class TableProcessor:
             'data': rows[1:] if rows else []
         }
     
-    def _extract_excel(self, file_path: str) -> Dict[str, Any]:
+    def _extract_excel(self, file_path: str) -> dict[str, Any]:
         """Extract data from Excel file.
         
         Args:
@@ -231,7 +231,7 @@ class MultimodalManager:
         """Initialize multimodal manager."""
         from rag_kb.config import settings
         self.multimodal_file = settings.data_dir / 'multimodal_index.json'
-        self.content_index: Dict[str, MultimodalContent] = {}
+        self.content_index: dict[str, MultimodalContent] = {}
         self.image_processor = ImageProcessor()
         self.table_processor = TableProcessor()
         self._load_index()
@@ -262,7 +262,7 @@ class MultimodalManager:
         except Exception as e:
             print(f"Error saving multimodal index: {e}")
     
-    def _dict_to_content(self, data: Dict[str, Any]) -> MultimodalContent:
+    def _dict_to_content(self, data: dict[str, Any]) -> MultimodalContent:
         """Convert dictionary to content object."""
         return MultimodalContent(
             content_id=data['content_id'],
@@ -273,7 +273,7 @@ class MultimodalManager:
             metadata=data.get('metadata', {})
         )
     
-    def process_multimodal_file(self, file_path: str, doc_id: str = None) -> Dict[str, Any]:
+    def process_multimodal_file(self, file_path: str, doc_id: str = None) -> dict[str, Any]:
         """Process a multimodal file.
         
         Args:
@@ -328,7 +328,7 @@ class MultimodalManager:
             'extracted_data': extracted_data
         }
     
-    def search_multimodal_content(self, query: str, modality_type: str = None) -> List[Dict[str, Any]]:
+    def search_multimodal_content(self, query: str, modality_type: str = None) -> list[dict[str, Any]]:
         """Search multimodal content by description.
         
         Args:
@@ -352,7 +352,7 @@ class MultimodalManager:
         
         return results
     
-    def get_content_by_type(self, modality_type: str) -> List[Dict[str, Any]]:
+    def get_content_by_type(self, modality_type: str) -> list[dict[str, Any]]:
         """Get all content of a specific type.
         
         Args:

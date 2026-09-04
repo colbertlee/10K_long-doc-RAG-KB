@@ -1,10 +1,9 @@
 """Optimized multi-working directory routing system."""
 
-from typing import Dict, Any, List, Optional
+import json
 from dataclasses import dataclass, field
 from enum import Enum
-import json
-from pathlib import Path
+from typing import Any
 
 
 class RoutingStrategy(Enum):
@@ -21,15 +20,15 @@ class WorkingDirectory:
     """Working directory configuration."""
     dir_id: str
     dir_path: str
-    product_id: Optional[str] = None
-    category: Optional[str] = None
-    user_id: Optional[str] = None
+    product_id: str | None = None
+    category: str | None = None
+    user_id: str | None = None
     capacity: int = 1000
     current_load: int = 0
     enabled: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'dir_id': self.dir_id,
@@ -56,7 +55,7 @@ class OptimizedRouter:
         from rag_kb.config import settings
         self.strategy = strategy
         self.router_file = settings.data_dir / 'optimized_router.json'
-        self.working_directories: Dict[str, WorkingDirectory] = {}
+        self.working_directories: dict[str, WorkingDirectory] = {}
         self.routing_cache = {}
         self._load_directories()
     
@@ -86,7 +85,7 @@ class OptimizedRouter:
         except Exception as e:
             print(f"Error saving directories: {e}")
     
-    def _dict_to_directory(self, data: Dict[str, Any]) -> WorkingDirectory:
+    def _dict_to_directory(self, data: dict[str, Any]) -> WorkingDirectory:
         """Convert dictionary to directory object."""
         return WorkingDirectory(
             dir_id=data['dir_id'],
@@ -102,7 +101,7 @@ class OptimizedRouter:
     
     def register_working_directory(self, dir_id: str, dir_path: str,
                                   product_id: str = None, category: str = None,
-                                  user_id: str = None, capacity: int = 1000) -> Dict[str, Any]:
+                                  user_id: str = None, capacity: int = 1000) -> dict[str, Any]:
         """Register a new working directory.
         
         Args:
@@ -135,7 +134,7 @@ class OptimizedRouter:
         }
     
     def route_query(self, query: str, product_id: str = None,
-                   category: str = None, user_id: str = None) -> Optional[str]:
+                   category: str = None, user_id: str = None) -> str | None:
         """Route query to optimal working directory.
         
         Args:
@@ -172,7 +171,7 @@ class OptimizedRouter:
         
         return dir_id
     
-    def _route_by_product(self, product_id: str) -> Optional[str]:
+    def _route_by_product(self, product_id: str) -> str | None:
         """Route by product ID.
         
         Args:
@@ -190,7 +189,7 @@ class OptimizedRouter:
         
         return None
     
-    def _route_by_category(self, category: str) -> Optional[str]:
+    def _route_by_category(self, category: str) -> str | None:
         """Route by category.
         
         Args:
@@ -208,7 +207,7 @@ class OptimizedRouter:
         
         return None
     
-    def _route_by_user(self, user_id: str) -> Optional[str]:
+    def _route_by_user(self, user_id: str) -> str | None:
         """Route by user preference.
         
         Args:
@@ -226,7 +225,7 @@ class OptimizedRouter:
         
         return None
     
-    def _route_by_load(self) -> Optional[str]:
+    def _route_by_load(self) -> str | None:
         """Route by load balancing.
         
         Returns:
@@ -250,7 +249,7 @@ class OptimizedRouter:
         return min_load_dir[0]
     
     def _route_intelligent(self, query: str, product_id: str = None,
-                         category: str = None, user_id: str = None) -> Optional[str]:
+                         category: str = None, user_id: str = None) -> str | None:
         """Intelligent routing using multiple factors.
         
         Args:
@@ -292,7 +291,7 @@ class OptimizedRouter:
             directory.current_load = max(0, directory.current_load + load_change)
             self._save_directories()
     
-    def get_directory_status(self, dir_id: str) -> Optional[Dict[str, Any]]:
+    def get_directory_status(self, dir_id: str) -> dict[str, Any] | None:
         """Get directory status.
         
         Args:
@@ -305,7 +304,7 @@ class OptimizedRouter:
             return self.working_directories[dir_id].to_dict()
         return None
     
-    def get_all_directories(self) -> List[Dict[str, Any]]:
+    def get_all_directories(self) -> list[dict[str, Any]]:
         """Get all working directories.
         
         Returns:

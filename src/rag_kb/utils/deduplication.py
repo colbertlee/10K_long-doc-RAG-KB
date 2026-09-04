@@ -2,23 +2,22 @@
 
 import hashlib
 import json
-from typing import Dict, Optional, Set
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 class DocumentDeduplicator:
     """Multi-dimensional document deduplication system."""
     
-    def __init__(self, cache_file: Optional[Path] = None):
+    def __init__(self, cache_file: Path | None = None):
         """Initialize document deduplicator.
         
         Args:
             cache_file: Optional file to persist deduplication cache
         """
-        self.content_cache: Dict[str, str] = {}  # content_hash -> doc_id
-        self.metadata_cache: Dict[str, str] = {}  # metadata_fingerprint -> doc_id
-        self.filename_cache: Dict[str, str] = {}  # filename -> doc_id
+        self.content_cache: dict[str, str] = {}  # content_hash -> doc_id
+        self.metadata_cache: dict[str, str] = {}  # metadata_fingerprint -> doc_id
+        self.filename_cache: dict[str, str] = {}  # filename -> doc_id
         self.cache_file = cache_file
         
         # Load existing cache if available
@@ -29,7 +28,7 @@ class DocumentDeduplicator:
         """Generate SHA256 hash of document content."""
         return hashlib.sha256(content.encode('utf-8')).hexdigest()
     
-    def _generate_metadata_fingerprint(self, metadata: Dict) -> str:
+    def _generate_metadata_fingerprint(self, metadata: dict) -> str:
         """Generate fingerprint from metadata."""
         # Normalize metadata for consistent fingerprinting
         normalized = {
@@ -45,7 +44,7 @@ class DocumentDeduplicator:
         """Generate normalized filename key."""
         return filename.lower().strip()
     
-    def is_duplicate(self, doc_id: str, content: str, metadata: Dict) -> tuple[bool, str]:
+    def is_duplicate(self, doc_id: str, content: str, metadata: dict) -> tuple[bool, str]:
         """Check if document is a duplicate using multi-dimensional analysis.
         
         Args:
@@ -130,7 +129,7 @@ class DocumentDeduplicator:
         except Exception as e:
             print(f"Warning: Could not load deduplication cache: {e}", flush=True)
     
-    def get_duplicate_stats(self) -> Dict:
+    def get_duplicate_stats(self) -> dict:
         """Get deduplication statistics."""
         return {
             'total_documents': len(self.content_cache),
@@ -150,10 +149,10 @@ class DocumentDeduplicator:
 
 
 # Global deduplicator instance
-_global_deduplicator: Optional[DocumentDeduplicator] = None
+_global_deduplicator: DocumentDeduplicator | None = None
 
 
-def get_deduplicator(cache_file: Optional[Path] = None) -> DocumentDeduplicator:
+def get_deduplicator(cache_file: Path | None = None) -> DocumentDeduplicator:
     """Get the global document deduplicator instance."""
     global _global_deduplicator
     if _global_deduplicator is None:

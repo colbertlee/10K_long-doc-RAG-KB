@@ -1,10 +1,10 @@
 """BM25 sparse search implementation for keyword-based retrieval."""
 
 import json
-from pathlib import Path
-from typing import List, Dict, Any, Tuple
-from collections import defaultdict
 import math
+from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
 
 class BM25Search:
@@ -27,7 +27,7 @@ class BM25Search:
         self.term_doc_map = defaultdict(list)  # term -> list of (doc_id, term_freq)
         self.total_docs = 0
         
-    def add_documents(self, documents: List[Dict[str, Any]]):
+    def add_documents(self, documents: list[dict[str, Any]]):
         """
         Add documents to the BM25 index.
         
@@ -57,7 +57,7 @@ class BM25Search:
         if self.doc_lengths:
             self.avg_doc_length = sum(self.doc_lengths) / len(self.doc_lengths)
     
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         """
         Simple tokenization.
         
@@ -72,7 +72,7 @@ class BM25Search:
         tokens = text.split()
         return tokens
     
-    def search(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
+    def search(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
         """
         Search using BM25 algorithm.
         
